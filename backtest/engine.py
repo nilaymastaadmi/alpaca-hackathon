@@ -34,6 +34,30 @@ THRESHOLD_GRID = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]  # section 4, the only fit
 
 
 @dataclass(frozen=True)
+class StrategyParams:
+    """
+    Every knob, with defaults that exactly reproduce the committed H3 result.
+    Changing a default here silently invalidates RESULT_H3.md, so do not.
+    """
+    max_concurrent: int = 1
+    risk_per_position: float = RISK_PER_POSITION
+    wing_pct: float = WING_PCT
+    profit_target: float = PROFIT_TARGET
+    exit_dte: int = EXIT_DTE
+    structure: str = "condor"          # condor | put_spread | call_spread
+    stop_loss_mult: float | None = None   # exit if buyback > credit * this
+    one_per_expiry: bool = False       # stagger, a risk control at size
+    # One decision per day. The engine runs on DAILY bars, so re-entering on the
+    # same close that just closed a position uses one price for both sides of a
+    # round trip, which flatters the result. Default False keeps the committed
+    # H3 baseline reproducible; it is also the conservative choice.
+    allow_same_day_reentry: bool = False
+
+
+DEFAULT_PARAMS = StrategyParams()
+
+
+@dataclass(frozen=True)
 class TrialConfig:
     name: str
     use_vrp_gate: bool
@@ -58,10 +82,10 @@ TRIALS = [
 class Condor:
     entry_date: pd.Timestamp
     expiry: pd.Timestamp
-    short_call: float
-    long_call: float
-    short_put: float
-    long_put: float
+    short_call: float | None
+    long_call: float | None
+    short_put: float | None
+    long_put: float | None
     credit: float               # per contract, dollars per share
     wing: float
     contracts: int
@@ -72,9 +96,21 @@ class Condor:
         return self.max_loss_per_contract * 100.0 * self.contracts
 
 
+_STRIKE_CACHE: dict = {}
+
+
 def _find_strike_for_delta(S: float, dte: int, base_iv: float, skew: P.SkewModel,
                            target_delta: float, is_call: bool) -> float:
-    """Scan $1 strikes and return the one whose model delta is closest to target."""
+    """
+    Scan $1 strikes and return the one whose model delta is closest to target.
+
+    Memoised: the exploratory sweep re-runs the same (S, dte, iv) combinations
+    across many parameter sets, and without this the scan dominates runtime.
+    """
+    key = (round(S, 1), dte, round(base_iv, 4), round(target_delta, 3), is_call)
+    hit = _STRIKE_CACHE.get(key)
+    if hit is not None:
+        return hit
     T = dte / P.DAYS_PER_YEAR
     lo, hi = int(S * 0.80), int(S * 1.20)
     best_k, best_err = None, 1e9
@@ -84,55 +120,70 @@ def _find_strike_for_delta(S: float, dte: int, base_iv: float, skew: P.SkewModel
         err = abs(abs(d) - target_delta)
         if err < best_err:
             best_err, best_k = err, float(K)
+    _STRIKE_CACHE[key] = best_k
     return best_k
 
 
 def value_condor(c: Condor, S: float, dte: int, vix: float, vix3m: float,
                  skew: P.SkewModel) -> float:
-    """Cost per contract to buy the condor back. Positive number."""
+    """
+    Cost per contract to buy the structure back. Positive number.
+    A None strike means that side of the structure is absent (vertical spreads).
+    """
     if dte <= 0:
-        # Settle at intrinsic.
-        sc = max(S - c.short_call, 0.0)
-        lc = max(S - c.long_call, 0.0)
-        sp = max(c.short_put - S, 0.0)
-        lp = max(c.long_put - S, 0.0)
-        return (sc - lc) + (sp - lp)
+        v = 0.0
+        if c.short_call is not None:
+            v += max(S - c.short_call, 0.0) - max(S - c.long_call, 0.0)
+        if c.short_put is not None:
+            v += max(c.short_put - S, 0.0) - max(c.long_put - S, 0.0)
+        return v
     T = dte / P.DAYS_PER_YEAR
     base = P.atm_iv(vix, vix3m, dte)
     v = 0.0
-    v += P.bs_price(S, c.short_call, T, skew.iv(S, c.short_call, base), True)
-    v -= P.bs_price(S, c.long_call, T, skew.iv(S, c.long_call, base), True)
-    v += P.bs_price(S, c.short_put, T, skew.iv(S, c.short_put, base), False)
-    v -= P.bs_price(S, c.long_put, T, skew.iv(S, c.long_put, base), False)
+    if c.short_call is not None:
+        v += P.bs_price(S, c.short_call, T, skew.iv(S, c.short_call, base), True)
+        v -= P.bs_price(S, c.long_call, T, skew.iv(S, c.long_call, base), True)
+    if c.short_put is not None:
+        v += P.bs_price(S, c.short_put, T, skew.iv(S, c.short_put, base), False)
+        v -= P.bs_price(S, c.long_put, T, skew.iv(S, c.long_put, base), False)
     return v
 
 
 def build_condor(entry_date: pd.Timestamp, expiry: pd.Timestamp, S: float, dte: int,
                  vix: float, vix3m: float, skew: P.SkewModel, cfg: TrialConfig,
-                 equity: float, credit_haircut: float = 0.0) -> Condor | None:
+                 equity: float, credit_haircut: float = 0.0,
+                 params: StrategyParams = DEFAULT_PARAMS) -> Condor | None:
     base = P.atm_iv(vix, vix3m, dte)
-    sc = _find_strike_for_delta(S, dte, base, skew, cfg.short_delta, True)
-    sp = _find_strike_for_delta(S, dte, base, skew, cfg.short_delta, False)
-    wing = max(round(S * WING_PCT), 1.0)
-    lc, lp = sc + wing, sp - wing
-    if sp >= sc:
-        return None
-
+    wing = max(round(S * params.wing_pct), 1.0)
     T = dte / P.DAYS_PER_YEAR
-    credit = (
-        P.bs_price(S, sc, T, skew.iv(S, sc, base), True)
-        - P.bs_price(S, lc, T, skew.iv(S, lc, base), True)
-        + P.bs_price(S, sp, T, skew.iv(S, sp, base), False)
-        - P.bs_price(S, lp, T, skew.iv(S, lp, base), False)
-    )
+
+    want_call = params.structure in ("condor", "call_spread")
+    want_put = params.structure in ("condor", "put_spread")
+
+    sc = lc = sp = lp = None
+    credit = 0.0
+    if want_call:
+        sc = _find_strike_for_delta(S, dte, base, skew, cfg.short_delta, True)
+        lc = sc + wing
+        credit += P.bs_price(S, sc, T, skew.iv(S, sc, base), True)
+        credit -= P.bs_price(S, lc, T, skew.iv(S, lc, base), True)
+    if want_put:
+        sp = _find_strike_for_delta(S, dte, base, skew, cfg.short_delta, False)
+        lp = sp - wing
+        credit += P.bs_price(S, sp, T, skew.iv(S, sp, base), False)
+        credit -= P.bs_price(S, lp, T, skew.iv(S, lp, base), False)
+
+    if want_call and want_put and sp >= sc:
+        return None
     credit *= (1.0 - credit_haircut)
     if credit <= 0.01:
         return None
 
+    # A condor can only lose on one side at a time, so max loss is one wing.
     max_loss = wing - credit
     if max_loss <= 0:
         return None
-    contracts = int((equity * RISK_PER_POSITION) // (max_loss * 100.0))
+    contracts = int((equity * params.risk_per_position) // (max_loss * 100.0))
     if contracts < 1:
         return None
 
@@ -151,32 +202,41 @@ def _pick_expiry(day: pd.Timestamp, expiries: np.ndarray, cfg: TrialConfig):
 def run_strategy(panel: pd.DataFrame, expiries: np.ndarray, skew: P.SkewModel,
                  cfg: TrialConfig, threshold: float,
                  cost_pct: float = COST_PCT,
-                 credit_haircut: float = 0.0) -> dict:
+                 credit_haircut: float = 0.0,
+                 params: StrategyParams = DEFAULT_PARAMS) -> dict:
     """
     Day loop over a panel indexed by date with columns:
       close, vix, vix3m, vrp_signal, contango
 
-    Returns equity curve, trade list and the refusal count. Refusals are a
-    first-class output, not a side effect: section 9 prediction P6.
+    Supports up to params.max_concurrent open positions. With the default
+    max_concurrent=1 this reproduces the committed H3 result exactly.
+
+    Refusals are a first-class output, not a side effect: section 9 prediction P6.
     """
     equity = STARTING_EQUITY
-    pos: Condor | None = None
-    entry_cost_paid = 0.0
+    open_pos: list[tuple[Condor, float]] = []   # (condor, entry_cost_paid)
     equity_curve, trades = [], []
     refusals = {"vrp": 0, "regime": 0, "no_expiry": 0, "unsized": 0}
     opportunities = 0
+    at_capacity = 0   # kept OUT of refusals: being busy is not a refusal
+    same_day_reentry = 0
 
     for day, row in panel.iterrows():
         S, vix, vix3m = row["close"], row["vix"], row["vix3m"]
 
-        if pos is not None:
+        # 1. Manage every open position.
+        still_open, unreal_total, cost_carried = [], 0.0, 0.0
+        closed_today = False
+        for pos, entry_cost in open_pos:
             dte = (pos.expiry - day).days
             buyback = value_condor(pos, S, dte, vix, vix3m, skew)
             unreal = (pos.credit - buyback) * 100.0 * pos.contracts
-            should_exit = (buyback <= pos.credit * (1.0 - PROFIT_TARGET)) or (dte <= EXIT_DTE)
-            if should_exit:
+            hit_target = buyback <= pos.credit * (1.0 - params.profit_target)
+            hit_stop = (params.stop_loss_mult is not None
+                        and buyback >= pos.credit * params.stop_loss_mult)
+            if hit_target or hit_stop or dte <= params.exit_dte:
                 exit_cost = pos.credit * cost_pct * 100.0 * pos.contracts
-                pnl = unreal - entry_cost_paid - exit_cost
+                pnl = unreal - entry_cost - exit_cost
                 equity += pnl
                 trades.append({
                     "entry": pos.entry_date, "exit": day, "expiry": pos.expiry,
@@ -185,46 +245,57 @@ def run_strategy(panel: pd.DataFrame, expiries: np.ndarray, skew: P.SkewModel,
                     "max_loss": pos.notional_risk,
                     "r_multiple": pnl / pos.notional_risk if pos.notional_risk else np.nan,
                     "held_days": (day - pos.entry_date).days,
+                    "exit_reason": ("target" if hit_target else
+                                    "stop" if hit_stop else "dte"),
                 })
-                pos = None
-                equity_curve.append({"date": day, "equity": equity})
-                continue
-            equity_curve.append({"date": day, "equity": equity + unreal - entry_cost_paid})
-            continue
+                closed_today = True
+            else:
+                still_open.append((pos, entry_cost))
+                unreal_total += unreal
+                cost_carried += entry_cost
+        open_pos = still_open
 
-        # Flat: consider entering.
-        opportunities += 1
-        if cfg.use_regime_gate and not row["contango"]:
-            refusals["regime"] += 1
-            equity_curve.append({"date": day, "equity": equity})
-            continue
-        if cfg.use_vrp_gate and not (row["vrp_signal"] >= threshold):
-            refusals["vrp"] += 1
-            equity_curve.append({"date": day, "equity": equity})
-            continue
+        # 2. Consider one new entry per day.
+        if closed_today and not params.allow_same_day_reentry:
+            same_day_reentry += 1   # counted, not taken
+        elif len(open_pos) >= params.max_concurrent:
+            at_capacity += 1
+        else:
+            opportunities += 1
+            blocked = None
+            if cfg.use_regime_gate and not row["contango"]:
+                blocked = "regime"
+            elif cfg.use_vrp_gate and not (row["vrp_signal"] >= threshold):
+                blocked = "vrp"
+            if blocked:
+                refusals[blocked] += 1
+            else:
+                exp, dte = _pick_expiry(day, expiries, cfg)
+                if params.one_per_expiry and exp is not None:
+                    if any(p.expiry == exp for p, _ in open_pos):
+                        exp = None
+                if exp is None:
+                    refusals["no_expiry"] += 1
+                else:
+                    c = build_condor(day, exp, S, dte, vix, vix3m, skew, cfg,
+                                     equity, credit_haircut, params)
+                    if c is None:
+                        refusals["unsized"] += 1
+                    else:
+                        ec = c.credit * cost_pct * 100.0 * c.contracts
+                        open_pos.append((c, ec))
+                        cost_carried += ec
 
-        exp, dte = _pick_expiry(day, expiries, cfg)
-        if exp is None:
-            refusals["no_expiry"] += 1
-            equity_curve.append({"date": day, "equity": equity})
-            continue
+        equity_curve.append({"date": day, "equity": equity + unreal_total - cost_carried})
 
-        c = build_condor(day, exp, S, dte, vix, vix3m, skew, cfg, equity, credit_haircut)
-        if c is None:
-            refusals["unsized"] += 1
-            equity_curve.append({"date": day, "equity": equity})
-            continue
-
-        pos = c
-        entry_cost_paid = c.credit * cost_pct * 100.0 * c.contracts
-        equity_curve.append({"date": day, "equity": equity - entry_cost_paid})
-
-    eq = pd.DataFrame(equity_curve).set_index("date")["equity"] if equity_curve else pd.Series(dtype=float)
+    eq = (pd.DataFrame(equity_curve).set_index("date")["equity"]
+          if equity_curve else pd.Series(dtype=float))
     return {
         "equity": eq,
         "trades": pd.DataFrame(trades),
         "refusals": refusals,
         "opportunities": opportunities,
+        "at_capacity": at_capacity,
         "final_equity": equity,
     }
 
