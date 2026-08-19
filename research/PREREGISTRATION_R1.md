@@ -214,4 +214,37 @@ Stated in advance so that being wrong is recorded rather than quietly dropped. `
 
 ---
 
+## Amendment A1, written 2026-08-19 BEFORE any H3 trial was run
+
+Recorded here rather than silently applied. No H3 result existed when this was
+written, so none of it can be results-driven. Two changes and one clarification.
+
+**A1.1 Wing width becomes a percentage of spot, not $5.** Section 4 fixed wing
+width at $5. That was written against SPY near 770 and is wrong for a backtest
+spanning 2016 to 2022, where SPY ranged roughly 180 to 470. A flat $5 wing is
+2.8% of spot in 2016 and 0.65% in 2026, so it would silently change the strategy
+across the sample. **Wing width becomes 0.65% of spot, rounded to the nearest $1
+strike, minimum $1**, which equals $5 at SPY 770 and holds the economics constant.
+Risk per position is capped at 1.0% of equity either way, so this affects
+granularity, not risk.
+
+**A1.2 The decision-time VRP signal uses TRAILING realised vol, not a HAR-RV
+forecast.** H1 defines VRP against SUBSEQUENT realised vol, which is correct for
+testing the thesis but is not available to a live agent. `STRATEGY.md` section
+5.2 mentioned HAR-RV. Fitting HAR coefficients would add fitted parameters beyond
+the single one this registration permits, so the strategy instead uses the
+parameter-free proxy:
+
+> `VRP_signal(t) = ATM_IV(t) - trailing 21 day realised vol(t)`, in vol points.
+
+Uses only past data, adds no fitted parameters, and is the comparison most
+practitioners actually make. HAR-RV may be revisited later as a separate
+registered trial, not folded into this one.
+
+**A1.3 Clarification: ATM_IV(t) means the VIX-corrected level**, per the
+validation work in `RESULT_PRICING_GATE.md` (market ATM IV runs at 0.853 of VIX).
+The raw VIX print is not the ATM implied vol and must not be used as one.
+
+---
+
 Author: Nilay Toshniwal. Registered 2026-08-19, before `backtest/` existed.
