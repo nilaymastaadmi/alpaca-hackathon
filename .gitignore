@@ -2,3 +2,6 @@
 .venv/
 __pycache__/
 *.pyc
+
+backtest/cache/option_bars.csv
+backtest/cache/*.csv
