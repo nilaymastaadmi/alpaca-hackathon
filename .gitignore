@@ -5,3 +5,5 @@ __pycache__/
 
 backtest/cache/option_bars.csv
 backtest/cache/*.csv
+
+artifacts/state.json
