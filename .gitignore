@@ -8,3 +8,4 @@ backtest/cache/*.csv
 
 artifacts/state.json
 artifacts/positions.json
+artifacts/watchdog.json

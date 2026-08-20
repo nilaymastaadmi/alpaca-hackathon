@@ -62,7 +62,8 @@ def save_state(s: dict) -> None:
     STATE_PATH.write_text(json.dumps(s, indent=2), encoding="utf-8")
 
 
-def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True) -> Decision:
+def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
+              publish_artifacts: bool = False) -> Decision:
     log = ArtifactLog()
     engine = RiskEngine(cfg)
     state = load_state()
@@ -202,6 +203,17 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True) -> Decision:
         # exactly the ones a judge will look at.
         log.seal()
 
+        # Publish so the DEPLOYED dashboard reflects this decision. It renders
+        # what is committed, not what is on this laptop. Failures here are
+        # returned, never raised: a git problem must not stop the agent from
+        # managing real positions.
+        pub = None
+        if publish_artifacts:
+            from publish import publish as _publish
+            pub = _publish(note=f"action={action} seq={rec.get('seq')}").to_dict()
+            if verbose:
+                print(f"  publish: {pub['action']} {pub['detail'][:80]}")
+
         if verbose:
             _print(decision, leaf, sig, cfg, exits, recon_issues)
 
@@ -315,13 +327,16 @@ def main() -> None:
     ap.add_argument("--once", action="store_true", help="single cycle then exit")
     ap.add_argument("--seal", action="store_true",
                     help="seal the artifact log and print the Merkle root")
+    ap.add_argument("--publish", action="store_true",
+                    help="commit and push artifacts so the deployed dashboard "
+                         "is not stale. Opt-in because it pushes to a remote.")
     args = ap.parse_args()
 
     if args.seal:
         print(json.dumps(ArtifactLog().seal(), indent=2))
         return
 
-    run_cycle(DEFAULT, dry_run=args.dry_run)
+    run_cycle(DEFAULT, dry_run=args.dry_run, publish_artifacts=args.publish)
 
 
 if __name__ == "__main__":
