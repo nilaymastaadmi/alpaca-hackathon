@@ -200,7 +200,9 @@ def test_deleting_a_record_is_detected(log):
     log.path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     ok, msg = log.verify()
     assert ok is False
-    assert "count changed" in msg or "root mismatch" in msg
+    # Deletion is now reported distinctly from growth and from tampering, so the
+    # reader can tell which happened rather than seeing one generic failure.
+    assert "REMOVED" in msg or "root mismatch" in msg
 
 
 def test_appending_after_sealing_is_detected(log):
@@ -228,3 +230,59 @@ def test_root_is_reproducible_across_instances(log):
     first = log.root()
     second = ArtifactLog(log.path).root()
     assert first == second, "a third party must recompute the same root"
+
+
+# --- grew-since-seal must be distinguishable from tampered ---------------
+# Reporting both as the same failure trains the reader to ignore the one that
+# matters. An append-only log gaining records between seals is expected.
+
+def test_growth_since_seal_is_reported_as_unsealed_not_tampered(log):
+    for i in range(4):
+        log.append(rec(i))
+    log.seal()
+    log.append(rec(99, "enter"))
+    ok, msg = log.verify()
+    assert ok is False
+    assert "UNSEALED" in msg
+    assert "verifies unchanged" in msg
+
+
+def test_growth_plus_edit_of_the_sealed_prefix_is_reported_as_tampered(log):
+    """Growth is benign; growth WITH an edited prefix is not, and must say so."""
+    for i in range(4):
+        log.append(rec(i))
+    log.seal()
+    log.append(rec(99, "enter"))
+
+    lines = log.path.read_text(encoding="utf-8").strip().splitlines()
+    victim = json.loads(lines[1])
+    victim.pop("leaf_hash")
+    victim["action"] = "enter"
+    victim["leaf_hash"] = leaf_hash(victim)
+    lines[1] = json.dumps(victim, default=str)
+    log.path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    ok, msg = log.verify()
+    assert ok is False
+    assert "TAMPERED" in msg
+
+
+def test_removal_is_reported_distinctly(log):
+    for i in range(5):
+        log.append(rec(i))
+    log.seal()
+    lines = log.path.read_text(encoding="utf-8").strip().splitlines()
+    log.path.write_text("\n".join(lines[:3]) + "\n", encoding="utf-8")
+    ok, msg = log.verify()
+    assert ok is False
+    assert "REMOVED" in msg
+
+
+def test_resealing_after_growth_restores_verification(log):
+    for i in range(4):
+        log.append(rec(i))
+    log.seal()
+    log.append(rec(99, "enter"))
+    assert log.verify()[0] is False
+    log.seal()
+    assert log.verify()[0] is True

@@ -197,6 +197,10 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True) -> Decision:
         rec["exits"] = exits
         rec["reconciliation"] = recon_issues
         leaf = log.append(rec)
+        # Seal every cycle. An autonomous agent that only seals when a human
+        # remembers to leaves its most recent decisions unverifiable, which are
+        # exactly the ones a judge will look at.
+        log.seal()
 
         if verbose:
             _print(decision, leaf, sig, cfg, exits, recon_issues)

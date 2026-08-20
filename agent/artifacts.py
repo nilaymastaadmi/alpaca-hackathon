@@ -178,9 +178,25 @@ class ArtifactLog:
         if tampered:
             return False, (f"{len(tampered)} artifact(s) fail their own leaf hash "
                            f"(seq {tampered[:10]}); the log was edited after writing")
-        if len(recs) != sealed["n_artifacts"]:
-            return False, (f"artifact count changed: sealed {sealed['n_artifacts']}, "
-                           f"found {len(recs)}")
+
+        # Distinguish "grew since the seal" from "was altered". An append-only
+        # log gaining records is expected between seals and is benign; the
+        # sealed prefix must still verify unchanged. Reporting both as the same
+        # failure would train the reader to ignore the one that matters.
+        n_sealed = sealed["n_artifacts"]
+        if len(recs) > n_sealed:
+            prefix_root = merkle_root(self.leaves()[:n_sealed])
+            if prefix_root != sealed["merkle_root"]:
+                return False, (
+                    f"TAMPERED: the first {n_sealed} sealed artifacts no longer "
+                    f"reproduce their sealed root\n  sealed:     "
+                    f"{sealed['merkle_root']}\n  recomputed: {prefix_root}")
+            return False, (
+                f"UNSEALED: {len(recs) - n_sealed} new artifact(s) since the seal. "
+                f"The sealed prefix of {n_sealed} verifies unchanged, so nothing was "
+                f"altered. Run `make seal` to publish the current root.")
+        if len(recs) < n_sealed:
+            return False, (f"artifacts REMOVED: sealed {n_sealed}, found {len(recs)}")
         if recomputed != sealed["merkle_root"]:
             return False, (f"root mismatch\n  sealed:     {sealed['merkle_root']}\n"
                            f"  recomputed: {recomputed}")

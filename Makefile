@@ -23,3 +23,8 @@ dry-run:
 
 decide:
 	uv run --with requests --with tzdata python agent/agent.py
+
+## Local dashboard. Reads artifacts off disk, so it renders with the market
+## closed and the API down.
+dash:
+	uv run --with streamlit --with pandas streamlit run dashboard/app.py
