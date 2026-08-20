@@ -57,11 +57,21 @@ def load_json(p: Path) -> dict:
 
 
 def verify_log() -> tuple[bool, str]:
+    """
+    Recompute the Merkle root and compare it to the seal.
+
+    Wrapped defensively because this runs on Streamlit Cloud, where a broken
+    import would otherwise take down the whole page. A dashboard that cannot
+    verify should say so plainly and keep rendering everything else, rather
+    than showing a stack trace where the verification badge belongs.
+    """
     try:
         from artifacts import ArtifactLog
+        import artifacts as A
+        A.ROOT_PATH = ROOT_FILE          # anchor to this deployment's paths
         return ArtifactLog(DECISIONS).verify()
     except Exception as exc:
-        return False, f"verifier unavailable: {exc}"
+        return False, f"verifier unavailable in this environment: {exc}"
 
 
 decisions = load_decisions()

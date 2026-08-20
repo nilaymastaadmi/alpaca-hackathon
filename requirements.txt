@@ -1,0 +1,5 @@
+# Streamlit Community Cloud reads this from the repo root.
+# The dashboard reads artifacts off disk and imports the verifier from agent/,
+# so it needs nothing beyond these two.
+streamlit>=1.40
+pandas>=2.2
