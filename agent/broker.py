@@ -159,6 +159,64 @@ class Broker:
                 break
         return contracts
 
+    def quotes(self, symbols: list[str]) -> dict[str, dict]:
+        """Latest quotes for specific contracts. Batched, 100 per request."""
+        out: dict[str, dict] = {}
+        for i in range(0, len(symbols), 100):
+            batch = symbols[i:i + 100]
+            r = self.mcp.call("get_option_snapshot", {"symbols": ",".join(batch)})
+            d = r.get("data", r)
+            snaps = d.get("snapshots", d) if isinstance(d, dict) else {}
+            if not isinstance(snaps, dict):
+                continue
+            for sym, snap in snaps.items():
+                if isinstance(snap, dict):
+                    q = snap.get("latestQuote") or snap.get("latest_quote")
+                    if isinstance(q, dict):
+                        out[sym] = q
+        return out
+
+    def plan_from_position(self, pos) -> "CondorPlan | None":
+        """
+        Rebuild a closable plan from a ledger position.
+
+        Only the leg symbols matter for a closing order, so prices are left at
+        zero and the caller supplies the limit. This exists so closing reuses
+        the same laddered execution path as opening rather than a second,
+        less-tested code path.
+        """
+        from datetime import date as _date
+        from signals import Contract
+
+        def stub(sym: str | None) -> Contract | None:
+            if not sym:
+                return None
+            from signals import parse_occ
+            _, exp, is_call, strike = parse_occ(sym)
+            return Contract(sym, strike, is_call, exp, None, None, None, None)
+
+        sc, lc = stub(pos.short_call), stub(pos.long_call)
+        sp, lp = stub(pos.short_put), stub(pos.long_put)
+        if not all((sc, lc, sp, lp)):
+            return None
+        exp = _date.fromisoformat(pos.expiry)
+        return CondorPlan(sc, lc, sp, lp, 0.0, 0.0,
+                          pos.max_loss_per_contract + pos.credit, exp,
+                          (exp - _date.today()).days)
+
+    def close_position(self, pos, buyback: float, contracts: int,
+                       dry_run: bool = False) -> dict:
+        """
+        Buy the structure back. Closing is a DEBIT, so limit prices are positive
+        and the ladder walks upward, paying more to get out rather than less.
+        """
+        plan = self.plan_from_position(pos)
+        if plan is None:
+            return {"filled": False, "error": "could not rebuild plan from position"}
+        plan.credit_mid = buyback
+        plan.credit_crossing = buyback * 0.85     # walk up to ~18% over mid
+        return self.place_laddered(plan, contracts, opening=False, dry_run=dry_run)
+
     # --- structure building -------------------------------------------------
 
     def build_condor(self, contracts: list[Contract], spot: float,

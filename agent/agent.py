@@ -41,6 +41,9 @@ from artifacts import ArtifactLog
 from broker import Broker, CondorPlan
 from config import DEFAULT, Config
 from mcp_client import MCPClient
+from positions import (
+    Ledger, evaluate_exit, new_position, reconcile, value_from_quotes,
+)
 from risk import Decision, PortfolioState, RiskEngine, size_position
 
 ET = ZoneInfo("America/New_York")
@@ -72,8 +75,18 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True) -> Decision:
         # --- read the world ------------------------------------------------
         acct = broker.account()
         equity = float(acct.get("equity", 0.0))
-        positions = broker.positions()
-        n_open = _count_option_structures(positions)
+        broker_positions = broker.positions()
+        broker_symbols = {str(p.get("symbol", "")) for p in broker_positions}
+
+        # --- manage what is already open BEFORE considering anything new ----
+        # Exits come first on purpose. An agent that opens before it closes can
+        # sit at capacity holding a position it should already have exited.
+        ledger = Ledger()
+        held, recon_issues = reconcile(ledger.load(), broker_symbols)
+        ledger.save(held)
+        exits = _manage_exits(broker, ledger, held, today, cfg, dry_run, log)
+        held = ledger.load()
+        n_open = len(held)
 
         clock = broker.clock()
         market_open = bool(clock.get("is_open", False))
@@ -147,6 +160,14 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True) -> Decision:
                 else:
                     note = (f"filled at {result['limit_price']} on rung "
                             f"{result['rung']}")
+                    # Record it immediately. A filled order that never reaches
+                    # the ledger is a position the agent will not manage or exit.
+                    ledger.add(new_position(
+                        plan.to_dict(), contracts,
+                        credit=abs(float(result["limit_price"])),
+                        entry_limit=result["limit_price"],
+                        order_id=(result.get("order") or {}).get("id"),
+                    ))
             note += f" | ladder: {json.dumps(result.get('attempts', []))[:300]}"
         elif engine.is_halt(gates):
             action = "halt"
@@ -173,12 +194,61 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True) -> Decision:
         rec = decision.to_dict()
         rec["mcp_calls"] = mcp.audit()
         rec["dry_run"] = dry_run
+        rec["exits"] = exits
+        rec["reconciliation"] = recon_issues
         leaf = log.append(rec)
 
         if verbose:
-            _print(decision, leaf, sig, cfg)
+            _print(decision, leaf, sig, cfg, exits, recon_issues)
 
     return decision
+
+
+def _manage_exits(broker, ledger, held, today, cfg, dry_run, log) -> list[dict]:
+    """
+    Value every open position and close the ones whose rules have triggered.
+
+    Each exit is its own artifact, so the audit trail shows the reason a
+    position was closed and the numbers behind it, not just that it vanished.
+    """
+    if not held:
+        return []
+
+    all_legs = [s for p in held for s in p.legs]
+    try:
+        quotes = broker.quotes(all_legs)
+    except Exception as exc:
+        return [{"error": f"could not fetch quotes: {str(exc)[:160]}"}]
+
+    results = []
+    for p in held:
+        buyback = value_from_quotes(p, quotes)
+        sig = evaluate_exit(p, buyback, today, cfg.profit_target,
+                            cfg.exit_dte, cfg.stop_loss_mult)
+        rec = {"position": p.id, "expiry": p.expiry, "dte": p.dte(today),
+               "credit": p.credit, "contracts": p.contracts,
+               **sig.to_dict()}
+
+        if sig.should_exit:
+            if dry_run:
+                rec["action"] = "would_close"
+            else:
+                out = broker.close_position(p, buyback or p.credit,
+                                            p.contracts, dry_run=False)
+                rec["action"] = "closed" if out.get("filled") else "close_failed"
+                rec["execution"] = {k: v for k, v in out.items() if k != "order"}
+                if out.get("filled"):
+                    ledger.remove(p.id)
+        else:
+            rec["action"] = "hold"
+            if sig.profit_frac > p.peak_profit_frac:
+                p.peak_profit_frac = sig.profit_frac
+                ledger.update(p)
+
+        log.append({"timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                    "action": f"exit_check:{rec['action']}", "exit": rec})
+        results.append(rec)
+    return results
 
 
 def _count_option_structures(positions: list[dict]) -> int:
@@ -191,11 +261,26 @@ def _count_option_structures(positions: list[dict]) -> int:
     return max(1, round(len(legs) / 4)) if legs else 0
 
 
-def _print(d: Decision, leaf: str, sig: SIG.Signals, cfg: Config) -> None:
+def _print(d: Decision, leaf: str, sig: SIG.Signals, cfg: Config,
+           exits: list[dict] | None = None,
+           recon: list[dict] | None = None) -> None:
     bar = "=" * 74
     print(bar)
     print(f"DECISION  {d.timestamp}   ACTION: {d.action.upper()}")
     print(bar)
+    for issue in (recon or []):
+        sev = issue.get("severity", "info")
+        print(f"  [{sev}] {issue.get('position')}: {issue.get('issue', '')[:90]}")
+    if exits:
+        print(f"  open positions: {len(exits)}")
+        for e in exits:
+            if "error" in e:
+                print(f"    ERROR {e['error']}")
+                continue
+            print(f"    {e['position']}  {e['action']:<12} "
+                  f"{e['profit_frac'] * 100:+6.0f}% of max  {e['dte']:>3}d  "
+                  f"{e['reason'][:60]}")
+        print()
     print(f"  spot {sig.spot:.2f}   ATM IV {sig.atm_iv_near:.2f} ({sig.near_dte}d) "
           f"/ {sig.atm_iv_far:.2f} ({sig.far_dte}d)")
     print(f"  term ratio {sig.term_ratio:.3f} "
