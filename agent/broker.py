@@ -260,7 +260,13 @@ class Broker:
         if credit_mid <= 0.02:
             return None
 
-        actual_wing = min(lc.strike - sc.strike, sp.strike - lp.strike)
+        # MAX, not min. An iron condor can only lose on one side at a time, so
+        # its max loss is the WIDER wing minus the credit. Taking the minimum
+        # understates risk whenever the two wings differ, which happens as soon
+        # as a strike is unquoted and the nearest available one is further out.
+        # Gate 10 then sizes against a loss that cannot happen and passes a
+        # position whose real risk exceeds the cap.
+        actual_wing = max(lc.strike - sc.strike, sp.strike - lp.strike)
         return CondorPlan(sc, lc, sp, lp, credit_mid, credit_crossing,
                           actual_wing, exp, (exp - today).days)
 

@@ -74,18 +74,46 @@ class Decision:
     structure: dict[str, Any] | None = None
     note: str = ""
 
+    # Gates 0 and 1 describe the ENVIRONMENT, not a judgement about the trade.
+    # "The market is closed" is not a decision the agent made, and attributing
+    # refusals to it drowns the ones that carry information. `make summary` was
+    # reporting market_open as the top blocking gate at 85.7%, on a command the
+    # README invites judges to run.
+    ENVIRONMENTAL_GATES = ("market_open", "session_window")
+
     @property
     def blocking_gate(self) -> GateResult | None:
+        """The first SUBSTANTIVE gate that blocked, ignoring environmental ones."""
         for g in self.gates:
-            if not g.passed:
+            if not g.passed and g.gate not in self.ENVIRONMENTAL_GATES:
                 return g
         return None
+
+    @property
+    def environmental_block(self) -> GateResult | None:
+        """Reported separately so the artifact stays complete without skewing stats."""
+        for g in self.gates:
+            if not g.passed and g.gate in self.ENVIRONMENTAL_GATES:
+                return g
+        return None
+
+    @property
+    def was_an_opportunity(self) -> bool:
+        """
+        True when the market was actually open and inside the trading window, so
+        a refusal reflects the agent's own reasoning. Refusal-rate statistics
+        must be computed over these only.
+        """
+        return self.environmental_block is None
 
     def to_dict(self) -> dict:
         return {
             "timestamp": self.timestamp,
             "action": self.action,
             "blocking_gate": self.blocking_gate.gate if self.blocking_gate else None,
+            "environmental_block": (self.environmental_block.gate
+                                    if self.environmental_block else None),
+            "was_an_opportunity": self.was_an_opportunity,
             "gates": [g.to_dict() for g in self.gates],
             "signals": self.signals,
             "portfolio": self.portfolio,
@@ -106,6 +134,31 @@ class RiskEngine:
         self.cfg = cfg
 
     # --- individual gates, numbered so they can be cited ------------------
+
+    def g0_position_integrity(self, recon_issues: list[dict] | None) -> GateResult:
+        """
+        Refuse to add risk while the ledger and the broker disagree critically.
+
+        `reconcile()` already detected partial positions and called them
+        CRITICAL, with a docstring saying a condor missing a long wing is a
+        naked short. But its findings were never passed to the gate stack, so
+        the agent would calmly open a sixth position while holding an unhedged
+        short. Detecting a hazard and not acting on it is worse than not
+        detecting it, because the log looks vigilant.
+        """
+        issues = recon_issues or []
+        critical = [i for i in issues if i.get("severity") == "CRITICAL"]
+        ok = not critical
+        return GateResult(
+            "position_integrity", 0, ok,
+            "ledger and broker agree on every open position" if ok else
+            f"{len(critical)} position(s) PARTIAL at the broker. A condor missing "
+            f"a wing is a naked short, so the defined-risk assumption behind the "
+            f"3% sizing no longer holds. No new risk until inspected: "
+            f"{[i.get('position') for i in critical]}",
+            {"critical": len(critical), "total_issues": len(issues),
+             "detail": critical[:3]},
+        )
 
     def g1_session_window(self, now: datetime) -> GateResult:
         t = now.time()
@@ -249,12 +302,14 @@ class RiskEngine:
 
     def evaluate_pretrade(self, now: datetime, ps: PortfolioState,
                           vix: float, vix3m: float,
-                          atm_iv: float, trailing_rv: float) -> list[GateResult]:
+                          atm_iv: float, trailing_rv: float,
+                          recon_issues: list[dict] | None = None) -> list[GateResult]:
         """
-        Gates 1 to 8: everything decidable before a structure is priced.
+        Gates 0 to 8: everything decidable before a structure is priced.
         ALL are evaluated, not short circuited, so the artifact is complete.
         """
         return [
+            self.g0_position_integrity(recon_issues),
             self.g1_session_window(now),
             self.g2_drawdown_breaker(ps),
             self.g3_daily_loss_limit(ps),
@@ -281,10 +336,14 @@ class RiskEngine:
     @staticmethod
     def is_halt(gates: list[GateResult]) -> bool:
         """
-        Gates 2 and 3 are CIRCUIT BREAKERS, not refusals. A refusal means no
+        Gates 0, 2 and 3 are CIRCUIT BREAKERS, not refusals. A refusal means no
         trade right now; a halt means stop for the session or entirely.
+
+        Gate 0 belongs here because a partial position is not a market opinion,
+        it is a broken assumption: the 3% sizing is only defensible while the
+        wings are actually present.
         """
-        return any((not g.passed) and g.number in (2, 3) for g in gates)
+        return any((not g.passed) and g.number in (0, 2, 3) for g in gates)
 
 
 def size_position(equity: float, risk_per_position: float,

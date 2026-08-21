@@ -75,7 +75,20 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
 
         # --- read the world ------------------------------------------------
         acct = broker.account()
-        equity = float(acct.get("equity", 0.0))
+        # Never default equity to 0.0. mcp_client returns {"text": ...} on
+        # unparseable JSON, and a 0.0 landing on the first cycle of a session
+        # saves session_start_equity as 0.0, which makes session_pnl_pct return
+        # 0.0 for the rest of the day. Gate 3 would then FAIL OPEN for the whole
+        # session while gate 2 wrote a fabricated "-100% drawdown, HALT" into the
+        # sealed artifact trail. Refusing to proceed is the only safe response.
+        try:
+            equity = float(acct.get("equity"))
+        except (TypeError, ValueError):
+            raise RuntimeError(
+                f"account payload has no usable equity: {str(acct)[:200]}")
+        if equity <= 0:
+            raise RuntimeError(f"account equity read as {equity}, refusing to "
+                               f"trade on a value that would disable gate 3")
         broker_positions = broker.positions()
         broker_symbols = {str(p.get("symbol", "")) for p in broker_positions}
 
@@ -113,16 +126,17 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
             consecutive_losses=int(state.get("consecutive_losses", 0)),
         )
 
-        # --- gates 1 to 8 ---------------------------------------------------
+        # --- gates 0 to 8 ---------------------------------------------------
         gates = engine.evaluate_pretrade(
             now_et.replace(tzinfo=None), ps,
             vix=sig.atm_iv_near, vix3m=sig.atm_iv_far,
             atm_iv=sig.atm_iv_near, trailing_rv=sig.trailing_rv,
+            recon_issues=recon_issues,
         )
         if not market_open:
             from risk import GateResult
             gates.insert(0, GateResult(
-                "market_open", 0, False,
+                "market_open", -1, False,
                 "market is closed; no decision to make", {"is_open": False}))
 
         plan: CondorPlan | None = None
@@ -138,6 +152,21 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
                     "structure", 9, False,
                     "could not assemble a same-expiry condor from quoted contracts",
                     {"chain_size": len(chain)}))
+            elif cfg.one_per_expiry and any(
+                    p.expiry == plan.expiry.isoformat() for p in held):
+                from risk import GateResult
+                # D1 calls staggering "not optional at this size".
+                # build_condor is deterministic, so without this five cycles
+                # produce five positions on the SAME expiry at the SAME
+                # strikes: one position at 15% wearing a costume.
+                gates.append(GateResult(
+                    "stagger", 11, False,
+                    f"already hold a position expiring {plan.expiry}. Five "
+                    f"positions on one expiry is one position at 15%, not five "
+                    f"at 3%",
+                    {"expiry": plan.expiry.isoformat(),
+                     "held_expiries": [p.expiry for p in held]}))
+                plan = None
             else:
                 contracts = size_position(equity, cfg.risk_per_position,
                                           plan.max_loss_per_contract)

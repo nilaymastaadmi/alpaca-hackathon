@@ -34,9 +34,13 @@ LOG_PATH = Path(__file__).resolve().parent / "iv_history.jsonl"
 # across strikes, good candidates for defined-risk premium selling.
 UNIVERSE = ["SPY", "QQQ", "AAPL", "NVDA", "TSLA", "AMD", "MSFT"]
 
-# Classic iron-condor DTE window and a wide-enough strike band to capture
-# both the short legs (near ATM-ish) and the long wings.
-DTE_MIN, DTE_MAX = 21, 45
+# Widened from 21-45 to 5-45 on 2026-08-20, because the logger was collecting
+# data at a tenor the agent does not trade. The agent trades 7-14 DTE, so at
+# 21-45 the log held ZERO observations at the traded tenor and could not
+# calibrate the VRP threshold it exists to inform. STRATEGY.md section 8 names
+# that calibration as the mitigation for the risk the author is least sure
+# about, so every day at the wrong tenor was a permanently lost day.
+DTE_MIN, DTE_MAX = 5, 45
 STRIKE_BAND = 0.15  # +/- 15% around spot
 
 

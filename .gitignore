@@ -7,5 +7,4 @@ backtest/cache/option_bars.csv
 backtest/cache/*.csv
 
 artifacts/state.json
-artifacts/positions.json
 artifacts/watchdog.json

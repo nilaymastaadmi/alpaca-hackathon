@@ -235,7 +235,9 @@ def test_clean_state_passes_every_pretrade_gate():
     gates = ENG.evaluate_pretrade(MIDDAY, healthy(), vix=15.0, vix3m=18.0,
                                   atm_iv=16.0, trailing_rv=12.0)
     assert ENG.all_passed(gates) is True
-    assert len(gates) == 8
+    # 9 now: gate 0 (position integrity) was added after the audit found
+    # reconcile()'s CRITICAL findings were never reaching the gate stack.
+    assert len(gates) == 9
 
 
 def test_every_gate_is_evaluated_not_short_circuited():
@@ -246,7 +248,7 @@ def test_every_gate_is_evaluated_not_short_circuited():
     ps = healthy(equity=85_000.0, peak_equity=100_000.0, open_positions=5)
     gates = ENG.evaluate_pretrade(MIDDAY, ps, vix=32.0, vix3m=26.0,
                                   atm_iv=10.0, trailing_rv=15.0)
-    assert len(gates) == 8
+    assert len(gates) == 9
     failed = [g.gate for g in gates if not g.passed]
     assert "drawdown_breaker" in failed
     assert "capacity" in failed
@@ -259,7 +261,7 @@ def test_gates_are_uniquely_numbered():
     gates += ENG.evaluate_structure(2.04, 0.031, 6, 4.50, 100_000.0)
     numbers = [g.number for g in gates]
     assert len(numbers) == len(set(numbers)), "gate numbers must be unique to cite"
-    assert sorted(numbers) == list(range(1, 11))
+    assert sorted(numbers) == list(range(0, 11))
 
 
 def test_decision_reports_its_blocking_gate():
@@ -275,7 +277,7 @@ def test_decision_serialises_every_gate_for_the_audit_trail():
     gates = ENG.evaluate_pretrade(MIDDAY, healthy(), 15.0, 18.0, 16.0, 12.0)
     d = Decision("2026-08-31T11:00:00", "enter", gates, {"vrp": 4.0}, {"equity": 1e5})
     out = d.to_dict()
-    assert len(out["gates"]) == 8
+    assert len(out["gates"]) == 9
     assert all("inputs" in g for g in out["gates"])
 
 
@@ -302,3 +304,97 @@ def test_drawdown_limit_is_hit_or_below(equity, should_halt):
 def test_daily_loss_limit_is_hit_or_below(equity, should_halt):
     ps = healthy(equity=equity, session_start_equity=100_000.0)
     assert ENG.g3_daily_loss_limit(ps).passed is (not should_halt)
+
+
+# --- gate 0: a partial position must STOP new risk -----------------------
+# The audit found reconcile() correctly detecting partial positions and calling
+# them CRITICAL, while its findings were never passed to the gate stack. The
+# agent would calmly open a sixth position while holding an unhedged short.
+# Detecting a hazard and not acting on it is worse than not detecting it,
+# because the log looks vigilant.
+
+CRITICAL_ISSUE = [{
+    "position": "pos-abc", "severity": "CRITICAL",
+    "issue": "PARTIAL position at broker. A condor missing a long wing is a "
+             "naked short.",
+    "expected_legs": ["a", "b", "c", "d"], "present_legs": ["a", "c", "d"],
+}]
+INFO_ISSUE = [{"position": "pos-xyz", "severity": "info",
+               "issue": "no legs at broker; closed or expired"}]
+
+
+def test_position_integrity_passes_when_nothing_is_wrong():
+    assert ENG.g0_position_integrity([]).passed is True
+    assert ENG.g0_position_integrity(None).passed is True
+
+
+def test_position_integrity_ignores_informational_issues():
+    """A closed or expired position is normal and must not stop trading."""
+    assert ENG.g0_position_integrity(INFO_ISSUE).passed is True
+
+
+def test_position_integrity_blocks_on_critical():
+    g = ENG.g0_position_integrity(CRITICAL_ISSUE)
+    assert g.passed is False
+    assert "naked short" in g.reason
+    assert g.inputs["critical"] == 1
+
+
+def test_partial_position_HALTS_rather_than_merely_refusing():
+    """
+    A partial position is not a market opinion, it is a broken assumption: the
+    3% sizing is only defensible while the wings are actually there. So it must
+    take the halt path, not the ordinary refusal path.
+    """
+    gates = ENG.evaluate_pretrade(MIDDAY, healthy(), vix=15.0, vix3m=18.0,
+                                  atm_iv=16.0, trailing_rv=12.0,
+                                  recon_issues=CRITICAL_ISSUE)
+    assert ENG.all_passed(gates) is False
+    assert ENG.is_halt(gates) is True
+
+
+def test_a_perfect_setup_is_blocked_by_a_naked_short():
+    """
+    Every other gate passing must not be enough. This is the scenario that
+    matters: rich premium, calm regime, capacity free, and one broken position.
+    """
+    gates = ENG.evaluate_pretrade(MIDDAY, healthy(), vix=15.0, vix3m=18.0,
+                                  atm_iv=18.0, trailing_rv=12.0,   # VRP +6.0
+                                  recon_issues=CRITICAL_ISSUE)
+    failed = [g.gate for g in gates if not g.passed]
+    assert failed == ["position_integrity"], (
+        "only the integrity gate should block, proving it alone stopped the trade")
+
+
+# --- environmental gates must not pollute refusal statistics -------------
+
+def test_market_closed_is_not_attributed_as_a_refusal():
+    """
+    `make summary` reported market_open as the top blocking gate at 85.7%, on a
+    command the README invites judges to run. "The market was closed" is not a
+    judgement the agent made.
+    """
+    gates = ENG.evaluate_pretrade(MIDDAY, healthy(), 15.0, 18.0, 16.0, 12.0)
+    gates.insert(0, GateResult("market_open", -1, False, "market is closed", {}))
+    d = Decision("2026-08-31T03:00:00", "refuse", gates, {}, {})
+    assert d.blocking_gate is None, "a closed market is not a substantive refusal"
+    assert d.environmental_block is not None
+    assert d.environmental_block.gate == "market_open"
+    assert d.was_an_opportunity is False
+
+
+def test_a_real_refusal_is_still_attributed():
+    gates = ENG.evaluate_pretrade(MIDDAY, healthy(), 15.0, 18.0, 12.5, 12.0)
+    d = Decision("2026-08-31T11:00:00", "refuse", gates, {}, {})
+    assert d.blocking_gate.gate == "vrp_threshold"
+    assert d.was_an_opportunity is True, (
+        "market open and in window, so this refusal reflects the agent's reasoning")
+
+
+def test_substantive_refusal_wins_over_environmental_in_attribution():
+    """Outside the window AND premium too thin: the substantive reason is reported."""
+    gates = ENG.evaluate_pretrade(datetime(2026, 8, 31, 8, 0), healthy(),
+                                  15.0, 18.0, 12.5, 12.0)
+    d = Decision("2026-08-31T08:00:00", "refuse", gates, {}, {})
+    assert d.blocking_gate.gate == "vrp_threshold"
+    assert d.environmental_block.gate == "session_window"

@@ -35,7 +35,13 @@ def test_publishable_list_is_narrow_and_explicit():
     The allowlist is the safety property. If someone widens it to a glob or a
     directory, this test should be the thing that objects.
     """
-    assert P.PUBLISHABLE == ("artifacts/decisions.jsonl", "artifacts/merkle_root.json")
+    assert set(P.PUBLISHABLE) == {
+        "artifacts/decisions.jsonl",
+        "artifacts/merkle_root.json",
+        # Added after the audit found the deployed dashboard rendering "Flat.
+        # No open structures." while the agent held five live condors.
+        "artifacts/positions.json",
+    }
     for path in P.PUBLISHABLE:
         assert path.startswith("artifacts/"), "nothing outside artifacts/ may publish"
 
@@ -46,8 +52,11 @@ def test_publishable_excludes_live_operational_state():
     operational state rather than the decision record.
     """
     joined = " ".join(P.PUBLISHABLE)
-    assert "state.json" not in joined
-    assert "positions.json" not in joined
+    # state.json is session bookkeeping and stays unpublished. positions.json IS
+    # published: the dashboard reads it, and a dashboard claiming "flat" while
+    # five condors are open is worse than no dashboard.
+    assert "artifacts/state.json" not in joined
+    assert "watchdog.json" not in joined
 
 
 def test_env_is_never_publishable():

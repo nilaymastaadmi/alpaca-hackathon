@@ -29,9 +29,19 @@ REPO = Path(__file__).resolve().parent.parent
 ARTIFACT_DIR = REPO / "artifacts"
 
 # Exactly what may be published. Anything not on this list is never staged.
-# state.json and positions.json are gitignored: they hold live operational state,
-# not the decision record, and republishing them adds nothing a judge can use.
-PUBLISHABLE = ("artifacts/decisions.jsonl", "artifacts/merkle_root.json")
+# state.json stays gitignored: it holds session bookkeeping, not the decision
+# record. positions.json IS published, because the dashboard renders it and a
+# dashboard claiming "flat" while the agent holds five condors is worse than
+# no dashboard.
+PUBLISHABLE = (
+    "artifacts/decisions.jsonl",
+    "artifacts/merkle_root.json",
+    # Added 2026-08-20. Without it the DEPLOYED dashboard rendered "Flat.
+    # No open structures." while the agent held five live condors, because
+    # dashboard/app.py reads this file and it was gitignored. It holds
+    # strikes, expiries and sizes, no secrets.
+    "artifacts/positions.json",
+)
 
 
 @dataclass

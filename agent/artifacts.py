@@ -217,21 +217,60 @@ def _cli() -> None:
         recs = log.read_all()
         actions: dict[str, int] = {}
         blocking: dict[str, int] = {}
+        env: dict[str, int] = {}
+        opportunities = 0
+        # Gates describing the ENVIRONMENT rather than a judgement. Kept in sync
+        # with risk.Decision.ENVIRONMENTAL_GATES, duplicated here so the reader
+        # has no import dependency on the agent package.
+        environmental = ("market_open", "session_window")
+
         for r in recs:
             actions[r.get("action", "?")] = actions.get(r.get("action", "?"), 0) + 1
+
             bg = r.get("blocking_gate")
-            if bg:
-                blocking[bg] = blocking.get(bg, 0) + 1
+            eb = r.get("environmental_block")
+
+            # LEGACY records predate the split and recorded an environmental
+            # gate as the blocking one. Reclassify at READ time. The sealed log
+            # is never rewritten: doing so would break the Merkle chain and
+            # would be exactly the tampering the whole design exists to detect.
+            if eb is None and bg in environmental:
+                eb, bg = bg, None
+
+            was_opportunity = r.get("was_an_opportunity")
+            if was_opportunity is None:
+                was_opportunity = eb is None
+
+            if was_opportunity:
+                opportunities += 1
+                if bg:
+                    blocking[bg] = blocking.get(bg, 0) + 1
+            if eb:
+                env[eb] = env.get(eb, 0) + 1
+
         print(f"artifacts: {len(recs)}")
         print(f"root     : {log.root()}")
         print("\nactions:")
         for k, v in sorted(actions.items(), key=lambda x: -x[1]):
             print(f"  {k:<10} {v:>5}")
+
+        # Only cycles where the market was open and we were in the trading
+        # window count as decisions the agent actually made. Mixing in "market
+        # was closed" would make the refusal rate meaningless.
+        print(f"\ndecision opportunities (market open, in window): {opportunities}")
         if blocking:
-            total_ref = sum(blocking.values())
-            print(f"\nrefusals by blocking gate ({total_ref} total):")
+            total = sum(blocking.values())
+            print(f"refusals by blocking gate ({total} of {opportunities} "
+                  f"opportunities):")
             for k, v in sorted(blocking.items(), key=lambda x: -x[1]):
-                print(f"  {k:<20} {v:>5}  ({v / total_ref * 100:.1f}%)")
+                pct = v / opportunities * 100 if opportunities else 0.0
+                print(f"  {k:<20} {v:>5}  ({pct:.1f}% of opportunities)")
+        elif opportunities:
+            print("  no substantive refusals")
+        if env:
+            print(f"\nnot decisions, environment only:")
+            for k, v in sorted(env.items(), key=lambda x: -x[1]):
+                print(f"  {k:<20} {v:>5}")
     else:
         print(f"unknown command {cmd!r}; use seal | verify | summary")
         sys.exit(2)
