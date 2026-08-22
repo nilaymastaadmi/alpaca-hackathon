@@ -19,8 +19,8 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "agent"))
 
 from positions import (  # noqa: E402
-    ExitSignal, Ledger, OpenPosition, evaluate_exit, new_position, reconcile,
-    value_from_quotes,
+    ExitSignal, Ledger, OpenPosition, conservative_partial_value, evaluate_exit,
+    new_position, reconcile, value_from_quotes,
 )
 
 TODAY = date(2026, 8, 31)
@@ -71,6 +71,72 @@ def test_value_returns_none_on_a_zero_bid():
     broken = dict(FULL_QUOTES)
     broken["SPY260911C00789000"] = q(0.0, 0.46)
     assert value_from_quotes(pos(), broken) is None
+
+
+# --- conservative_partial_value: the stop-loss blind-spot fix ------------
+
+def test_conservative_value_matches_full_value_when_everything_is_quoted():
+    """With complete data both functions should agree exactly."""
+    assert conservative_partial_value(pos(), FULL_QUOTES) == pytest.approx(
+        value_from_quotes(pos(), FULL_QUOTES))
+
+
+def test_conservative_value_overstates_cost_when_a_wing_is_missing():
+    """
+    THE property the fix depends on. Losing the long call's quote must not
+    make the position unreadable; it must produce a HIGHER (more
+    conservative) cost estimate than the true value, never a lower one.
+    """
+    partial = dict(FULL_QUOTES)
+    del partial["SPY260911C00789000"]     # long call wing goes dark
+    full = value_from_quotes(pos(), FULL_QUOTES)          # 1.29, all quoted
+    assert value_from_quotes(pos(), partial) is None       # unreadable by the strict path
+    conservative = conservative_partial_value(pos(), partial)
+    assert conservative is not None
+    assert conservative > full, "missing wing must bias toward MORE cost, not less"
+    # exactly the missing wing's mid (0.43), since it is now valued at zero
+    assert conservative == pytest.approx(full + 0.43)
+
+
+def test_conservative_value_is_none_when_a_side_has_no_short_leg_quote():
+    """
+    A side with NO short-leg data contributes nothing, rather than being
+    guessed at: there is no safe direction to guess a completely dark side in.
+    """
+    partial = dict(FULL_QUOTES)
+    del partial["SPY260911C00784000"]      # short call itself is dark
+    del partial["SPY260911C00789000"]      # and its wing
+    conservative = conservative_partial_value(pos(), partial)
+    # only the put side (still fully quoted) contributes: 1.25 - 0.58 = 0.67
+    assert conservative == pytest.approx(0.67)
+
+
+def test_conservative_value_is_none_when_both_short_legs_are_dark():
+    """No short-leg data anywhere means genuinely no signal, not a guess of 0."""
+    assert conservative_partial_value(pos(), {}) is None
+
+
+def test_conservative_value_lets_a_stop_loss_fire_that_would_otherwise_be_missed():
+    """
+    The end-to-end point of the fix: a position that would sit blind under
+    the strict valuation (holding until the DTE backstop, regardless of how
+    far it has moved) instead triggers its stop-loss using the conservative
+    estimate.
+    """
+    p = pos(credit=2.00)
+    quotes = {
+        # short call deep in trouble, wing has gone dark in the same move
+        "SPY260911C00784000": q(3.80, 4.20),
+        "SPY260911P00752000": q(0.05, 0.07),
+        "SPY260911P00747000": q(0.01, 0.02),
+    }
+    assert value_from_quotes(p, quotes) is None, "strict path can't value this"
+
+    conservative = conservative_partial_value(p, quotes)
+    sig = evaluate_exit(p, conservative, TODAY, profit_target=0.50, exit_dte=2,
+                        stop_loss_mult=2.0)
+    assert sig.should_exit is True
+    assert "stop out" in sig.reason
 
 
 def test_notional_risk_matches_contracts_and_wing():

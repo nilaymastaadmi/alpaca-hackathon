@@ -154,6 +154,54 @@ def value_from_quotes(pos: OpenPosition, quotes: dict[str, dict]) -> float | Non
     return v
 
 
+def conservative_partial_value(pos: OpenPosition,
+                               quotes: dict[str, dict]) -> float | None:
+    """
+    Fallback pricing using ONLY the short legs, for when value_from_quotes
+    cannot value the full structure.
+
+    value_from_quotes deliberately refuses to price a position from partial
+    quotes, and that is correct for ordinary holding decisions. But it means a
+    single unquoted long wing -- exactly the leg most likely to lose its quote
+    in the fast, wide-spread move a STOP LOSS exists to catch -- left the
+    position completely unmonitored until the DTE backstop. A stop-loss check
+    is the one place "wait for better data" is the wrong default: doing
+    nothing is not neutral, it is a decision to keep holding.
+
+    Any unquoted long wing is treated as worthless. Its true value is never
+    negative, so this OVERSTATES the true cost to close, which biases toward
+    triggering the stop sooner rather than missing it -- and correspondingly
+    UNDERSTATES profit_frac, so it can never falsely trigger a profit-target
+    exit. The bias only ever points toward closing, never toward complacency.
+
+    A side contributes nothing unless its own SHORT leg is quoted; there is no
+    safe direction to guess a side with zero data on it, so it is left out of
+    the estimate entirely rather than assumed. Returns None only when neither
+    short leg is quoted, meaning there is genuinely no signal to act on.
+    """
+    def mid(sym: str | None) -> float | None:
+        if not sym or sym not in quotes:
+            return None
+        q = quotes[sym]
+        bid, ask = q.get("bp", q.get("bid_price")), q.get("ap", q.get("ask_price"))
+        if bid is None or ask is None or bid <= 0 or ask <= 0:
+            return None
+        return (float(bid) + float(ask)) / 2.0
+
+    sc, lc = mid(pos.short_call), mid(pos.long_call)
+    sp, lp = mid(pos.short_put), mid(pos.long_put)
+
+    contributions = []
+    if pos.short_call and sc is not None:
+        contributions.append(sc - (lc or 0.0))
+    if pos.short_put and sp is not None:
+        contributions.append(sp - (lp or 0.0))
+
+    if not contributions:
+        return None
+    return sum(contributions)
+
+
 def evaluate_exit(pos: OpenPosition, buyback: float | None, today: date,
                   profit_target: float, exit_dte: int,
                   stop_loss_mult: float | None) -> ExitSignal:

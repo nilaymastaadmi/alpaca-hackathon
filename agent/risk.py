@@ -294,13 +294,22 @@ class RiskEngine:
                           "no scheduled macro event inside 1 day", {})
 
     def g9_cost(self, credit: float, est_cost: float) -> GateResult:
+        """
+        `est_cost` is CondorPlan.est_cost: half the mid-to-crossing gap on the
+        ENTRY side alone, per its own docstring. It is a one-way estimate of
+        what the entry ladder pays, not a round-trip figure -- this message
+        previously called it "round trip", which a reader would reasonably
+        take as the combined entry+exit cost. It is not; a genuine round trip
+        would be roughly double this if the exit ladder behaves similarly,
+        which has not been separately measured for this specific ceiling.
+        """
         pct = (est_cost / credit) if credit > 0 else float("inf")
         ok = pct <= self.cfg.max_cost_pct_of_credit
         return GateResult(
             "cost", 9, ok,
-            f"estimated round trip {pct * 100:.1f}% of credit, within "
+            f"estimated entry cost {pct * 100:.1f}% of credit, within "
             f"{self.cfg.max_cost_pct_of_credit * 100:.0f}%" if ok else
-            f"estimated round trip {pct * 100:.1f}% of credit exceeds the "
+            f"estimated entry cost {pct * 100:.1f}% of credit exceeds the "
             f"{self.cfg.max_cost_pct_of_credit * 100:.0f}% ceiling; the spread "
             f"would eat the edge",
             {"credit": round(credit, 3), "est_cost": round(est_cost, 4),

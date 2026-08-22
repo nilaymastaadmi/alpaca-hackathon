@@ -395,15 +395,21 @@ class Broker:
         Walk a net limit from mid toward the crossing price, stopping on fill.
 
         For a credit the limit is NEGATIVE and for a debit POSITIVE, per Alpaca's
-        multi-leg convention. Each rung carries a distinct client_order_id, which
-        the API documents as an idempotency key, so a timeout can be retried
-        without risking a duplicate position.
+        multi-leg convention.
 
-        Before EVERY rung, including the first, confirms nothing is already
-        resting on these legs. See `_resting_orders_for_legs` for why this
-        cannot be skipped: an exception after Alpaca already accepted an order
-        leaves no local record of it, and `sell_to_open` never rejects a
-        genuine duplicate the way a closing order would.
+        What actually prevents a duplicate after a lost response is the
+        resting-order check at the top of every rung (`_resting_orders_for_legs`),
+        not client_order_id. An earlier version of this docstring claimed the
+        opposite: that the per-rung client_order_id was what let "a timeout be
+        retried without risking a duplicate position". That has it backwards --
+        each rung is deliberately given a FRESH, distinct client_order_id
+        (a fresh price level genuinely is a different order), which means a
+        retry of the SAME rung would also mint a new id and would NOT be
+        recognised as a duplicate by Alpaca's idempotency handling, which only
+        catches an identical id sent twice. client_order_id here is a
+        traceability label for the audit trail, not the mechanism protecting
+        against double-open; that mechanism is the resting-order check below,
+        confirmed clear before every single rung, including the first.
         """
         if opening:
             start, end = -plan.credit_mid, -plan.credit_crossing

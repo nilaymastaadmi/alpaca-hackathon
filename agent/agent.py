@@ -43,7 +43,8 @@ from config import DEFAULT, Config
 from hedge import build_hedge
 from mcp_client import MCPClient
 from positions import (
-    Ledger, evaluate_exit, new_position, reconcile, value_from_quotes,
+    Ledger, conservative_partial_value, evaluate_exit, new_position, reconcile,
+    value_from_quotes,
 )
 from risk import Decision, PortfolioState, RiskEngine, size_position
 
@@ -426,10 +427,22 @@ def _manage_exits(broker, ledger, held, today, cfg, dry_run, log) -> list[dict]:
     results = []
     for p in held:
         buyback = value_from_quotes(p, quotes)
+        conservative = False
+        if buyback is None:
+            # Full valuation needs every leg quoted. The long wing is the one
+            # most likely to lose its quote in exactly the fast, wide move a
+            # stop-loss exists to catch, and "wait for better data" is not a
+            # neutral default here: doing nothing IS a decision to keep
+            # holding. Fall back to short-legs-only pricing, which overstates
+            # cost and so only ever biases toward closing sooner, never toward
+            # a false profit signal. See positions.conservative_partial_value.
+            buyback = conservative_partial_value(p, quotes)
+            conservative = buyback is not None
         sig = evaluate_exit(p, buyback, today, cfg.profit_target,
                             cfg.exit_dte, cfg.stop_loss_mult)
         rec = {"position": p.id, "expiry": p.expiry, "dte": p.dte(today),
                "credit": p.credit, "contracts": p.contracts,
+               "conservative_valuation": conservative,
                **sig.to_dict()}
 
         if sig.should_exit:
@@ -452,16 +465,6 @@ def _manage_exits(broker, ledger, held, today, cfg, dry_run, log) -> list[dict]:
                     "action": f"exit_check:{rec['action']}", "exit": rec})
         results.append(rec)
     return results
-
-
-def _count_option_structures(positions: list[dict]) -> int:
-    """
-    Count STRUCTURES, not legs. A condor is four position rows but one unit of
-    risk, and the capacity gate is about units of risk.
-    """
-    legs = [p for p in positions
-            if len(str(p.get("symbol", ""))) > 15]   # OCC symbols are long
-    return max(1, round(len(legs) / 4)) if legs else 0
 
 
 def _print(d: Decision, leaf: str, sig: SIG.Signals, cfg: Config,
