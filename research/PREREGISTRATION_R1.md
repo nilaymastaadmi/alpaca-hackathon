@@ -285,4 +285,109 @@ reported.
 
 ---
 
+## Amendment A3, written 2026-08-22, BEFORE T7's backtest code exists or any result is seen
+
+**A seventh trial is added to the family, deliberately, with the bar recomputed
+before the trial is run.** Section 11 rule 1 forbids adding a trial after
+seeing results without incrementing N and recomputing the bar; this amendment
+is the incrementing and the recomputing, done first.
+
+### Why this trial exists
+
+The live agent deploys T4 (7-14 DTE), not T6 (21-45 DTE, the best backtested
+trial), because `STRATEGY.md` section 4 and registered prediction P5 already
+established that a 4.5 day hold captures only 7-9% of a 42 DTE position's
+credit decay. The same logic runs the other direction and was never tested:
+**a shorter tenor than T4 would capture a larger fraction of its own credit in
+the same 4.5 day window**, which is a real, mechanical reason to test it, not
+a search for a bigger Sharpe number.
+
+The exploratory sweep (`RESULT_SWEEP.md`, explicitly not evidence) shows a
+0-3 DTE bucket that is clearly bad (Sharpe +0.238, max DD -5.55%, the worst
+drawdown of any tenor bucket in that table) and a 3-7 DTE bucket that looks
+very good (Sharpe +2.010). **T7 is deliberately NOT set to 3-7 DTE.** Matching
+the sweep's own peak would look like, and partly would be, chasing an
+unregistered number. T7 is instead set to **5-10 DTE**: shorter than the
+deployed T4, clear of the confirmed-bad 0-3 DTE bucket by a 2-day margin, and
+chosen for the mechanical credit-capture reason above rather than for its
+sweep score.
+
+### T7, fixed now
+
+| Trial | Configuration |
+|---|---|
+| T7 | Both gates, 5-10 DTE short strikes (`dte_min=5, dte_max=10, dte_target=8`), short delta 0.16 (unchanged from T4). Everything else identical to T4: wing 0.65% of spot, exit at 50% profit or 2 DTE, 1.0% risk, one position at a time, cost 1.5% round trip. |
+
+Only the DTE band changes versus T4, isolating tenor as the single variable
+under test, the same way T6 isolates it at the long end.
+
+### Bar, recomputed at N=7
+
+- trials: 7 (T1-T6 fixed 2026-08-19, T7 added here)
+- E[max under null] = sqrt(2 ln 7) = **1.973** (was 1.893 at N=6)
+- SE(Sharpe) at 6.99y, assumed SR 0.5 = 0.401 (unchanged, same T and same
+  assumed SR as the original registration)
+- **development bar, recomputed: annualised Sharpe >= 0.791** (was 0.760)
+
+**Checked before this amendment was written, not after: the higher bar does
+not flip any existing verdict.** T1 +1.071, T2 +1.392, T3 +0.949, T4 +1.201,
+T5 +1.515 and T6 +1.614 all still clear 0.791. This amendment does not
+retroactively unpromote anything; it only raises the bar T7 itself must clear.
+
+### Holdout-shot governance, clarified now because it was ambiguous
+
+Section 10 permits exactly one holdout shot, to "that single trial" that
+clears the development bar. `RESULT_H3.md` already named T6 as the nominee,
+and the holdout has never been touched (`backtest/HOLDOUT_SEAL.log` does not
+exist). Decided now, before T7's result exists: **if more than one trial
+clears the recomputed bar, the single holdout shot goes to whichever cleared
+trial has the highest development Sharpe, recomputed fresh across all seven.**
+Concretely:
+- If T7 clears 0.791 and beats T6's +1.614, T7 becomes the sole nominee for
+  the one holdout shot, replacing T6.
+- If T7 clears 0.791 but does not beat T6, T6 remains the nominee. T7 is
+  reported as a second trial that also clears, not promoted further.
+- If T7 does not clear 0.791, nothing changes: T6 remains the nominee.
+
+In every case **the holdout stays sealed by this amendment alone.** Running
+T7 is a development-window exercise, exactly like T1-T6 were.
+
+### Registered predictions, stated before the result is seen
+
+- **P7.** T7's out-of-sample Sharpe exceeds T4's +1.201. Mechanism: more of
+  the position's total credit decay is captured inside a hold that ends at
+  2 DTE (per the fixed exit rule) when the tenor itself is only 5-10 days.
+- **P8.** T7's out-of-sample max drawdown is no worse than 1.5x T4's -3.10%,
+  i.e. no worse than -4.65%. This is the falsifiable version of "close to the
+  0-3 DTE danger zone": that bucket's max DD was -5.55%, about 1.8x T4's, and
+  markedly worse than every other tenor bucket in the sweep (all -2.2% to
+  -2.9%). If T7's drawdown lands inside that same -2.2% to -2.9% neighbourhood,
+  the fat-tail concern did not materialise at 5-10 DTE. If it jumps toward
+  -5.5%, it did.
+- **P9.** T7's Sharpe falls under the mandatory double-cost sensitivity run
+  (section 7), unlike T6, whose Sharpe rose (+1.614 to +1.728), which
+  `RESULT_H3_ROBUSTNESS.md` already flagged as evidence the optimiser was
+  partly selecting noise. A shorter tenor trades more frequently per unit of
+  capital at risk, which should make it MORE cost-sensitive, not less. Seeing
+  the normal direction (Sharpe falls as costs rise) would itself be a mark of
+  a less fragile result than T6's.
+
+### Consequence rules
+
+Identical to section 10, applied to T7 specifically: if T7 does not clear
+0.791, it is reported as a negative result and is not promoted. If it clears,
+the holdout-shot governance above decides what happens next, and the holdout
+stays sealed regardless.
+
+### What must not happen, in addition to section 11
+
+7. Rerunning T7 with a different DTE band after seeing this one's result and
+   calling it the same trial.
+8. Treating a T7 pass as license to keep adding trials at nearby DTE bands
+   until one clears. T7 is one trial. A T8 would need its own amendment,
+   written before its own result, exactly like this one.
+
+---
+
 Author: Nilay Toshniwal. Registered 2026-08-19, before `backtest/` existed.
+Amendment A3 registered 2026-08-22, before T7's code existed.
