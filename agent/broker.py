@@ -20,6 +20,7 @@ from datetime import date, timedelta
 from typing import Any
 
 from config import Config
+from hedge import VixQuote, hedge_order, parse_vix_chain
 from mcp_client import MCPClient
 from signals import Contract, parse_chain
 
@@ -158,6 +159,66 @@ class Broker:
             if not token:
                 break
         return contracts
+
+    def vix_chain(self, dte_lo: int, dte_hi: int,
+                 max_pages: int = 25) -> list[VixQuote]:
+        """
+        VIX option chain, parsed into VixQuote. Same pagination lesson as
+        chain(): page one is not guaranteed to hold the strikes needed, so
+        every page is followed. No strike band is applied, unlike the SPY
+        chain: VIX strikes span a much narrower absolute range, and
+        recovering a trustworthy forward via put-call parity needs the full
+        curve, not a window around spot.
+        """
+        today = date.today()
+        args = {
+            "underlying_symbol": "VIX",
+            "expiration_date_gte": (today + timedelta(days=dte_lo)).isoformat(),
+            "expiration_date_lte": (today + timedelta(days=dte_hi)).isoformat(),
+            "limit": 1000,
+        }
+        quotes: list[VixQuote] = []
+        seen: set[str] = set()
+        token = None
+        for _ in range(max_pages):
+            if token:
+                args["page_token"] = token
+            r = self.mcp.call("get_option_chain", dict(args))
+            for q in parse_vix_chain(r):
+                if q.occ not in seen:
+                    seen.add(q.occ)
+                    quotes.append(q)
+            data = r.get("data", r) if isinstance(r, dict) else {}
+            token = data.get("next_page_token") if isinstance(data, dict) else None
+            if not token:
+                break
+        return quotes
+
+    def place_hedge(self, plan, dry_run: bool = False) -> dict:
+        """
+        Single-leg buy-to-open for the VIX call, at mid, polled once for a fill.
+
+        Not laddered like the condor: this is a BUY, and an unfilled resting
+        buy carries no short exposure the way an unfilled short leg would, so
+        the double-open guard built for place_laddered does not apply here in
+        the same way. A day order that never fills is a safe state to leave
+        alone, not a risk that compounds.
+        """
+        args = hedge_order(plan)
+        if dry_run:
+            return {"filled": False, "dry_run": True, "would_send": args}
+
+        try:
+            res = self.mcp.call("place_option_order", args)
+        except Exception as exc:
+            return {"filled": False, "error": str(exc)[:200]}
+
+        d = res.get("data", res)
+        oid = d.get("id") if isinstance(d, dict) else None
+        filled = self._await_fill(oid)
+        if filled:
+            return self._fill_result(filled, 1, [{"order_id": oid}])
+        return {"filled": False, "order_id": oid, "resting": bool(oid)}
 
     def quotes(self, symbols: list[str]) -> dict[str, dict]:
         """Latest quotes for specific contracts. Batched, 100 per request."""

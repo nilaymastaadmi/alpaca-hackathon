@@ -81,7 +81,15 @@ class Config:
     # This is the only thing that caps that scenario.
     hedge_enabled: bool = True
     hedge_budget_pct: float = 0.01      # 1% of equity
-    hedge_target_delta: float = 0.30
+    # NOT a delta, despite VXTH's own "30 delta" language. Alpaca's VIX chain
+    # carries no greeks (verified 2026-08-20), so hedge.build_hedge() proxies
+    # the 30-delta rule with strike/forward MONEYNESS instead, recovered via
+    # put-call parity. This field was previously named hedge_target_delta at
+    # 0.30, which would have been passed straight into build_hedge's
+    # target_moneyness parameter and silently picked strikes far BELOW the
+    # forward, backwards for a crash-insurance call. Renamed to say what it
+    # actually is; see agent/hedge.py for the parity derivation.
+    hedge_target_moneyness: float = 1.35
     hedge_dte_min: int = 21
     hedge_dte_max: int = 45
 

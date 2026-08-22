@@ -40,6 +40,7 @@ import signals as SIG
 from artifacts import ArtifactLog
 from broker import Broker, CondorPlan
 from config import DEFAULT, Config
+from hedge import build_hedge
 from mcp_client import MCPClient
 from positions import (
     Ledger, evaluate_exit, new_position, reconcile, value_from_quotes,
@@ -104,6 +105,11 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
 
         clock = broker.clock()
         market_open = bool(clock.get("is_open", False))
+
+        # Independent of the core book's decision below: this either already
+        # holds the week's hedge, buys it, or logs why it could not.
+        hedge_result = _manage_hedge(broker, cfg, equity, today, market_open,
+                                     broker_positions, dry_run, log)
 
         spot = broker.spot()
         closes = broker.closes(days=60)
@@ -262,6 +268,7 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
         rec["dry_run"] = dry_run
         rec["exits"] = exits
         rec["flatten"] = flatten_results
+        rec["hedge"] = hedge_result
         rec["reconciliation"] = recon_issues
         leaf = log.append(rec)
         # Seal every cycle. An autonomous agent that only seals when a human
@@ -281,9 +288,64 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
                 print(f"  publish: {pub['action']} {pub['detail'][:80]}")
 
         if verbose:
-            _print(decision, leaf, sig, cfg, exits, recon_issues, flatten_results)
+            _print(decision, leaf, sig, cfg, exits, recon_issues, flatten_results,
+                  hedge_result)
 
     return decision
+
+
+def _manage_hedge(broker, cfg, equity, today, market_open, broker_positions,
+                  dry_run, log) -> dict:
+    """
+    Maintain the tail hedge: buy one VIX call position sized to
+    cfg.hedge_budget_pct and hold it through the week, rather than actively
+    managing it. VXTH's own methodology rolls monthly, which already covers a
+    much longer horizon than this 4.5 day live window, so there is no
+    rebalancing logic here to get wrong.
+
+    Runs independent of the core book's gate decisions. A drawdown breach
+    flattens the SHORT PREMIUM ledger (see _flatten_all); it must not also
+    sell the hedge, which is presumably doing its job paying off during
+    exactly that scenario.
+    """
+    if not cfg.hedge_enabled:
+        return {"action": "disabled"}
+    if not market_open:
+        return {"action": "skip", "reason": "market closed"}
+
+    already_held = any(str(p.get("symbol", "")).startswith("VIX")
+                       for p in broker_positions)
+    if already_held:
+        return {"action": "held", "reason": "hedge already in place for the week"}
+
+    try:
+        quotes = broker.vix_chain(cfg.hedge_dte_min, cfg.hedge_dte_max)
+    except Exception as exc:
+        rec = {"action": "error", "reason": f"could not fetch VIX chain: {str(exc)[:160]}"}
+        log.append({"timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                    "action": "hedge:error", "hedge": rec})
+        return rec
+
+    plan = build_hedge(quotes, equity, today, budget_pct=cfg.hedge_budget_pct,
+                       target_moneyness=cfg.hedge_target_moneyness,
+                       dte_min=cfg.hedge_dte_min, dte_max=cfg.hedge_dte_max)
+    if plan is None:
+        rec = {"action": "no_candidate",
+               "reason": "no VIX call cleared the spread, dispersion or budget "
+                        "checks; not hedging off an untrustworthy read",
+               "n_quotes": len(quotes)}
+        log.append({"timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                    "action": "hedge:no_candidate", "hedge": rec})
+        return rec
+
+    out = broker.place_hedge(plan, dry_run=dry_run)
+    rec = {"action": ("would_buy" if dry_run else
+                      "bought" if out.get("filled") else "resting_unfilled"),
+           "plan": plan.to_dict(), "execution": {k: v for k, v in out.items()
+                                                 if k != "order"}}
+    log.append({"timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+               "action": f"hedge:{rec['action']}", "hedge": rec})
+    return rec
 
 
 def _flatten_all(broker, ledger, held, today, dry_run, log) -> list[dict]:
@@ -398,11 +460,15 @@ def _count_option_structures(positions: list[dict]) -> int:
 def _print(d: Decision, leaf: str, sig: SIG.Signals, cfg: Config,
            exits: list[dict] | None = None,
            recon: list[dict] | None = None,
-           flattens: list[dict] | None = None) -> None:
+           flattens: list[dict] | None = None,
+           hedge: dict | None = None) -> None:
     bar = "=" * 74
     print(bar)
     print(f"DECISION  {d.timestamp}   ACTION: {d.action.upper()}")
     print(bar)
+    if hedge:
+        print(f"  hedge: {hedge.get('action')}"
+              f"{' - ' + hedge['reason'] if hedge.get('reason') else ''}")
     for issue in (recon or []):
         sev = issue.get("severity", "info")
         print(f"  [{sev}] {issue.get('position')}: {issue.get('issue', '')[:90]}")
