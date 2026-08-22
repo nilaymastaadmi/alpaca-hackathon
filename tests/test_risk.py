@@ -71,7 +71,7 @@ def test_drawdown_breach_actually_halts_not_just_refuses():
     """The distinction that matters: a breach must be a HALT, not a refusal."""
     ps = healthy(equity=88_000.0, peak_equity=100_000.0)
     gates = ENG.evaluate_pretrade(MIDDAY, ps, vix=15.0, vix3m=18.0,
-                                  atm_iv=16.0, trailing_rv=12.0)
+                                  short_strike_iv=16.0, trailing_rv=12.0)
     assert ENG.all_passed(gates) is False
     assert ENG.is_halt(gates) is True, "drawdown breach must halt, not merely refuse"
 
@@ -88,7 +88,7 @@ def test_ordinary_refusal_is_not_a_halt():
     """A VRP refusal is a normal no-trade. It must NOT trip the breaker path."""
     ps = healthy()
     gates = ENG.evaluate_pretrade(MIDDAY, ps, vix=15.0, vix3m=18.0,
-                                  atm_iv=13.0, trailing_rv=12.5)  # VRP +0.5
+                                  short_strike_iv=13.0, trailing_rv=12.5)  # VRP +0.5
     assert ENG.all_passed(gates) is False
     assert ENG.is_halt(gates) is False
 
@@ -159,6 +159,30 @@ def test_vrp_refusal_records_the_measured_numbers():
     assert g.passed is False
     assert g.inputs["vrp"] == pytest.approx(0.5)
     assert g.inputs["threshold"] == CFG.vrp_threshold
+
+
+def test_vrp_gate_refuses_when_short_strike_iv_is_unmeasurable():
+    """
+    None means the traded-tenor chain had no two-sided, delta-bearing quotes.
+    This must REFUSE, not fall back to any other number: falling back to the
+    old 30-day ATM proxy is the exact +1 vol point bias that made this gate
+    need fixing (13.165 ATM-at-29-DTE vs 12.135 at the real 11-DTE short
+    strikes, measured live, which is the entire threshold).
+    """
+    g = ENG.g7_vrp(None, 12.0)
+    assert g.passed is False
+    assert "biased proxy" in g.reason
+    assert g.inputs["short_strike_iv"] is None
+
+
+def test_vrp_gate_inputs_key_is_short_strike_iv_not_atm_iv():
+    """
+    The artifact key name is part of the fix: a judge reading "atm_iv" in the
+    trail would reasonably assume the old, wrong tenor is still being used.
+    """
+    g = ENG.g7_vrp(16.0, 12.0)
+    assert "short_strike_iv" in g.inputs
+    assert "atm_iv" not in g.inputs
 
 
 # --- event proximity ------------------------------------------------------
@@ -233,7 +257,7 @@ def test_sizing_gate_rejects_over_cap():
 
 def test_clean_state_passes_every_pretrade_gate():
     gates = ENG.evaluate_pretrade(MIDDAY, healthy(), vix=15.0, vix3m=18.0,
-                                  atm_iv=16.0, trailing_rv=12.0)
+                                  short_strike_iv=16.0, trailing_rv=12.0)
     assert ENG.all_passed(gates) is True
     # 9 now: gate 0 (position integrity) was added after the audit found
     # reconcile()'s CRITICAL findings were never reaching the gate stack.
@@ -247,7 +271,7 @@ def test_every_gate_is_evaluated_not_short_circuited():
     """
     ps = healthy(equity=85_000.0, peak_equity=100_000.0, open_positions=5)
     gates = ENG.evaluate_pretrade(MIDDAY, ps, vix=32.0, vix3m=26.0,
-                                  atm_iv=10.0, trailing_rv=15.0)
+                                  short_strike_iv=10.0, trailing_rv=15.0)
     assert len(gates) == 9
     failed = [g.gate for g in gates if not g.passed]
     assert "drawdown_breaker" in failed
@@ -347,7 +371,7 @@ def test_partial_position_HALTS_rather_than_merely_refusing():
     take the halt path, not the ordinary refusal path.
     """
     gates = ENG.evaluate_pretrade(MIDDAY, healthy(), vix=15.0, vix3m=18.0,
-                                  atm_iv=16.0, trailing_rv=12.0,
+                                  short_strike_iv=16.0, trailing_rv=12.0,
                                   recon_issues=CRITICAL_ISSUE)
     assert ENG.all_passed(gates) is False
     assert ENG.is_halt(gates) is True
@@ -359,7 +383,7 @@ def test_a_perfect_setup_is_blocked_by_a_naked_short():
     matters: rich premium, calm regime, capacity free, and one broken position.
     """
     gates = ENG.evaluate_pretrade(MIDDAY, healthy(), vix=15.0, vix3m=18.0,
-                                  atm_iv=18.0, trailing_rv=12.0,   # VRP +6.0
+                                  short_strike_iv=18.0, trailing_rv=12.0,   # VRP +6.0
                                   recon_issues=CRITICAL_ISSUE)
     failed = [g.gate for g in gates if not g.passed]
     assert failed == ["position_integrity"], (

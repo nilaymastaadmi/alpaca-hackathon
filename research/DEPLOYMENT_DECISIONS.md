@@ -93,3 +93,65 @@ stood the strategy down through the March 2020 backwardation. **At 15% concurren
 risk the tail protection is worth more than it was at 1%**, so the argument for
 keeping it is stronger now than the Sharpe comparison alone suggests. Not decided
 here.
+
+---
+
+## D2. Gate 7 measures the traded strikes, not a 30-day ATM proxy; threshold stays provisional
+
+**Found by the 2026-08-20 adversarial audit, fixed 2026-08-22.**
+
+### The bug
+
+Gate 7 computed VRP as `ATM_IV(~29 DTE) - trailing_RV`. The agent sells ~16
+delta strikes at 7-14 DTE. Those are different tenors and different strikes,
+and the gap between them is not noise.
+
+Measured live, same moment, same underlying: ATM IV at 29 DTE read **13.165**;
+the actual short strikes at 11 DTE read **12.135**. A **+1.03 vol point bias**,
+against a threshold of 1.0. The gate was reading the entire threshold's worth of
+false richness on every evaluation.
+
+**The bias is structural, not incidental.** Gate 6 requires contango, which by
+definition means the curve slopes upward with tenor. A longer-dated ATM read
+will therefore be biased rich relative to a shorter-dated, further-OTM one on
+every single day the regime gate is satisfied. This was never going to average
+out; it runs the same direction every time gate 6 passes.
+
+### The fix
+
+`signals.short_strike_iv()` measures IV from the actual call and actual put
+the strategy would sell (nearest `short_delta`, at the expiry nearest
+`dte_target`), the same selection `broker.build_condor` uses. Gate 7 now takes
+that value directly. **When it cannot be measured (no two-sided quotes at the
+traded tenor), gate 7 refuses rather than falling back to the old ATM number**;
+falling back would silently reintroduce the exact bias this fix removes.
+
+Verified live 2026-08-22 against the real MCP server: short-strike VRP read
+**-1.01**, against the old ATM-based reading of **+0.00** at the same moment.
+Both happened to refuse today, for genuinely different reasons and different
+margins, which is itself confirmation the fix changed what is measured rather
+than just relabelling it.
+
+### What is decided and what is not
+
+**Decided:** the measurement is fixed. This is a correctness fix, not a
+judgement call, and needed no sign-off.
+
+**Not decided: the threshold value.** `vrp_threshold` stays at 1.0, carried
+over unchanged from before the fix. That number was never derived against the
+corrected quantity, because no calibration history existed at the 7-14 DTE
+tenor when this was fixed — `prep/snapshot_iv.py` only started collecting that
+range on 2026-08-20. Re-basing the threshold from real data (rather than
+guessing a new number) needs a few more nights of the corrected logger to
+accumulate before kickoff on 2026-08-28.
+
+**Deliberately not guessed at.** Inventing a new threshold now, without data,
+would repeat exactly the mistake this project has avoided everywhere else:
+asserting a number because it seems reasonable rather than because it was
+measured. 1.0 unchanged is the safe direction to be wrong in — a threshold set
+too high costs trades, not money, which is a mispricing risk this agent is
+built to prefer over the alternative.
+
+**Action item, not yet done:** once enough nights of 7-14 DTE history exist,
+re-derive `vrp_threshold` from it and record that as its own dated entry here,
+on the same footing as this one.

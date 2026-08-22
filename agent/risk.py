@@ -238,8 +238,32 @@ class RiskEngine:
              "contango": contango},
         )
 
-    def g7_vrp(self, atm_iv: float, trailing_rv: float) -> GateResult:
-        vrp = atm_iv - trailing_rv
+    def g7_vrp(self, short_strike_iv: float | None,
+              trailing_rv: float) -> GateResult:
+        """
+        Measures the volatility of the strikes actually sold, not a 30-day
+        ATM proxy. That used to be the same gate reading roughly +1 vol point
+        rich against a real live measurement (13.165 ATM-at-29-DTE vs 12.135
+        at the actual 11-DTE short strikes) -- the entire threshold, and
+        always biased the SAME direction because gate 6 requires contango,
+        which slopes the curve upward by construction. See
+        signals.short_strike_iv for the full derivation.
+
+        short_strike_iv is None when the traded-tenor chain had no two-sided,
+        delta-bearing quotes to measure. That refuses rather than silently
+        falling back to the old ATM number, which is exactly the bias this
+        gate exists to avoid re-introducing.
+        """
+        if short_strike_iv is None:
+            return GateResult(
+                "vrp_threshold", 7, False,
+                "could not measure implied vol at the strikes actually sold "
+                "(no two-sided quotes at the traded tenor/delta); refusing "
+                "rather than falling back to a biased proxy",
+                {"short_strike_iv": None, "trailing_rv": round(trailing_rv, 3),
+                 "threshold": self.cfg.vrp_threshold},
+            )
+        vrp = short_strike_iv - trailing_rv
         ok = vrp >= self.cfg.vrp_threshold
         return GateResult(
             "vrp_threshold", 7, ok,
@@ -247,7 +271,8 @@ class RiskEngine:
             f"threshold; implied is richer than recent realised" if ok else
             f"VRP {vrp:+.2f} vol points is below the {self.cfg.vrp_threshold:.1f} "
             f"threshold. Volatility is not expensive enough to sell. NO TRADE",
-            {"atm_iv": round(atm_iv, 3), "trailing_rv": round(trailing_rv, 3),
+            {"short_strike_iv": round(short_strike_iv, 3),
+             "trailing_rv": round(trailing_rv, 3),
              "vrp": round(vrp, 3), "threshold": self.cfg.vrp_threshold},
         )
 
@@ -302,7 +327,7 @@ class RiskEngine:
 
     def evaluate_pretrade(self, now: datetime, ps: PortfolioState,
                           vix: float, vix3m: float,
-                          atm_iv: float, trailing_rv: float,
+                          short_strike_iv: float | None, trailing_rv: float,
                           recon_issues: list[dict] | None = None) -> list[GateResult]:
         """
         Gates 0 to 8: everything decidable before a structure is priced.
@@ -316,7 +341,7 @@ class RiskEngine:
             self.g4_consecutive_losses(ps),
             self.g5_capacity(ps),
             self.g6_regime(vix, vix3m),
-            self.g7_vrp(atm_iv, trailing_rv),
+            self.g7_vrp(short_strike_iv, trailing_rv),
             self.g8_event_proximity(now.date()),
         ]
 

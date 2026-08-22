@@ -55,9 +55,21 @@ class Config:
     one_per_expiry: bool = True
 
     # --- gates -------------------------------------------------------------
-    # H1: mean VRP +3.68 vol points, Newey-West t +4.74. The threshold sits
-    # below the mean deliberately: refusing too often is how the agent ends the
-    # week with nothing to show.
+    # H1: mean VRP +3.68 vol points, Newey-West t +4.74, measured against VIX
+    # and a 21-day forward window. This threshold is applied to a DIFFERENT,
+    # narrower quantity: gate 7 measures IV at the actual short strikes and
+    # tenor traded (signals.short_strike_iv), not H1's VIX-referenced number,
+    # after an audit found the original ATM-at-29-DTE version read ~1 vol
+    # point rich against what is actually sold (measured live 2026-08-20:
+    # 13.165 ATM vs 12.135 short-strike, a bias the same size as this whole
+    # threshold). See DEPLOYMENT_DECISIONS.md D2.
+    #
+    # PROVISIONAL. 1.0 was carried over unchanged from the pre-fix threshold,
+    # not re-derived, because no real calibration data existed yet at the
+    # corrected 7-14 DTE tenor when this was fixed (the logger was widened to
+    # cover it on 2026-08-20). Re-base once that history accumulates. Until
+    # then this is deliberately the SAFE direction to be wrong in: a threshold
+    # that is too high costs trades, not money.
     vrp_threshold: float = 1.0
     use_regime_gate: bool = True
     # H2: VRP in contango has t +6.13; in backwardation t +0.72, indistinguishable

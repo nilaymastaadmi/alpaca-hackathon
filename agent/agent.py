@@ -114,7 +114,14 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
         spot = broker.spot()
         closes = broker.closes(days=60)
         chain = broker.chain(cfg.dte_min - 2, 120, spot)
-        sig = SIG.compute(chain, spot, closes, today)
+        # short_* params make gate 7 measure the IV of the strikes actually
+        # sold (short_delta at dte_target), not a 30-day ATM proxy. See
+        # signals.short_strike_iv and risk.g7_vrp for why that distinction is
+        # the entire threshold, not a rounding difference.
+        sig = SIG.compute(chain, spot, closes, today,
+                          short_delta=cfg.short_delta,
+                          short_target_dte=cfg.dte_target,
+                          short_dte_min=cfg.dte_min, short_dte_max=cfg.dte_max)
 
         # --- session bookkeeping -------------------------------------------
         if state.get("session_date") != today.isoformat():
@@ -136,7 +143,7 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
         gates = engine.evaluate_pretrade(
             now_et.replace(tzinfo=None), ps,
             vix=sig.atm_iv_near, vix3m=sig.atm_iv_far,
-            atm_iv=sig.atm_iv_near, trailing_rv=sig.trailing_rv,
+            short_strike_iv=sig.short_strike_iv, trailing_rv=sig.trailing_rv,
             recon_issues=recon_issues,
         )
         if not market_open:
@@ -492,8 +499,15 @@ def _print(d: Decision, leaf: str, sig: SIG.Signals, cfg: Config,
           f"/ {sig.atm_iv_far:.2f} ({sig.far_dte}d)")
     print(f"  term ratio {sig.term_ratio:.3f} "
           f"({'contango' if sig.contango else 'BACKWARDATION'})")
-    print(f"  trailing RV {sig.trailing_rv:.2f}   "
-          f"VRP {sig.vrp:+.2f} vol points (threshold {cfg.vrp_threshold:.1f})")
+    print(f"  trailing RV {sig.trailing_rv:.2f}")
+    if sig.short_strike_iv is not None:
+        print(f"  short-strike IV {sig.short_strike_iv:.2f} ({sig.short_strike_dte}d, "
+              f"what gate 7 acts on)   VRP {sig.short_strike_vrp:+.2f} vol points "
+              f"(threshold {cfg.vrp_threshold:.1f})")
+    else:
+        print(f"  short-strike IV unavailable at the traded tenor; gate 7 refuses")
+    print(f"  ATM VRP {sig.atm_vrp:+.2f} vol points (comparison only, "
+          f"NOT what gate 7 acts on)")
     print(f"\n  gates:")
     for g in d.gates:
         mark = "PASS" if g.passed else "BLOCK"
