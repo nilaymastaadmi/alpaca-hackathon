@@ -272,6 +272,62 @@ class Broker:
 
     # --- execution ----------------------------------------------------------
 
+    def _resting_orders_for_legs(self, plan: CondorPlan) -> list[dict] | None:
+        """
+        Ask Alpaca directly whether an order already rests on these exact legs,
+        rather than trusting a client_order_id or order_id we may have lost.
+
+        This is the guard against double-open. Four ways it happens without it:
+        the MCP call raises AFTER Alpaca already accepted the order, so no oid
+        is ever recorded to cancel; _await_fill hits an exception and returns
+        None, discarding a real order_id; a parent-quantity partial fill times
+        out the poll instead of resolving; or the watchdog kills the process
+        mid-ladder. In every case `sell_to_open` is always valid on Alpaca's
+        side, so nothing there rejects a genuine duplicate. The external order
+        book is the only source of truth a client-side guard can be built on.
+
+        Returns None when the query itself could not be trusted (a transport
+        failure, or a response shape that does not parse), meaning safety is
+        UNCONFIRMED. Callers must treat that as "assume unsafe", not as "assume
+        clear": guessing clear is the exact bug this function exists to close.
+
+        Filters server-side by `symbols`, then re-checks client-side against
+        each returned order's legs. Belt and suspenders: `nested=True` is
+        documented to roll multi-leg orders up under a `legs` field when
+        filtering by symbols, but that behaviour has not been exercised against
+        a real resting multi-leg order in this codebase, so it is not trusted
+        alone.
+        """
+        leg_symbols = {c.occ for c in
+                       (plan.short_call, plan.long_call, plan.short_put, plan.long_put)}
+        try:
+            r = self.mcp.call("get_orders", {
+                "status": "open", "symbols": ",".join(sorted(leg_symbols)),
+                "nested": True, "limit": 50,
+            })
+        except Exception:
+            return None
+
+        d = r.get("data", r) if isinstance(r, dict) else r
+        orders = d.get("result", d) if isinstance(d, dict) else d
+        if not isinstance(orders, list):
+            return None   # unexpected shape; cannot confirm safety, do not guess
+
+        matched = []
+        for o in orders:
+            if not isinstance(o, dict):
+                continue
+            seen = set()
+            top = o.get("symbol")
+            if top:
+                seen.add(top)
+            for leg in (o.get("legs") or []):
+                if isinstance(leg, dict) and leg.get("symbol"):
+                    seen.add(leg["symbol"])
+            if seen & leg_symbols:
+                matched.append(o)
+        return matched
+
     def place_laddered(self, plan: CondorPlan, contracts: int, opening: bool,
                        dry_run: bool = False) -> dict:
         """
@@ -281,6 +337,12 @@ class Broker:
         multi-leg convention. Each rung carries a distinct client_order_id, which
         the API documents as an idempotency key, so a timeout can be retried
         without risking a duplicate position.
+
+        Before EVERY rung, including the first, confirms nothing is already
+        resting on these legs. See `_resting_orders_for_legs` for why this
+        cannot be skipped: an exception after Alpaca already accepted an order
+        leaves no local record of it, and `sell_to_open` never rejects a
+        genuine duplicate the way a closing order would.
         """
         if opening:
             start, end = -plan.credit_mid, -plan.credit_crossing
@@ -289,8 +351,30 @@ class Broker:
             end = plan.credit_crossing + (plan.credit_mid - plan.credit_crossing) * 2
 
         rungs = max(self.cfg.price_ladder_rungs, 1)
-        attempts = []
-        for i in range(rungs):
+        attempts: list[dict] = []
+        i = 0
+        while i < rungs:
+            if not dry_run:
+                resting = self._resting_orders_for_legs(plan)
+                if resting is None:
+                    attempts.append({
+                        "rung": i + 1, "aborted": True,
+                        "reason": "could not confirm no order is resting on "
+                                  "these legs; refusing to send a new one "
+                                  "rather than risk a duplicate position",
+                    })
+                    return {"filled": False, "attempts": attempts,
+                            "aborted_unsafe": True}
+                if resting:
+                    existing_id = resting[0].get("id")
+                    attempts.append({"rung": i + 1, "found_resting_order": existing_id,
+                                     "waited_instead_of_sending": True})
+                    filled = self._await_fill(existing_id)
+                    if filled:
+                        return self._fill_result(filled, i + 1, attempts)
+                    self._cancel(existing_id)
+                    continue   # do not advance i; re-check clear next pass
+
             frac = i / (rungs - 1) if rungs > 1 else 1.0
             px = start + (end - start) * frac
             coid = f"vrp-{'open' if opening else 'close'}-{uuid.uuid4().hex[:12]}"
@@ -306,13 +390,19 @@ class Broker:
             if dry_run:
                 attempts.append({"rung": i + 1, "limit_price": round(px, 2),
                                  "dry_run": True, "client_order_id": coid})
+                i += 1
                 continue
 
             try:
                 res = self.mcp.call("place_option_order", args)
             except Exception as exc:
+                # Do NOT retry blindly. The order may have been accepted by
+                # Alpaca despite this client-side exception. The resting-order
+                # check at the top of the next iteration is what determines
+                # whether that happened, rather than guessing here.
                 attempts.append({"rung": i + 1, "limit_price": round(px, 2),
                                  "error": str(exc)[:200]})
+                i += 1
                 continue
 
             d = res.get("data", res)
@@ -321,12 +411,35 @@ class Broker:
                              "order_id": oid, "client_order_id": coid})
             filled = self._await_fill(oid)
             if filled:
-                return {"filled": True, "rung": i + 1, "limit_price": round(px, 2),
-                        "order": filled, "attempts": attempts}
+                return self._fill_result(filled, i + 1, attempts)
             if oid:
                 self._cancel(oid)
+            i += 1
 
         return {"filled": False, "attempts": attempts, "dry_run": dry_run}
+
+    @staticmethod
+    def _fill_result(order: dict, rung: int, attempts: list[dict]) -> dict:
+        """
+        Build the standard success return, distinguishing a full fill from a
+        parent-quantity partial. A partial means fewer CONTRACTS filled than
+        requested, with all four legs of those contracts filled together
+        (Alpaca fills multi-leg orders atomically per contract); it does not
+        mean some legs filled and others did not.
+        """
+        try:
+            filled_qty = int(float(order.get("filled_qty", 0)))
+        except (TypeError, ValueError):
+            filled_qty = None
+        return {
+            "filled": True,
+            "partial": order.get("status") == "partially_filled",
+            "filled_qty": filled_qty,
+            "filled_avg_price": order.get("filled_avg_price"),
+            "rung": rung,
+            "order": order,
+            "attempts": attempts,
+        }
 
     def _await_fill(self, order_id: str | None) -> dict | None:
         if not order_id:
@@ -340,6 +453,13 @@ class Broker:
             d = r.get("data", r)
             status = d.get("status") if isinstance(d, dict) else None
             if status == "filled":
+                return d
+            if status == "partially_filled":
+                # Cancel the remainder immediately rather than let it keep
+                # resting. Letting it ride is what would let a LATER rung, or
+                # the next agent cycle, stack a second position on top of the
+                # portion that already filled.
+                self._cancel(order_id)
                 return d
             if status in ("canceled", "rejected", "expired"):
                 return None

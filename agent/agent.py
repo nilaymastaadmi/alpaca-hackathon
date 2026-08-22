@@ -184,18 +184,36 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
                 result = broker.place_laddered(plan, contracts, True, dry_run=True)
             else:
                 result = broker.place_laddered(plan, contracts, True)
-                if not result.get("filled"):
+                if result.get("aborted_unsafe"):
+                    action = "refuse"
+                    note = ("aborted: could not confirm no order was already "
+                            "resting on these legs; refused to risk a duplicate")
+                elif not result.get("filled"):
                     action = "refuse"
                     note = "ladder exhausted without a fill; no position opened"
                 else:
-                    note = (f"filled at {result['limit_price']} on rung "
-                            f"{result['rung']}")
+                    # Record the ACTUAL fill, not the requested size or the
+                    # rung's limit price. A partial fill means fewer contracts
+                    # than requested actually filled; recording `contracts`
+                    # here would silently overstate the position, which then
+                    # overstates every exit and risk calculation against it.
+                    filled_qty = result.get("filled_qty") or contracts
+                    avg_price = result.get("filled_avg_price")
+                    # avg_price should always be present on a filled order; the
+                    # plan's own mid credit is the only sane fallback if Alpaca
+                    # ever omits it, since nothing else in `result` is a price.
+                    credit = (abs(float(avg_price)) if avg_price is not None
+                             else plan.credit_mid)
+                    note = (f"filled {filled_qty}/{contracts} contracts at "
+                            f"avg {avg_price} on rung {result['rung']}")
+                    if result.get("partial"):
+                        note = "PARTIAL " + note
                     # Record it immediately. A filled order that never reaches
                     # the ledger is a position the agent will not manage or exit.
                     ledger.add(new_position(
-                        plan.to_dict(), contracts,
-                        credit=abs(float(result["limit_price"])),
-                        entry_limit=result["limit_price"],
+                        plan.to_dict(), filled_qty,
+                        credit=credit,
+                        entry_limit=avg_price,
                         order_id=(result.get("order") or {}).get("id"),
                     ))
             note += f" | ladder: {json.dumps(result.get('attempts', []))[:300]}"
