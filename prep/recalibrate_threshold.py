@@ -1,0 +1,330 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["alpaca-py"]
+# ///
+"""
+D2 threshold recalibration READINESS check. Does not recalibrate anything.
+
+research/DEPLOYMENT_DECISIONS.md D2 fixed gate 7 to measure the actual traded
+strikes instead of a biased 30-day ATM proxy, and deliberately left
+vrp_threshold at 1.0, unchanged, because no calibration history existed yet
+at the corrected tenor. "Deliberately not guessed at... 1.0 unchanged is the
+safe direction to be wrong in." This script exists to tell us, honestly and
+on every run, whether that is still true -- and it stops there. It never
+proposes a specific new threshold number and never writes to config.py.
+Actually re-deriving vrp_threshold from real data, when there is enough of
+it, is its own decision (a D3 entry in DEPLOYMENT_DECISIONS.md) made by
+Nilay with the numbers in front of him, exactly like D1 and D2 were.
+
+Uses agent.signals.short_strike_iv() directly, unmodified, so this measures
+the EXACT quantity gate 7 acts on live -- not a reimplementation that could
+drift from it. Reconstructs Contract objects from prep/iv_history.jsonl and
+pairs each day's short-strike IV with a trailing realised vol computed the
+same way (agent.signals.realised_vol) from real SPY daily closes fetched
+fresh each run.
+
+What "enough data" means, made concrete rather than picked by feel:
+engine.py's THRESHOLD_GRID steps in whole vol-point increments (0.0, 1.0,
+2.0, ...). Readiness is defined as a 90% CI half-width on the mean corrected
+VRP no wider than HALF a grid step (0.5 vol points) -- tight enough that the
+threshold's own resolution isn't swamped by sampling noise. This is a moving
+target: the required-N projection is refit from the current empirical
+standard deviation every run, not fixed in advance.
+
+Only observations from CORRECT_TENOR_FROM onward count. prep/snapshot_iv.py
+widened its DTE band from 21-45 to 5-45 on 2026-08-20; anything logged
+before that date has zero observations at the 7-14 DTE band gate 7 actually
+trades and is excluded, not silently included as if it were usable.
+
+Safe to re-run any time, including nightly alongside the existing scheduled
+task. Writes a dated status report to research/RECALIBRATION_STATUS.md so
+progress night over night is visible in git history.
+
+Run:  uv run --with alpaca-py prep/recalibrate_threshold.py
+"""
+
+from __future__ import annotations
+
+import json
+import math
+import sys
+from collections import defaultdict
+from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+ENV_PATH = PROJECT_ROOT / ".env"
+LOG_PATH = Path(__file__).resolve().parent / "iv_history.jsonl"
+STATUS_PATH = PROJECT_ROOT / "research" / "RECALIBRATION_STATUS.md"
+
+sys.path.insert(0, str(PROJECT_ROOT / "agent"))
+import config as CFG  # noqa: E402
+import signals as SIG  # noqa: E402
+
+CORRECT_TENOR_FROM = date(2026, 8, 20)
+TARGET_HALF_WIDTH = 0.5   # half of one THRESHOLD_GRID step (1.0 vol point)
+
+# Standard two-sided 90% CI critical values, t_(0.95, df). Small table plus
+# linear interpolation rather than adding scipy for one lookup.
+T_TABLE = {
+    1: 6.314, 2: 2.920, 3: 2.353, 4: 2.132, 5: 2.015, 6: 1.943, 7: 1.895,
+    8: 1.860, 9: 1.833, 10: 1.812, 12: 1.782, 15: 1.753, 20: 1.725,
+    25: 1.708, 30: 1.697,
+}
+
+
+def t_critical(df: int) -> float:
+    if df < 1:
+        return float("nan")
+    if df >= 30:
+        return 1.645  # normal approximation beyond the table
+    keys = sorted(T_TABLE)
+    if df in T_TABLE:
+        return T_TABLE[df]
+    lo = max(k for k in keys if k < df)
+    hi = min(k for k in keys if k > df)
+    frac = (df - lo) / (hi - lo)
+    return T_TABLE[lo] + frac * (T_TABLE[hi] - T_TABLE[lo])
+
+
+def load_env(path: Path) -> dict[str, str]:
+    if not path.exists():
+        sys.exit(f"missing .env at {path}")
+    env = {}
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, _, v = line.partition("=")
+        env[k.strip()] = v.strip()
+    return env
+
+
+def fetch_spy_closes(env: dict[str, str], start: date, end: date) -> dict[date, float]:
+    """Real daily closes, start padded 45 calendar days back for trailing RV."""
+    from alpaca.data.enums import DataFeed
+    from alpaca.data.historical.stock import StockHistoricalDataClient
+    from alpaca.data.requests import StockBarsRequest
+    from alpaca.data.timeframe import TimeFrame
+
+    # IEX, not SIP: the Basic plan's recent-data restriction (RISK_REGISTER.md
+    # 1.3) rejects SIP requests for recent dates with a 403. Bars this recent
+    # can only come from IEX on this subscription.
+    client = StockHistoricalDataClient(env["ALPACA_API_KEY"], env["ALPACA_SECRET_KEY"])
+    bars = client.get_stock_bars(
+        StockBarsRequest(
+            symbol_or_symbols="SPY",
+            timeframe=TimeFrame.Day,
+            start=datetime.combine(start - timedelta(days=45), datetime.min.time(),
+                                   tzinfo=timezone.utc),
+            end=datetime.combine(end + timedelta(days=1), datetime.min.time(),
+                                 tzinfo=timezone.utc),
+            feed=DataFeed.IEX,
+        )
+    ).data.get("SPY", [])
+    return {b.timestamp.date(): float(b.close) for b in bars}
+
+
+def build_contracts_for_day(rows: list[dict]) -> list[SIG.Contract]:
+    out = []
+    for r in rows:
+        try:
+            _, exp, is_call, strike = SIG.parse_occ(r["occ_symbol"])
+        except (ValueError, IndexError, KeyError):
+            continue
+        out.append(SIG.Contract(
+            occ=r["occ_symbol"], strike=strike, is_call=is_call, expiry=exp,
+            iv=r.get("implied_volatility"), delta=r.get("delta"),
+            bid=None, ask=None,
+        ))
+    return out
+
+
+def main() -> None:
+    env = load_env(ENV_PATH)
+    cfg = CFG.Config()
+
+    if not LOG_PATH.exists():
+        sys.exit(f"no log at {LOG_PATH}")
+
+    by_date: dict[date, list[dict]] = defaultdict(list)
+    for line in LOG_PATH.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        if row.get("underlying") != cfg.underlying:
+            continue
+        d = date.fromisoformat(row["date"])
+        if d < CORRECT_TENOR_FROM:
+            continue
+        by_date[d].append(row)
+
+    log_dates = sorted(by_date)
+    print(f"correct-tenor log dates found: {len(log_dates)}  {log_dates}")
+    if not log_dates:
+        _write_not_ready(0, None, None, None, "no correct-tenor data logged yet")
+        print("\nNOT READY: zero correct-tenor observations. Nothing to report.")
+        return
+
+    closes_by_date = fetch_spy_closes(env, log_dates[0], log_dates[-1])
+    trading_days = sorted(closes_by_date)
+
+    samples: list[tuple[date, float, int, bool]] = []  # (date, vrp, dte_used, is_trading_day)
+    skipped = []
+    for d in log_dates:
+        is_trading_day = d in closes_by_date
+        # 22 closes at/before d (or before the prior trading day if d itself
+        # is not one, e.g. a weekend catch-up run reflecting a stale close).
+        prior = [td for td in trading_days if td <= d]
+        if len(prior) < 22:
+            skipped.append((d, "insufficient SPY close history for trailing RV"))
+            continue
+        window_closes = [closes_by_date[td] for td in prior[-22:]]
+        try:
+            rv = SIG.realised_vol(window_closes, window=21)
+        except ValueError as e:
+            skipped.append((d, f"realised_vol failed: {e}"))
+            continue
+
+        contracts = build_contracts_for_day(by_date[d])
+        try:
+            short_iv, dte_used = SIG.short_strike_iv(
+                contracts, d, cfg.dte_target, cfg.short_delta, cfg.dte_min, cfg.dte_max)
+        except ValueError as e:
+            skipped.append((d, f"short_strike_iv failed (gate 7 would refuse too): {e}"))
+            continue
+
+        vrp = short_iv - rv
+        samples.append((d, vrp, dte_used, is_trading_day))
+
+    print(f"\nusable samples: {len(samples)}")
+    for d, vrp, dte_used, is_td in samples:
+        flag = "" if is_td else "  [captured on non-trading day, likely a stale close]"
+        print(f"  {d}  VRP {vrp:+.3f} pts  (dte {dte_used}){flag}")
+    if skipped:
+        print(f"\nskipped {len(skipped)}:")
+        for d, reason in skipped:
+            print(f"  {d}: {reason}")
+
+    n = len(samples)
+    if n < 2:
+        _write_not_ready(n, None, None, None,
+                          "fewer than 2 usable samples, cannot estimate variance yet",
+                          samples=samples, skipped=skipped)
+        print(f"\nNOT READY: {n} usable sample(s). Need at least 2 to estimate "
+              "variance at all, and far more than that to trust it.")
+        return
+
+    vrps = [v for _, v, _, _ in samples]
+    mean = sum(vrps) / n
+    var = sum((v - mean) ** 2 for v in vrps) / (n - 1)
+    sd = math.sqrt(var)
+    tcrit = t_critical(n - 1)
+    half_width = tcrit * sd / math.sqrt(n)
+    ready = half_width <= TARGET_HALF_WIDTH
+
+    print(f"\nmean corrected VRP: {mean:+.3f} pts   sd: {sd:.3f}   N: {n}")
+    print(f"90% CI half-width: {half_width:.3f}  (target <= {TARGET_HALF_WIDTH})")
+
+    if ready:
+        print(f"\nREADY: half-width {half_width:.3f} is within the {TARGET_HALF_WIDTH} "
+              "target. Enough data exists to responsibly START a proper D3 "
+              "recalibration study -- this script still does not propose a new "
+              "threshold number itself.")
+        _write_ready(samples, mean, sd, half_width, skipped)
+    else:
+        # Project required N from the current empirical sd (normal approx,
+        # a first pass -- refit every run as sd itself is re-measured).
+        n_needed = math.ceil((1.645 * sd / TARGET_HALF_WIDTH) ** 2)
+        more_needed = max(0, n_needed - n)
+        print(f"\nNOT READY. At the current empirical sd ({sd:.3f}), roughly "
+              f"{n_needed} total observations would close the gap -- about "
+              f"{more_needed} more nights of correctly-collected data, "
+              "assuming variance doesn't change much as N grows (it will be "
+              "re-measured, and this projection refit, on the next run).")
+        _write_not_ready(n, mean, sd, half_width, None, n_needed, more_needed, samples, skipped)
+
+
+def _write_not_ready(n, mean, sd, half_width, blocking_reason,
+                     n_needed=None, more_needed=None, samples=None, skipped=None) -> None:
+    STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    L = [
+        "# D2 threshold recalibration: readiness status",
+        "",
+        f"Checked {datetime.now(timezone.utc).isoformat(timespec='seconds')}. "
+        "Generated by `prep/recalibrate_threshold.py`, safe to re-run. This "
+        "file NEVER contains a proposed new threshold value -- see the "
+        "script's docstring for why.",
+        "",
+        "## Status: NOT READY",
+        "",
+    ]
+    if blocking_reason:
+        L.append(blocking_reason)
+    else:
+        L += [
+            f"- usable observations: **{n}**",
+            f"- mean corrected VRP so far: **{mean:+.3f}** vol points (sd {sd:.3f})",
+            f"- current 90% CI half-width: **{half_width:.3f}** (target <= "
+            f"{TARGET_HALF_WIDTH})",
+            f"- projected total observations needed at current variance: "
+            f"**~{n_needed}** (~{more_needed} more nights)",
+            "",
+            "`vrp_threshold` in `agent/config.py` stays at 1.0, per D2, until "
+            "this crosses into READY.",
+        ]
+    if samples:
+        L += ["", "## Samples so far", "", "| date | VRP (pts) | DTE used | trading day |",
+              "|---|---|---|---|"]
+        for d, vrp, dte_used, is_td in samples:
+            L.append(f"| {d} | {vrp:+.3f} | {dte_used} | {'yes' if is_td else 'no (stale close)'} |")
+    if skipped:
+        L += ["", "## Skipped", ""]
+        for d, reason in skipped:
+            L.append(f"- {d}: {reason}")
+    L.append("")
+    STATUS_PATH.write_text("\n".join(L), encoding="utf-8")
+
+
+def _write_ready(samples, mean, sd, half_width, skipped) -> None:
+    STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    n = len(samples)
+    L = [
+        "# D2 threshold recalibration: readiness status",
+        "",
+        f"Checked {datetime.now(timezone.utc).isoformat(timespec='seconds')}. "
+        "Generated by `prep/recalibrate_threshold.py`, safe to re-run. This "
+        "file NEVER contains a proposed new threshold value -- see the "
+        "script's docstring for why.",
+        "",
+        "## Status: READY",
+        "",
+        f"- usable observations: **{n}**",
+        f"- mean corrected VRP: **{mean:+.3f}** vol points (sd {sd:.3f})",
+        f"- 90% CI half-width: **{half_width:.3f}** (target <= {TARGET_HALF_WIDTH}, met)",
+        "",
+        "Enough data exists to responsibly START a proper D3 recalibration "
+        "study. This script stops here on purpose: deriving the actual new "
+        "threshold number needs its own reasoning (e.g. what false-accept "
+        "rate the original 1.0 implicitly assumed, whether to fit against "
+        "realised P&L rather than just the VRP distribution's shape), and "
+        "that reasoning should be written down and decided by Nilay, dated, "
+        "in `research/DEPLOYMENT_DECISIONS.md` as D3 -- the same way D1 and "
+        "D2 were, not mechanically applied by this script.",
+        "",
+        "## Samples", "",
+        "| date | VRP (pts) | DTE used | trading day |",
+        "|---|---|---|---|",
+    ]
+    for d, vrp, dte_used, is_td in samples:
+        L.append(f"| {d} | {vrp:+.3f} | {dte_used} | {'yes' if is_td else 'no (stale close)'} |")
+    if skipped:
+        L += ["", "## Skipped", ""]
+        for d, reason in skipped:
+            L.append(f"- {d}: {reason}")
+    L.append("")
+    STATUS_PATH.write_text("\n".join(L), encoding="utf-8")
+
+
+if __name__ == "__main__":
+    main()
