@@ -112,7 +112,7 @@ for separate reasons.
 
 ## 4. Operational failure modes
 
-### 4.1 THE BIG ONE: the laptop sleeping kills the agent. OPEN
+### 4.1 THE BIG ONE: the laptop sleeping kills the agent. HALF MITIGATED, half OPEN
 US market hours are 19:00 to 01:30 IST. The agent must run unattended overnight,
 every night, Mon 31 Aug to Fri 4 Sep.
 
@@ -125,19 +125,34 @@ A hung agent does not crash loudly. It sits there looking alive while the tradin
 window passes. **This is the single most likely way the live week produces no
 trades**, and no amount of strategy work protects against it.
 
-Needs a decision before kickoff: disable sleep for the week, run somewhere that
-does not sleep, or add a watchdog that kills and restarts a cycle whose progress
-has stalled. `propdesk` found a watchdog can recover from it but not prevent it.
+**Mitigated: `agent/watchdog.py` exists and is tested.** Every cycle runs in a
+separate subprocess with an OS-enforced timeout, since an in-process timer
+cannot rescue a thread stuck in a syscall but killing the process can. Smoke
+tested with two real supervised cycles (15.3s, 15.0s against a 240s default
+timeout). This recovers from a hang; per propdesk's own finding, it does not
+prevent the laptop from sleeping in the first place, only shortens how long a
+sleep event costs.
+
+**Still OPEN, and cannot be done from here:** disabling sleep itself
+(`powercfg /change standby-timeout-dc 0` and
+`powercfg /change hibernate-timeout-dc 0`; AC is already never, DC is 300s) is
+a system settings change, which stays out of scope for this agent to perform
+unilaterally regardless of shell access. Needs Nilay to run it, or to run the
+agent somewhere that does not sleep at all.
 
 ### 4.2 Network interception. ACCEPTED
 `reference_machine_state` records this machine hitting TLS interception on at
 least one network. Worth knowing which network the agent runs on during the week.
 
-### 4.3 Deployed dashboard shows stale artifacts. OPEN
-The dashboard renders whatever artifacts are COMMITTED. Nothing currently commits
-them as the agent runs, so a judge opening the URL on 3 Sep sees decisions dated
-20 Aug, on a page whose entire pitch is "here is what the agent decided". Needs a
-commit-artifacts step in the agent loop.
+### 4.3 Deployed dashboard shows stale artifacts. MITIGATED
+This was open when first written. `agent/publish.py` now commits and pushes
+`artifacts/decisions.jsonl`, `merkle_root.json` and `positions.json` from
+inside the agent loop when run with `--publish`. Only `artifacts/` is ever
+staged (tested), failures return a status rather than raising (a git problem
+must not stop the agent managing real positions), and it is opt-in per-run
+since it pushes to a remote. `agent/watchdog.py --publish` propagates the flag
+through supervised cycles. Confirmed working: a real `Agent artifacts ...`
+commit exists in the repo history from an actual `--publish` run.
 
 ### 4.4 Parent-quantity partial fills. MITIGATED, mechanism corrected 2026-08-22
 This entry originally described the risk as "a condor that fills three of four
