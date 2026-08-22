@@ -200,3 +200,89 @@ built to prefer over the alternative.
 **Action item, not yet done:** once enough nights of 7-14 DTE history exist,
 re-derive `vrp_threshold` from it and record that as its own dated entry here,
 on the same footing as this one.
+
+**Tooling added 2026-08-22, not the recalibration itself:**
+`prep/recalibrate_threshold.py` checks readiness on every run (safe to run
+nightly) and writes `research/RECALIBRATION_STATUS.md`. It measures the
+exact quantity gate 7 uses live, defines "enough data" as a 90% CI half-width
+under 0.5 vol points (half of `engine.THRESHOLD_GRID`'s own step size), and
+deliberately stops at READY/NOT READY -- it never proposes a number or
+writes to `config.py`. As of 2026-08-22: **NOT READY, 1 usable sample.**
+`vrp_threshold` stays at 1.0.
+
+---
+
+## D3. PROPOSED, not decided: switch deployed tenor from T4 (7-14 DTE) to T7 (5-10 DTE)
+
+**Found 2026-08-22, following amendment A3 to the pre-registration. Not yet
+decided by Nilay -- recorded here as a proposal with the numbers in front of
+it, the same way D1 and D2 were presented before being decided.**
+
+### What was tested and why
+
+The live agent deploys T4 (7-14 DTE) over the backtest-best T6 (21-45 DTE)
+because a 4.5 day hold captures only 7-9% of a 42 DTE position's credit decay
+(`STRATEGY.md` section 4, registered prediction P5). The same reasoning runs
+the other direction and had never been tested: a tenor SHORTER than T4 would
+capture a LARGER fraction of its own credit in the same 4.5 day window.
+
+Amendment A3 (`PREREGISTRATION_R1.md`) registered T7 (5-10 DTE, both gates,
+otherwise identical to T4) BEFORE running it, recomputed the multiple-testing
+bar from N=6 to N=7 (0.760 to 0.792, checked against T1-T6 before T7 ran --
+no existing verdict flipped), and stated three falsifiable predictions in
+advance. Full result: `RESULT_H3_T7.md`.
+
+### What it found
+
+| | T4 (deployed) | T7 (proposed) |
+|---|---|---|
+| DTE band | 7-14 | 5-10 |
+| Out-of-sample Sharpe | +1.201 | **+1.697** (best of all 7 trials) |
+| Total return | +9.30% | +17.60% |
+| Max drawdown | -3.10% | -3.64% |
+| Trades | 165 | 180 |
+| Win rate | 78.2% | 89.4% |
+| Sharpe under 2x cost | not re-tested for T4 alone at this cut | +1.579 (falls, the normal direction) |
+
+All three registered predictions came out CORRECT:
+- **P7** (T7 beats T4 on Sharpe): yes, by a wide margin.
+- **P8** (T7's drawdown stays clear of the confirmed-bad 0-3 DTE zone's
+  -5.55%, defined as no worse than -4.65%): yes, -3.64%, in the same
+  neighbourhood as every other non-0-3-DTE tenor bucket.
+- **P9** (T7's Sharpe falls under double-cost stress, unlike T6's anomalous
+  rise): yes. This is actually a better robustness signature than T6's
+  headline result had -- T6's Sharpe RISING under higher costs was flagged
+  in `RESULT_H3_ROBUSTNESS.md` as evidence its optimiser was partly selecting
+  noise. T7 does not show that flag.
+
+Per amendment A3's holdout-shot governance, **T7 now stands as the sole
+nominee for the one holdout shot**, replacing T6. The holdout itself remains
+SEALED -- nothing above touches it, and this proposal does not require
+touching it either.
+
+### Why this is NOT auto-applied
+
+1. **It is one development-window walk-forward result**, not a holdout
+   confirmation. The whole point of the sealed holdout is that a development
+   pass, however clean, is not yet evidence a strategy survives fresh data.
+2. **Changing the live tenor changes what actually trades real (paper)
+   money in the judged window.** That is exactly the kind of call D1 and D2
+   were, made deliberately with numbers in front of the decision-maker, not
+   applied automatically because a script produced a bigger number.
+3. Operationally, 5-10 DTE fits the 4.5 day live window BETTER than 7-14
+   does (a bigger fraction of a shorter position's decay is captured), which
+   is a real reason beyond the Sharpe number -- but it also means T7 was
+   chosen partly because it should look good in a short live window, which
+   is worth being honest about rather than presenting as pure luck.
+
+### If adopted
+
+Changes needed: `agent/config.py` `dte_min=7`->`5`, `dte_max=14`->`10`,
+`dte_target=10`->`8`. `short_delta` unchanged (T7 holds it fixed at 0.16 to
+isolate tenor as the only variable). Everything else in D1 (5 concurrent,
+3% risk each) and D2 (gate 7 measuring the actual traded strikes) is
+unaffected by this and would carry over unchanged.
+
+**Decision needed from Nilay: adopt T7 as the deployed tenor, keep T4, or
+wait for more data before deciding.** Not applied to `config.py` by this
+entry.

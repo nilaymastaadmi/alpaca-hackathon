@@ -73,8 +73,16 @@ One shot permitted, only after a dev trial clears its bar. Do not spend it.
   the actual ~11-day short strikes sold), a bias of about +1 vol point,
   always in the permissive direction. Fixed in code
   (`signals.short_strike_iv`). **The threshold itself (1.0) stays
-  provisional** — no re-derivation without real data, and as of 2026-08-22
-  only ONE usable night of correct-tenor calibration data exists (see below).
+  provisional.** `prep/recalibrate_threshold.py` (added 2026-08-22) checks
+  readiness on every run and never proposes a number itself — see
+  `research/RECALIBRATION_STATUS.md`. As of 2026-08-22: **NOT READY, 1
+  usable sample.**
+- **D3, PROPOSED not decided**: switch the deployed tenor from T4 (7-14 DTE)
+  to T7 (5-10 DTE). A properly pre-registered trial (amendment A3,
+  2026-08-22) cleared a freshly recomputed N=7 bar at Sharpe +1.697, best of
+  all seven trials, without T6's cost-stress anomaly. Full case and the
+  open decision: see D3 below and `research/RESULT_H3_T7.md`. **Not applied
+  to `agent/config.py`.**
 
 ## The agent (`agent/`)
 
@@ -113,34 +121,44 @@ the original failure:
   Alpaca's own docs: MLeg legs fill together or not at all, so "3 of 4 legs
   filled" cannot happen — the real risk is parent-quantity partial fill)
 
-`RISK_REGISTER.md` tracks status on everything; as of 2026-08-22 only one
-item is still open.
+`RISK_REGISTER.md` tracks status on everything. As of 2026-08-22 two items
+are open by design, not by neglect: 2.2 (confirm pre-kickoff work is allowed,
+cheap to ask in the Discord at kickoff) and 2.3 (the fresh submission-only
+account, deliberately not created yet, see item 4 below). Everything else,
+including the laptop-sleep item and a stale Streamlit login-gate label found
+during this pass, is MITIGATED, RESOLVED or ACCEPTED.
 
 ## What's still open, and whose job each one is
 
-1. **Laptop sleep.** `agent/watchdog.py` recovers from a hang but does not
-   prevent the laptop sleeping in the first place. **This is Nilay's action,
-   not mine** — `powercfg` is a system settings change, out of scope for this
-   agent to run unilaterally even with shell access. Commands:
+1. **Laptop sleep — DONE 2026-08-22.** Nilay ran
    `powercfg /change standby-timeout-dc 0` and
-   `powercfg /change hibernate-timeout-dc 0`. Matters twice: for the live
-   week, and right now, because the same bug already ate one calibration
-   night (Aug 21's logger run silently didn't fire).
-2. **D2 threshold recalibration.** Blocked on data, not effort. As of
-   2026-08-22 the corrected-tenor (5-45 DTE) logger has exactly ONE usable
-   night (Aug 20; Aug 19 was pre-fix, Aug 21 was missed to the sleep bug).
-   Re-deriving a threshold from one observation would repeat the exact
-   mistake this project's whole discipline exists to prevent. Depends on #1
-   above actually getting fixed so the nightly logger runs reliably through
-   kickoff.
-3. **Fresh submission-only paper account.** Deliberately NOT created yet —
+   `powercfg /change hibernate-timeout-dc 0`. Verified after the fact with
+   `powercfg /query SCHEME_CURRENT SUB_SLEEP`: both `STANDBYIDLE` and
+   `HIBERNATEIDLE` DC indices read `0x00000000` (never). `agent/watchdog.py`
+   still handles a hang if one somehow occurs; this closes the more likely
+   failure mode of the laptop sleeping outright.
+2. **D2 threshold recalibration — decide T7 (D3) first, or run in parallel.**
+   `prep/recalibrate_threshold.py` exists and reports NOT READY (1 usable
+   sample of the corrected quantity, as of 2026-08-22; Aug 19 was pre-fix,
+   Aug 20's logged snapshot had no delta-bearing contract in the traded DTE
+   band despite the live D2 verification succeeding that same day, Aug 21
+   was missed to the sleep bug now fixed above). Re-run any time; it is
+   nightly-safe and self-reports how many more nights are needed from its
+   own current variance estimate.
+3. **D3 decision: adopt T7 (5-10 DTE) as the deployed tenor, or keep T4.**
+   New as of 2026-08-22. See `research/DEPLOYMENT_DECISIONS.md` D3. This is
+   the one item on this list that is a genuine judgement call for Nilay, not
+   a blocked-on-data or blocked-on-time item — the backtest evidence exists
+   now, the question is whether one clean development-window pass is enough
+   to change what trades live money in the judged week.
+4. **Fresh submission-only paper account.** Deliberately NOT created yet —
    confirmed with Nilay 2026-08-22 there's no reason to rush it. Do it a day
    or two before kickoff (not day-of, in case options-level-3 approval has
    any delay), then run one live fill test on it before 31 Aug.
-4. **Presentation: video, slides, cover image.** All mandatory, all still at
+5. **Presentation: video, slides, cover image.** All mandatory, all still at
    zero. **Nilay's own task** ("we'll make the presentation dw", 2026-08-22),
    not something to push on unprompted.
-5. **Social posts** (up to 5, X/LinkedIn) — correctly not started, since the
+6. **Social posts** (up to 5, X/LinkedIn) — correctly not started, since the
    rules require they be dated *during* the hackathon window.
 
 ## Explicitly investigated and rejected, don't re-raise without new evidence
@@ -148,13 +166,26 @@ item is still open.
 - **XSP as a second instrument** — checked live 2026-08-22: zero IV, zero
   delta on every contract, same data gap VIX had. Building proper pricing for
   it would replicate days of already-done SPY-specific work. Not a lever.
-- **Switching to a 3-7 DTE tenor** — the exploratory sweep shows it scoring
-  almost 2x the deployed tenor's Sharpe, and it is deliberately NOT adopted.
-  That number comes from the sweep explicitly labelled "not evidence" (never
-  one of the 6 pre-registered H3 trials), and 3-7 DTE sits uncomfortably
-  close to the 0DTE zone already found to be a coin-flip with fat tails a
-  single Sharpe number hides. Acting on it would be exactly the cherry-picking
-  failure mode the pre-registration discipline exists to prevent.
+
+## A short tenor WAS properly tested, not just the sweep peak (2026-08-22)
+
+The earlier version of this file said the 3-7 DTE sweep number (scoring
+almost 2x the deployed tenor) was deliberately not adopted, since it came
+from the exploratory sweep labelled "not evidence." That reasoning still
+holds for 3-7 DTE specifically. But rather than leave it there, a proper
+pre-registered trial was run at a nearby, deliberately-not-cherry-picked
+band: **T7 (5-10 DTE)**, amendment A3 to `PREREGISTRATION_R1.md`, registered
+before its code existed, with the multiple-testing bar recomputed from N=6
+to N=7 (0.760 to 0.792) before the result was seen.
+
+**T7 clears the recomputed bar at Sharpe +1.697, the best of all seven
+trials, and does not show T6's noise-selection red flag** (Sharpe falls
+under cost stress, the normal direction, instead of rising). Full result:
+`research/RESULT_H3_T7.md`. This is now a live, undecided deployment
+question, not a rejected path — see **D3** in
+`research/DEPLOYMENT_DECISIONS.md`: switch the live tenor from T4 (7-14 DTE)
+to T7 (5-10 DTE)? Proposed, not yet decided by Nilay. Not applied to
+`agent/config.py`.
 
 ## Standing rules for this project, don't relitigate
 

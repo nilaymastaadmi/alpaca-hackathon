@@ -11,17 +11,15 @@ tolerated, **RESOLVED** closed with evidence.
 
 ## 1. Free tier and quota ceilings
 
-### 1.1 Streamlit app was LOGIN-GATED. OPEN, needs one toggle
-Deploying from a private repo made the app private. Measured 2026-08-20:
-`HTTP 303 -> /-/login`, health endpoint returns `{"status":"ok"}`, so the app is
-running but **not viewable by anyone without an invite**.
-
-The submission requires an Application URL "for interactive evaluation". A judge
-hitting a login wall scores what they can see, which is nothing.
-
-**Fix, one toggle, no redeploy:** App settings, Sharing, "Who can view this app",
-select "This app is public and searchable". App visibility is INDEPENDENT of repo
-visibility, so the repo can stay private while the app is public.
+### 1.1 Streamlit app login gate. RESOLVED
+Originally login-gated (measured 2026-08-20: `HTTP 303 -> /-/login`) because
+deploying from a private repo made the app private. Fixed via the app's own
+Sharing setting, independent of repo visibility. **Confirmed genuinely public**
+by following the FULL redirect chain (`curl -sL -c cookiejar -b cookiejar`,
+reading the final status at the end of a 3-hop anonymous-grant auth broker
+chain, not a single-hop check): HTTP 200. A single-hop check gives a false
+303-to-login even on a genuinely public app, which caused this to be
+mis-diagnosed as still broken for a while after the actual fix landed.
 
 ### 1.2 Streamlit Community Cloud ceilings. ACCEPTED
 - **1 private app** on the free tier. Ours uses it. Public apps are unlimited, so
@@ -112,7 +110,7 @@ for separate reasons.
 
 ## 4. Operational failure modes
 
-### 4.1 THE BIG ONE: the laptop sleeping kills the agent. HALF MITIGATED, half OPEN
+### 4.1 THE BIG ONE: the laptop sleeping kills the agent. MITIGATED 2026-08-22
 US market hours are 19:00 to 01:30 IST. The agent must run unattended overnight,
 every night, Mon 31 Aug to Fri 4 Sep.
 
@@ -133,12 +131,14 @@ timeout). This recovers from a hang; per propdesk's own finding, it does not
 prevent the laptop from sleeping in the first place, only shortens how long a
 sleep event costs.
 
-**Still OPEN, and cannot be done from here:** disabling sleep itself
-(`powercfg /change standby-timeout-dc 0` and
-`powercfg /change hibernate-timeout-dc 0`; AC is already never, DC is 300s) is
-a system settings change, which stays out of scope for this agent to perform
-unilaterally regardless of shell access. Needs Nilay to run it, or to run the
-agent somewhere that does not sleep at all.
+**Sleep itself disabled 2026-08-22.** Nilay ran
+`powercfg /change standby-timeout-dc 0` and
+`powercfg /change hibernate-timeout-dc 0` (a system settings change, correctly
+kept out of scope for this agent to run unilaterally). Verified after the
+fact with `powercfg /query SCHEME_CURRENT SUB_SLEEP`: both `STANDBYIDLE` and
+`HIBERNATEIDLE` DC indices read `0x00000000` (never), AC already was. The
+watchdog remains as defence for any other cause of a hung cycle; the most
+likely single point of failure is now closed.
 
 ### 4.2 Network interception. ACCEPTED
 `reference_machine_state` records this machine hitting TLS interception on at
