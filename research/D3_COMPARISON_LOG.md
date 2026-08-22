@@ -1,6 +1,6 @@
 # D3 comparison log: T4 vs T6 vs T7
 
-Generated 2026-08-22T18:38:00 by `agent/compare_report.py` from `agent/agent.py --compare-all`. Purely observational -- every row below is a dry-run decision, no order was ever sent. See `research/DEPLOYMENT_DECISIONS.md` D3 for the backtest case; this file is the live-market evidence gathered in parallel while that decision stays open until kickoff.
+Generated 2026-08-22T21:40:21 by `agent/compare_report.py` from `agent/agent.py --compare-all`. Purely observational -- every row below is a dry-run decision, no order was ever sent. See `research/DEPLOYMENT_DECISIONS.md` D3 for the backtest case; this file is the live-market evidence gathered in parallel while that decision stays open until kickoff.
 
 | date | T4 (7-14 DTE, deployed) | T6 (21-45 DTE) | T7 (5-10 DTE, proposed) |
 |---|---|---|---|
