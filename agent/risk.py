@@ -66,7 +66,7 @@ class PortfolioState:
 class Decision:
     """The full record of one decision, refusal or trade."""
     timestamp: str
-    action: str                       # "enter" | "refuse" | "halt"
+    action: str                       # "enter" | "refuse" | "halt" | "flatten"
     gates: list[GateResult]
     signals: dict[str, Any]
     portfolio: dict[str, Any]

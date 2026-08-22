@@ -4,7 +4,7 @@
 .PHONY: test verify seal summary decide dry-run
 
 test:
-	uv run --with pytest python -m pytest tests/ -q
+	uv run --with pytest --with tzdata --with requests python -m pytest tests/ -q
 
 ## Recompute the Merkle root over every logged decision and compare it to the
 ## sealed value. This is the point of the artifact log: you do not have to

@@ -143,6 +143,15 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
         contracts = 0
         action = "refuse"
         note = ""
+        flatten_results: list[dict] = []
+
+        # Gate 2's own message says "HALT and flatten". Until now nothing did
+        # the flatten half of that promise: the breaker stopped new entries but
+        # left every existing position open. Checked here, once, rather than
+        # inside the gate itself, because closing positions is an ACTION with
+        # side effects and a gate's job is only to evaluate a condition.
+        dd_gate = next((g for g in gates if g.gate == "drawdown_breaker"), None)
+        drawdown_breached = dd_gate is not None and not dd_gate.passed
 
         if engine.all_passed(gates):
             plan = broker.build_condor(chain, spot, today)
@@ -217,6 +226,15 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
                         order_id=(result.get("order") or {}).get("id"),
                     ))
             note += f" | ladder: {json.dumps(result.get('attempts', []))[:300]}"
+        elif drawdown_breached and held:
+            action = "flatten"
+            flatten_results = _flatten_all(broker, ledger, held, today, dry_run, log)
+            n_closed = sum(1 for r in flatten_results if r["action"] == "closed")
+            n_failed = sum(1 for r in flatten_results if r["action"] == "close_failed")
+            note = (f"drawdown breaker fired ({dd_gate.reason}); "
+                    f"{n_closed}/{len(held)} flattened, {n_failed} failed to close")
+            if dry_run:
+                note = "DRY RUN, nothing sent: " + note
         elif engine.is_halt(gates):
             action = "halt"
             note = "circuit breaker tripped; no new risk"
@@ -243,6 +261,7 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
         rec["mcp_calls"] = mcp.audit()
         rec["dry_run"] = dry_run
         rec["exits"] = exits
+        rec["flatten"] = flatten_results
         rec["reconciliation"] = recon_issues
         leaf = log.append(rec)
         # Seal every cycle. An autonomous agent that only seals when a human
@@ -262,9 +281,61 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
                 print(f"  publish: {pub['action']} {pub['detail'][:80]}")
 
         if verbose:
-            _print(decision, leaf, sig, cfg, exits, recon_issues)
+            _print(decision, leaf, sig, cfg, exits, recon_issues, flatten_results)
 
     return decision
+
+
+def _flatten_all(broker, ledger, held, today, dry_run, log) -> list[dict]:
+    """
+    Close every held position unconditionally. Only called when the
+    portfolio-level drawdown breaker (gate 2) has fired.
+
+    Deliberately different from `_manage_exits` in one respect: if quotes
+    cannot be fetched at all, `_manage_exits` gives up for the whole cycle,
+    because holding is a safe default when nothing forces a decision. Here it
+    is the opposite. The breaker firing means doing nothing is the unsafe
+    option, so each position falls back to its own entry credit as the ladder
+    seed and gets a real close attempt anyway, rather than the emergency
+    action silently doing nothing because a market data call failed.
+
+    A position that fails to close stays in the ledger rather than being
+    dropped, so the next cycle (the drawdown condition will still be true)
+    picks it up and tries again.
+    """
+    if not held:
+        return []
+
+    all_legs = [s for p in held for s in p.legs]
+    quote_error = None
+    try:
+        quotes = broker.quotes(all_legs)
+    except Exception as exc:
+        quotes, quote_error = {}, str(exc)[:160]
+
+    results = []
+    for p in held:
+        buyback = value_from_quotes(p, quotes) if quotes else None
+        rec = {"position": p.id, "expiry": p.expiry, "dte": p.dte(today),
+               "credit": p.credit, "contracts": p.contracts,
+               "reason": "drawdown breaker: portfolio-level HALT and flatten"}
+        if quote_error and buyback is None:
+            rec["quote_warning"] = quote_error
+
+        if dry_run:
+            rec["action"] = "would_flatten"
+        else:
+            out = broker.close_position(p, buyback or p.credit, p.contracts,
+                                        dry_run=False)
+            rec["action"] = "closed" if out.get("filled") else "close_failed"
+            rec["execution"] = {k: v for k, v in out.items() if k != "order"}
+            if out.get("filled"):
+                ledger.remove(p.id)
+
+        log.append({"timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                    "action": f"flatten:{rec['action']}", "flatten": rec})
+        results.append(rec)
+    return results
 
 
 def _manage_exits(broker, ledger, held, today, cfg, dry_run, log) -> list[dict]:
@@ -326,7 +397,8 @@ def _count_option_structures(positions: list[dict]) -> int:
 
 def _print(d: Decision, leaf: str, sig: SIG.Signals, cfg: Config,
            exits: list[dict] | None = None,
-           recon: list[dict] | None = None) -> None:
+           recon: list[dict] | None = None,
+           flattens: list[dict] | None = None) -> None:
     bar = "=" * 74
     print(bar)
     print(f"DECISION  {d.timestamp}   ACTION: {d.action.upper()}")
@@ -334,6 +406,12 @@ def _print(d: Decision, leaf: str, sig: SIG.Signals, cfg: Config,
     for issue in (recon or []):
         sev = issue.get("severity", "info")
         print(f"  [{sev}] {issue.get('position')}: {issue.get('issue', '')[:90]}")
+    if flattens:
+        print(f"  DRAWDOWN BREAKER: flattening {len(flattens)} position(s)")
+        for f in flattens:
+            print(f"    {f['position']}  {f['action']:<14} "
+                  f"{f['contracts']}x  {f.get('quote_warning', '')[:50]}")
+        print()
     if exits:
         print(f"  open positions: {len(exits)}")
         for e in exits:
