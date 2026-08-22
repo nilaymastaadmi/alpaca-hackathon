@@ -130,13 +130,16 @@ during this pass, is MITIGATED, RESOLVED or ACCEPTED.
 
 ## What's still open, and whose job each one is
 
-1. **Laptop sleep — DONE 2026-08-22.** Nilay ran
-   `powercfg /change standby-timeout-dc 0` and
-   `powercfg /change hibernate-timeout-dc 0`. Verified after the fact with
-   `powercfg /query SCHEME_CURRENT SUB_SLEEP`: both `STANDBYIDLE` and
-   `HIBERNATEIDLE` DC indices read `0x00000000` (never). `agent/watchdog.py`
-   still handles a hang if one somehow occurs; this closes the more likely
-   failure mode of the laptop sleeping outright.
+1. **Laptop sleep — idle fixed, lid-close fixed but UNVERIFIED.** Idle
+   timeout confirmed off (`powercfg /query`). Caught the SAME DAY, mid test
+   run: closing the lid still slept the machine via a separate setting
+   (event log showed a 59-minute Modern Standby gap, "Reason: Lid", matching
+   a test stall almost to the second). Fixed via direct registry write
+   (`powercfg /query` doesn't surface this setting on this OEM scheme) --
+   see `RISK_REGISTER.md` 4.1 for the exact path. **Nilay: please close the
+   lid for 10-15 seconds and confirm the machine stays awake, on both AC and
+   battery, before trusting this for the live week.** `agent/watchdog.py`
+   remains as defence for any other hang cause.
 2. **D2 threshold recalibration — decide T7 (D3) first, or run in parallel.**
    `prep/recalibrate_threshold.py` exists and reports NOT READY (1 usable
    sample of the corrected quantity, as of 2026-08-22; Aug 19 was pre-fix,

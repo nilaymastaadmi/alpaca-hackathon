@@ -97,6 +97,14 @@ class ArtifactLog:
     def __init__(self, path: Path = LOG_PATH):
         self.path = path
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        # Instance-scoped, not the module-level ROOT_PATH: seal() and verify()
+        # used to write/read that global directly, so any second ArtifactLog
+        # pointed at a different directory (e.g. an isolated comparison run)
+        # would seal its root on top of every OTHER instance's, including the
+        # real deployment's. dashboard/app.py already had to monkeypatch
+        # ROOT_PATH before calling verify() to work around exactly this; this
+        # makes the workaround unnecessary rather than adding a second one.
+        self.root_path = path.parent / "merkle_root.json"
 
     def append(self, record: dict) -> str:
         """Write one artifact and return its leaf hash."""
@@ -156,15 +164,15 @@ class ArtifactLog:
             "algorithm": "sha256, domain-separated leaves (0x00) and nodes (0x01), "
                          "odd node promoted unchanged",
         }
-        ROOT_PATH.parent.mkdir(parents=True, exist_ok=True)
-        ROOT_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        self.root_path.parent.mkdir(parents=True, exist_ok=True)
+        self.root_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         return payload
 
     def verify(self) -> tuple[bool, str]:
         """Recompute and compare against the sealed root."""
-        if not ROOT_PATH.exists():
+        if not self.root_path.exists():
             return False, "no sealed root found; nothing to verify against"
-        sealed = json.loads(ROOT_PATH.read_text())
+        sealed = json.loads(self.root_path.read_text())
         recs = self.read_all()
 
         tampered = []

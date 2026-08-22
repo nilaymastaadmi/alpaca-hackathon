@@ -52,23 +52,34 @@ ET = ZoneInfo("America/New_York")
 STATE_PATH = Path(__file__).resolve().parent.parent / "artifacts" / "state.json"
 
 
-def load_state() -> dict:
-    if STATE_PATH.exists():
-        return json.loads(STATE_PATH.read_text())
+def load_state(path: Path = STATE_PATH) -> dict:
+    if path.exists():
+        return json.loads(path.read_text())
     return {"peak_equity": None, "session_date": None,
             "session_start_equity": None, "consecutive_losses": 0}
 
 
-def save_state(s: dict) -> None:
-    STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    STATE_PATH.write_text(json.dumps(s, indent=2), encoding="utf-8")
+def save_state(s: dict, path: Path = STATE_PATH) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(s, indent=2), encoding="utf-8")
 
 
 def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
-              publish_artifacts: bool = False) -> Decision:
-    log = ArtifactLog()
+              publish_artifacts: bool = False,
+              artifact_path: Path | None = None,
+              ledger_path: Path | None = None,
+              state_path: Path | None = None) -> Decision:
+    """
+    artifact_path/ledger_path/state_path default to the real deployment
+    paths (ArtifactLog, Ledger and STATE_PATH's own defaults) when None, so
+    ordinary calls are byte-identical to before these existed. Passing them
+    is how a comparison run (see --compare) stays fully isolated from the
+    real decision log, ledger and session state, while still reading the
+    same live account through the same MCP connection.
+    """
+    log = ArtifactLog(artifact_path) if artifact_path else ArtifactLog()
     engine = RiskEngine(cfg)
-    state = load_state()
+    state = load_state(state_path) if state_path else load_state()
     now_et = datetime.now(ET)
     today = now_et.date()
 
@@ -97,7 +108,7 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
         # --- manage what is already open BEFORE considering anything new ----
         # Exits come first on purpose. An agent that opens before it closes can
         # sit at capacity holding a position it should already have exited.
-        ledger = Ledger()
+        ledger = Ledger(ledger_path) if ledger_path else Ledger()
         held, recon_issues = reconcile(ledger.load(), broker_symbols)
         ledger.save(held)
         exits = _manage_exits(broker, ledger, held, today, cfg, dry_run, log)
@@ -129,7 +140,7 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
             state["session_date"] = today.isoformat()
             state["session_start_equity"] = equity
         state["peak_equity"] = max(state.get("peak_equity") or equity, equity)
-        save_state(state)
+        save_state(state, state_path) if state_path else save_state(state)
 
         ps = PortfolioState(
             equity=equity,
@@ -528,6 +539,38 @@ def _print(d: Decision, leaf: str, sig: SIG.Signals, cfg: Config,
     print(bar)
 
 
+# D3 candidates (research/DEPLOYMENT_DECISIONS.md D3, RESULT_H3_T7.md): the
+# only knob that differs between them is tenor. T4 is the deployed default,
+# included here so it runs through the same isolated comparison path as the
+# other two rather than being special-cased.
+COMPARE_PRESETS: dict[str, dict] = {
+    "T4": {},
+    "T6": {"dte_min": 21, "dte_max": 45, "dte_target": 33},
+    "T7": {"dte_min": 5, "dte_max": 10, "dte_target": 8},
+}
+
+
+def run_compare_cycle(label: str, verbose: bool = True) -> Decision:
+    """
+    One isolated dry-run cycle for a D3 candidate, reading the same live
+    account and market data as the real agent but writing to
+    artifacts/compare/<label>/ instead of the real deployment paths. Always
+    dry-run: this exists to compare what each tenor WOULD decide, never to
+    place an order. Safe to call once daily per label through kickoff.
+    """
+    import dataclasses
+    if label not in COMPARE_PRESETS:
+        raise ValueError(f"unknown compare label {label!r}, expected one of "
+                         f"{sorted(COMPARE_PRESETS)}")
+    overrides = COMPARE_PRESETS[label]
+    cfg = dataclasses.replace(DEFAULT, **overrides) if overrides else DEFAULT
+    base = Path(__file__).resolve().parent.parent / "artifacts" / "compare" / label
+    return run_cycle(cfg, dry_run=True, verbose=verbose, publish_artifacts=False,
+                     artifact_path=base / "decisions.jsonl",
+                     ledger_path=base / "positions.json",
+                     state_path=base / "state.json")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true",
@@ -538,10 +581,28 @@ def main() -> None:
     ap.add_argument("--publish", action="store_true",
                     help="commit and push artifacts so the deployed dashboard "
                          "is not stale. Opt-in because it pushes to a remote.")
+    ap.add_argument("--compare", choices=sorted(COMPARE_PRESETS), default=None,
+                    help="isolated dry-run cycle for one D3 candidate tenor, "
+                         "logged under artifacts/compare/<label>/ instead of "
+                         "the real deployment paths. Always dry-run regardless "
+                         "of --dry-run; ignores --publish.")
+    ap.add_argument("--compare-all", action="store_true",
+                    help="run --compare for every candidate (T4, T6, T7) in "
+                         "one invocation, one cycle each")
     args = ap.parse_args()
 
     if args.seal:
         print(json.dumps(ArtifactLog().seal(), indent=2))
+        return
+
+    if args.compare_all:
+        for label in COMPARE_PRESETS:
+            print(f"\n{'=' * 78}\ncompare cycle: {label}\n{'=' * 78}")
+            run_compare_cycle(label)
+        return
+
+    if args.compare:
+        run_compare_cycle(args.compare)
         return
 
     run_cycle(DEFAULT, dry_run=args.dry_run, publish_artifacts=args.publish)

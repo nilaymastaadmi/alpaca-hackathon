@@ -110,7 +110,7 @@ for separate reasons.
 
 ## 4. Operational failure modes
 
-### 4.1 THE BIG ONE: the laptop sleeping kills the agent. MITIGATED 2026-08-22
+### 4.1 THE BIG ONE: the laptop sleeping kills the agent. Idle sleep fixed; lid-close sleep found and fixed same day, unverified physically
 US market hours are 19:00 to 01:30 IST. The agent must run unattended overnight,
 every night, Mon 31 Aug to Fri 4 Sep.
 
@@ -131,14 +131,34 @@ timeout). This recovers from a hang; per propdesk's own finding, it does not
 prevent the laptop from sleeping in the first place, only shortens how long a
 sleep event costs.
 
-**Sleep itself disabled 2026-08-22.** Nilay ran
+**Idle-timeout sleep disabled 2026-08-22.** Nilay ran
 `powercfg /change standby-timeout-dc 0` and
 `powercfg /change hibernate-timeout-dc 0` (a system settings change, correctly
 kept out of scope for this agent to run unilaterally). Verified after the
 fact with `powercfg /query SCHEME_CURRENT SUB_SLEEP`: both `STANDBYIDLE` and
-`HIBERNATEIDLE` DC indices read `0x00000000` (never), AC already was. The
-watchdog remains as defence for any other cause of a hung cycle; the most
-likely single point of failure is now closed.
+`HIBERNATEIDLE` DC indices read `0x00000000` (never), AC already was.
+
+**Then caught mid-test, same day: this was NOT the whole problem.** A test
+run that normally takes ~13s took 3545s (59:05). Windows event log
+(`Microsoft-Windows-Kernel-Power`, IDs 506/507) showed Modern Standby entered
+at 18:38:37 and exited at 19:37:33, **Reason: Lid** -- a ~59 minute gap that
+matches the test stall almost to the second. The idle-timeout fix above does
+nothing for lid-close: that is a separate Windows power setting
+(`SUB_BUTTONS` / lid-close-action GUID `5ca83367-...`), and it was still at
+its default (sleep) the whole time.
+
+**Fixed via the registry after `powercfg /query` failed to even show the
+setting** on this machine's OEM "SAMSUNG MODE" scheme (a scheme quirk, not a
+missing setting -- some OEM schemes hide settings from `/query` that are
+still live). Set `ACSettingIndex` and `DCSettingIndex` to `0` (Do Nothing)
+directly under
+`HKLM:\SYSTEM\CurrentControlSet\Control\Power\User\PowerSchemes\<scheme>\4f971e89-eebd-4455-a8de-9e59040e7347\5ca83367-6e45-459f-a27b-476b1d01c936`,
+confirmed written via `Get-ItemProperty` immediately after. **Not physically
+verified**: nothing here can close the lid and check. Nilay should close the
+lid for 10-15 seconds on both AC and battery and confirm the machine is
+still responsive on open, ideally before relying on it for the live week.
+
+The watchdog remains as defence for any other cause of a hung cycle.
 
 ### 4.2 Network interception. ACCEPTED
 `reference_machine_state` records this machine hitting TLS interception on at
