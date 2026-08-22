@@ -247,4 +247,42 @@ The raw VIX print is not the ATM implied vol and must not be used as one.
 
 ---
 
+## Amendment A2, written 2026-08-22, found by an independent adversarial audit
+
+**The pricing model's calibration and validation data fall entirely inside the
+sealed holdout window, and this was not caught until now.**
+
+Section 2 seals the holdout at `2023-01-01` onward. The VIX-to-ATM correction
+in `pricing.py` (`VIX_ATM_RATIO_FIT_YEAR = 2024`) and the validation gate in
+`calibrate_and_validate.py` (`VALIDATE_FROM_YEAR = 2025`) both use data from
+**2024 and 2025-2026** to build and check the model that prices every option in
+every reported result. Confirmed by direct inspection of the constants, not
+inferred: both years sit entirely after `2023-01-01`.
+
+**What this does NOT affect.** H1, H2, H3, the robustness sweep and the D1
+sizing analysis all ran on the DEVELOPMENT window (2016-2022), a different
+calendar period from where the pricing model was fit. The holdout itself has
+never been read (`backtest/HOLDOUT_SEAL.log` does not exist) and none of the
+above required unsealing it. Nothing already reported is invalidated by this.
+
+**What it DOES affect, and why it is being recorded now rather than after the
+fact.** If the sealed holdout is ever spent, per section 10's one-shot rule,
+the pricing model used to compute that result will not be independent of the
+window being evaluated: its own calibration data comes from inside that same
+window. That is a real form of look-ahead specific to the holdout evaluation,
+and pretending otherwise at the moment the holdout is finally opened would be
+exactly the kind of result-driven convenience section 11 exists to forbid.
+
+**Consequence, decided now, before any holdout evaluation exists to be
+tempted by:** if and when the holdout shot is taken, the pricing model's
+dependence on 2024-2026 calibration data must be disclosed alongside that
+result, not treated as resolved by this amendment. This amendment does not fix
+the tension; it exists so nobody can later claim not to have known about it.
+
+No results are withdrawn. No further action is required unless the holdout is
+ever unsealed, at which point this amendment governs how that result may be
+reported.
+
+---
+
 Author: Nilay Toshniwal. Registered 2026-08-19, before `backtest/` existed.

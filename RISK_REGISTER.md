@@ -139,10 +139,24 @@ them as the agent runs, so a judge opening the URL on 3 Sep sees decisions dated
 20 Aug, on a page whose entire pitch is "here is what the agent decided". Needs a
 commit-artifacts step in the agent loop.
 
-### 4.4 Partial fills leaving naked shorts. MITIGATED
-Alpaca's paper engine gives partial fills on roughly 10% of eligible orders. A
-condor that fills three of four legs is a naked short. `positions.reconcile()`
-flags this CRITICAL rather than silently repairing it, and the case is tested.
+### 4.4 Parent-quantity partial fills. MITIGATED, mechanism corrected 2026-08-22
+This entry originally described the risk as "a condor that fills three of four
+legs is a naked short." That is not how MLeg orders behave: confirmed directly
+against Alpaca's own documentation, the four legs of a single multi-leg order
+"fill together or not at all", so a single MLeg order cannot leave individual
+legs mismatched the way this entry claimed.
+
+The real partial-fill risk is at the PARENT QUANTITY, not the legs: a 6-contract
+order can fill for 3, with all four legs of those 3 contracts filled together.
+`broker._await_fill` now handles `partially_filled` explicitly (cancels the
+remainder immediately rather than letting it rest), and `_fill_result` records
+the actual `filled_qty` so the ledger stores what was really bought rather than
+what was requested. Both are tested in `tests/test_broker.py`.
+
+`positions.reconcile()`'s CRITICAL flag remains correct and necessary, just for
+a different cause than originally stated: not a same-order leg mismatch, but
+the ledger and the broker disagreeing after the fact (a manual intervention, a
+missed fill notification, or a position closed outside the agent's own loop).
 
 ### 4.5 Paper engine does not check order size against available liquidity. ACCEPTED
 Documented by Alpaca: order quantity is not checked against NBBO size, so paper

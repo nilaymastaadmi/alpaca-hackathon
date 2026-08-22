@@ -38,9 +38,26 @@ from git history):
 | Naive t (reported only to show why it is wrong) | +18.16 |
 
 The naive t is invalid here: 21-day forward windows sampled daily overlap by 20
-of 21 days, so observations are not independent. The correction shrank t by 3.8x,
-close to the sqrt(21) = 4.58 theory predicts, which is a sign the machinery
-behaves rather than a number to be taken on faith.
+of 21 days, so observations are not independent. The correction shrank t by
+3.8x, which is in the right neighbourhood for a Newey-West estimate at 21 lags,
+though not exact confirmation the machinery is optimally tuned: an independent
+review flagged that 21 lags likely undercorrects the true autocorrelation
+length, and that a longer lag window or a Hansen-Hodrick estimator gives a
+somewhat lower, still decisively significant t (in the 3.9 to 4.3 range rather
+than 4.74). **H1 holds under any of these**, so the finding is not in question,
+only the second-decimal precision of how hard the significance clears its bar.
+
+**One distinction worth being precise about: H1's +3.68 is VIX-referenced, and
+the live agent does not trade on that number.** H1 tests the thesis using
+VIX minus subsequent realised vol, which needs no pricing model and is the
+right test for "does this edge exist at all." Gate 7, the one the live agent
+actually acts on, measures the implied vol of the specific strikes it is about
+to sell, at the tenor it actually trades — a different, narrower quantity, for
+reasons in `research/DEPLOYMENT_DECISIONS.md` D2. The two numbers are not
+interchangeable and can disagree on any given day; on 2026-08-22 H1's style of
+measurement read +0.00 while gate 7's actual live reading was -1.01, which is
+why the agent refused. H1 is the evidence the mechanism is real. Gate 7 is what
+decides whether today is a day to use it.
 
 ## What the research found that did NOT work
 
@@ -59,11 +76,14 @@ repo with the same weight as the successes.
   Measured by inverting Black-Scholes on 3,513 real option bars: market ATM IV is
   **0.853 of VIX**, stable across tenor and year. Corrected on 2024 data only so
   the re-gate on 2025 to 2026 stayed out of sample. It then passed at 10.75%.
-- **The strategy result is fragile and the repo says so.** H3 clears its bar at
-  Sharpe +1.614, but doubling transaction costs *improved* Sharpe, which is
-  impossible and means the optimiser is partly selecting noise. The ungated
-  baseline beats the gated variants on average. Full write-up in
-  `research/RESULT_H3_ROBUSTNESS.md`.
+- **The strategy result is fragile and the repo says so.** H3's best trial
+  (T6, 21-45 DTE) clears its bar at Sharpe +1.614, but doubling transaction
+  costs *improved* Sharpe, which is impossible and means the optimiser is
+  partly selecting noise. **The deployed agent trades 7-14 DTE, which is a
+  different trial (T4), scoring +1.201, not +1.614** — the 4.5 day window
+  ruled out the longer tenor for reasons unrelated to Sharpe (see `STRATEGY.md`
+  §4). The ungated baseline beats the gated variants on average, at either
+  tenor. Full write-up in `research/RESULT_H3_ROBUSTNESS.md`.
 - **"Sell further out of the money" was an artifact of our own cost model.**
   Charging cost as a percentage of credit under-charged exactly the configs that
   looked best. Measured reality: the spread is 0.8% of a 35-delta option's price

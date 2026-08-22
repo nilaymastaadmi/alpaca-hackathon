@@ -38,20 +38,65 @@ and the second is worse than the first:
    Technology Implementation or Presentation. An autonomous trading agent that
    never trades is a failed demo regardless of how good the reasoning is.
 
-Scaling to 5 concurrent at 3% raises expected activity to roughly 10 to 15 trades
-and expected P&L to roughly +$700 to +$1,000.
+**Corrected 2026-08-22.** This entry originally said "roughly 10 to 15 trades
+and expected P&L to roughly +$700 to +$1,000" with no derivation shown. An
+independent adversarial audit flagged that this does not reconcile with actual
+trade-count math and proposed a wider, much more pessimistic range instead
+(-$13,800 to +$1,400, ~13.5% probability of breaching the drawdown limit).
+Rather than adopt either the original guess or the audit's unreproduced number,
+re-derived it directly: ran the exact deployed configuration (5 concurrent, 3%
+risk, threshold 1.0, both gates, 7-14 DTE) across the full 6.90-year
+DEVELOPMENT window, then sliced the resulting trade list into every possible
+overlapping 5-trading-session window and read the actual empirical
+distribution. Script: `backtest/deployed_config_pnl_range.py`, reproducible.
+
+**What that measured:**
+
+| | |
+|---|---|
+| Total trades, deployed config, full dev window | 461 (66.8/year) |
+| Windows with at least one trade entered | 67.8% of 1,737 |
+| Median window P&L | $0 (a plurality of windows see no entry) |
+| Mean window P&L | **+$207** |
+| 5th to 95th percentile | **-$2,592 to +$1,886** |
+| Worst of 1,737 empirical windows | **-$7,568** |
+| Windows breaching -10% ($10,000) or -15% ($15,000) | **0 of 1,737 (0.0%)** |
+
+**This does not match either the original guess or the audit's range, and the
+gap with the audit specifically is worth stating rather than papering over.**
+Two numbers disagree by an order of magnitude: the empirical worst window here
+is -$7,568, the audit's proposed range extends to -$13,800; the empirical
+breach rate here is 0%, the audit's was ~13.5%. Best available explanation:
+this measures what actually happened along one realised 6.9 year price path
+(an empirical backtest), while the audit's figures read as a broader
+structural or stress-scenario estimate not tied to the specific sequence of
+moves that occurred historically — a real distinction, since a finite
+historical sample cannot contain every tail scenario that could occur, only
+the ones that did. Both framings have a legitimate claim: this section's
+numbers are reproducible and grounded in what the strategy actually would have
+done; a structural worst-case bound (below) is not sample-dependent at all.
+**Neither should be read as a forecast for the specific live week.**
+
+**Trade count corrected too.** Not "10 to 15 trades" — closer to 1 trade
+entered per week on average (66.8/year over a 5.5-week trading month), highly
+irregular, with roughly a third of any given week seeing no entry at all.
 
 ### Risk accepted, stated plainly
 
-**Worst case is -15% of equity**, and it is a realistic tail rather than a
-theoretical one, because all positions sit on the same underlying in the same
-direction. Short volatility positions are highly correlated: a single large
-adverse move takes all five to max loss together. There is no diversification
-between them, only staggering.
+**Worst case is -15% of equity, and this part did not change.** It is a hard
+STRUCTURAL bound, not a probability estimate: defined by position sizing
+(5 x 3%) and the long wings, which cap loss per contract regardless of how bad
+the move gets. It does not depend on the historical sample the way the table
+above does. All five positions sit on the same underlying in the same
+direction — short volatility positions are highly correlated, a single large
+adverse move takes all five to max loss together, and there is no
+diversification between them, only staggering.
 
-Probability of a large enough SPY move inside a specific 4.5 day window is roughly
-10 to 15%. A realistic bad week is -5% to -10%; -15% requires everything to break
-at once. The loss is hard-capped by the long wings and cannot exceed it.
+That hard cap has never been empirically approached: 0 of 1,737 historical
+windows came within half of the -10% gate-2 threshold, let alone -15%. That is
+reassuring but not proof of safety going forward — 6.9 years is a short sample
+for tail events by construction (the same lesson propdesk's power analysis
+already paid for), and the live week is one draw, not a resample of history.
 
 This was chosen with those numbers in front of the decision-maker. It is not drift.
 
