@@ -110,7 +110,7 @@ for separate reasons.
 
 ## 4. Operational failure modes
 
-### 4.1 THE BIG ONE: the laptop sleeping kills the agent. Idle sleep fixed; lid-close sleep found and fixed same day, unverified physically
+### 4.1 THE BIG ONE: the laptop sleeping kills the agent. Three separate causes found across three checks; all three now fixed, still not fully proven over a real overnight stretch
 US market hours are 19:00 to 01:30 IST. The agent must run unattended overnight,
 every night, Mon 31 Aug to Fri 4 Sep.
 
@@ -157,6 +157,34 @@ confirmed written via `Get-ItemProperty` immediately after. **Not physically
 verified**: nothing here can close the lid and check. Nilay should close the
 lid for 10-15 seconds on both AC and battery and confirm the machine is
 still responsive on open, ideally before relying on it for the live week.
+
+**A THIRD, bigger cause found 2026-08-25, from the scheduled tasks
+themselves going quiet.** Both `AlpacaHackathon-IVSnapshot` and
+`AlpacaHackathon-D3Compare` missed their 21:30/21:40 slot on 2026-08-23,
+caught up once at 11:20/11:21 the next day, then missed the 21:30/21:40 slot
+AGAIN on 2026-08-24 and stayed asleep until 02:09 on 2026-08-25 (over 5.5
+hours, discovered when this session opened the lid). Windows event log
+(`Kernel-Power` 506/507, event 42) showed the real cause: **display timeout
+on battery power (`VIDEOIDLE` DC) was still 180 seconds**, AC was already 0.
+On this Modern Standby machine, the screen turning off routinely drags the
+whole system into suspend shortly after, regardless of the `STANDBYIDLE`
+("PC goes to sleep after") setting being 0 -- the idle-timeout fix at the
+top of this entry closed one path, the lid fix closed a second, and this
+was a third, independent path through the exact same symptom. Also found,
+separately, and NOT touched: a genuine low-battery forced-hibernate fired
+at 03:16 on 2026-08-24 (`BATACTIONCRIT` = Hibernate at 2% battery). That is
+a real hardware safety feature, correctly left alone -- the fix here is
+**keep the machine on AC power for the live week**, not disable low-battery
+protection.
+
+Fixed: `powercfg /change monitor-timeout-dc 0`, verified via
+`powercfg /query SCHEME_CURRENT SUB_VIDEO VIDEOIDLE`: DC now reads
+`0x00000000` matching AC. **Given this is the second time a "fixed"
+sub-cause turned out to be incomplete, do not treat this as closed on
+paper alone.** The real test is an unattended overnight stretch with no
+missed scheduled-task runs; the daily D3 comparison and IV snapshot tasks
+are themselves now serving as that canary; check `Get-ScheduledTaskInfo`
+for both after the next 1-2 nights before trusting this for the live week.
 
 The watchdog remains as defence for any other cause of a hung cycle.
 

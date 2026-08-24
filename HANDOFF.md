@@ -130,16 +130,20 @@ during this pass, is MITIGATED, RESOLVED or ACCEPTED.
 
 ## What's still open, and whose job each one is
 
-1. **Laptop sleep — idle fixed, lid-close fixed but UNVERIFIED.** Idle
-   timeout confirmed off (`powercfg /query`). Caught the SAME DAY, mid test
-   run: closing the lid still slept the machine via a separate setting
-   (event log showed a 59-minute Modern Standby gap, "Reason: Lid", matching
-   a test stall almost to the second). Fixed via direct registry write
-   (`powercfg /query` doesn't surface this setting on this OEM scheme) --
-   see `RISK_REGISTER.md` 4.1 for the exact path. **Nilay: please close the
-   lid for 10-15 seconds and confirm the machine stays awake, on both AC and
-   battery, before trusting this for the live week.** `agent/watchdog.py`
-   remains as defence for any other hang cause.
+1. **Laptop sleep — THREE separate causes found and fixed across three
+   checks, still not proven over a real unattended night.** (1) idle
+   timeout, (2) lid-close, (3) found 2026-08-25 when both scheduled tasks
+   went quiet for 19+ hours across two nights: display timeout on battery
+   was still 180s, and on this Modern Standby machine screen-off drags the
+   whole system into suspend regardless of the idle-timeout setting. All
+   three now set to "never." A genuine low-battery forced-hibernate was also
+   found and deliberately left alone (real safety feature) -- **keep the
+   machine on AC for the live week**, don't rely on the sleep fixes alone.
+   Full detail and the exact commands: `RISK_REGISTER.md` 4.1. **Given the
+   first two "fixes" each turned out incomplete, treat this as unverified
+   until the D3 comparison and IV snapshot scheduled tasks show 2-3 clean
+   consecutive nights with no missed runs** (`Get-ScheduledTaskInfo` on
+   both). `agent/watchdog.py` remains as defence for any other hang cause.
 2. **D2 threshold recalibration — decide T7 (D3) first, or run in parallel.**
    `prep/recalibrate_threshold.py` exists and reports NOT READY (1 usable
    sample of the corrected quantity, as of 2026-08-22; Aug 19 was pre-fix,
