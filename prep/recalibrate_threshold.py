@@ -62,6 +62,7 @@ import config as CFG  # noqa: E402
 import signals as SIG  # noqa: E402
 
 CORRECT_TENOR_FROM = date(2026, 8, 20)
+COMPARE_T4_PATH = PROJECT_ROOT / "artifacts" / "compare" / "T4" / "decisions.jsonl"
 TARGET_HALF_WIDTH = 0.5   # half of one THRESHOLD_GRID step (1.0 vol point)
 
 # Standard two-sided 90% CI critical values, t_(0.95, df). Small table plus
@@ -140,6 +141,43 @@ def build_contracts_for_day(rows: list[dict]) -> list[SIG.Contract]:
     return out
 
 
+def load_compare_fallback() -> dict[date, list[tuple[float, int]]]:
+    """
+    Per-date (vrp, dte_used) pairs from the T4 D3-comparison log
+    (agent/agent.py --compare-all, hourly 19:15-01:15 IST). T4's preset IS
+    the deployed config, so its short_strike_vrp is the exact quantity gate
+    7 acts on -- already computed by SIG.compute() against live data, not
+    reconstructed here.
+
+    Used only as a FALLBACK when prep/iv_history.jsonl has no usable reading
+    for a date (e.g. 2026-08-20, where the once-daily snapshot logger found
+    no delta-bearing contracts in the traded band that one time it ran --
+    the exact single-shot fragility this exists to backstop). Collapsed to
+    ONE mean-VRP sample per date by the caller: multiple hourly cycles on
+    the same day are not independent draws, and counting each as its own
+    observation would repeat the overlapping-window overcounting mistake H1
+    needed Newey-West correction for.
+    """
+    if not COMPARE_T4_PATH.exists():
+        return {}
+    out: dict[date, list[tuple[float, int]]] = defaultdict(list)
+    for line in COMPARE_T4_PATH.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        rec = json.loads(line)
+        ts = rec.get("timestamp", "")
+        if not ts:
+            continue
+        d = date.fromisoformat(ts[:10])
+        sig = rec.get("signals", {})
+        vrp = sig.get("short_strike_vrp")
+        dte_used = sig.get("short_strike_dte")
+        if isinstance(vrp, (int, float)) and dte_used is not None:
+            out[d].append((vrp, dte_used))
+    return out
+
+
 def main() -> None:
     env = load_env(ENV_PATH)
     cfg = CFG.Config()
@@ -160,47 +198,64 @@ def main() -> None:
         by_date[d].append(row)
 
     log_dates = sorted(by_date)
+    compare_fallback = load_compare_fallback()
+    compare_dates = sorted(d for d in compare_fallback if d >= CORRECT_TENOR_FROM)
+    all_dates = sorted(set(log_dates) | set(compare_dates))
     print(f"correct-tenor log dates found: {len(log_dates)}  {log_dates}")
-    if not log_dates:
+    print(f"D3-comparison T4 fallback dates found: {len(compare_dates)}  {compare_dates}")
+    if not all_dates:
         _write_not_ready(0, None, None, None, "no correct-tenor data logged yet")
         print("\nNOT READY: zero correct-tenor observations. Nothing to report.")
         return
 
-    closes_by_date = fetch_spy_closes(env, log_dates[0], log_dates[-1])
+    closes_by_date = fetch_spy_closes(env, all_dates[0], all_dates[-1])
     trading_days = sorted(closes_by_date)
 
-    samples: list[tuple[date, float, int, bool]] = []  # (date, vrp, dte_used, is_trading_day)
+    # (date, vrp, dte_used, is_trading_day, source)
+    samples: list[tuple[date, float, int, bool, str]] = []
     skipped = []
-    for d in log_dates:
+    for d in all_dates:
         is_trading_day = d in closes_by_date
-        # 22 closes at/before d (or before the prior trading day if d itself
-        # is not one, e.g. a weekend catch-up run reflecting a stale close).
-        prior = [td for td in trading_days if td <= d]
-        if len(prior) < 22:
-            skipped.append((d, "insufficient SPY close history for trailing RV"))
-            continue
-        window_closes = [closes_by_date[td] for td in prior[-22:]]
-        try:
-            rv = SIG.realised_vol(window_closes, window=21)
-        except ValueError as e:
-            skipped.append((d, f"realised_vol failed: {e}"))
-            continue
+        got_sample = False
+        snapshot_failure = None
 
-        contracts = build_contracts_for_day(by_date[d])
-        try:
-            short_iv, dte_used = SIG.short_strike_iv(
-                contracts, d, cfg.dte_target, cfg.short_delta, cfg.dte_min, cfg.dte_max)
-        except ValueError as e:
-            skipped.append((d, f"short_strike_iv failed (gate 7 would refuse too): {e}"))
-            continue
+        if d in by_date:
+            # 22 closes at/before d (or before the prior trading day if d
+            # itself isn't one, e.g. a weekend catch-up run reflecting a
+            # stale close).
+            prior = [td for td in trading_days if td <= d]
+            if len(prior) < 22:
+                snapshot_failure = "insufficient SPY close history for trailing RV"
+            else:
+                window_closes = [closes_by_date[td] for td in prior[-22:]]
+                try:
+                    rv = SIG.realised_vol(window_closes, window=21)
+                    contracts = build_contracts_for_day(by_date[d])
+                    short_iv, dte_used = SIG.short_strike_iv(
+                        contracts, d, cfg.dte_target, cfg.short_delta,
+                        cfg.dte_min, cfg.dte_max)
+                    samples.append((d, short_iv - rv, dte_used, is_trading_day, "snapshot"))
+                    got_sample = True
+                except ValueError as e:
+                    snapshot_failure = f"snapshot logger: {e}"
 
-        vrp = short_iv - rv
-        samples.append((d, vrp, dte_used, is_trading_day))
+        if not got_sample and d in compare_fallback:
+            pairs = compare_fallback[d]
+            mean_vrp = sum(v for v, _ in pairs) / len(pairs)
+            mean_dte = round(sum(dte for _, dte in pairs) / len(pairs))
+            samples.append((d, mean_vrp, mean_dte, is_trading_day,
+                           f"D3-compare fallback, mean of {len(pairs)} cycles"))
+            got_sample = True
+
+        if not got_sample:
+            reason = (f"{snapshot_failure}; no D3-compare fallback either"
+                      if snapshot_failure else "no usable reading from either source")
+            skipped.append((d, reason))
 
     print(f"\nusable samples: {len(samples)}")
-    for d, vrp, dte_used, is_td in samples:
+    for d, vrp, dte_used, is_td, source in samples:
         flag = "" if is_td else "  [captured on non-trading day, likely a stale close]"
-        print(f"  {d}  VRP {vrp:+.3f} pts  (dte {dte_used}){flag}")
+        print(f"  {d}  VRP {vrp:+.3f} pts  (dte {dte_used}, {source}){flag}")
     if skipped:
         print(f"\nskipped {len(skipped)}:")
         for d, reason in skipped:
@@ -215,7 +270,7 @@ def main() -> None:
               "variance at all, and far more than that to trust it.")
         return
 
-    vrps = [v for _, v, _, _ in samples]
+    vrps = [v for _, v, _, _, _ in samples]
     mean = sum(vrps) / n
     var = sum((v - mean) ** 2 for v in vrps) / (n - 1)
     sd = math.sqrt(var)
@@ -274,10 +329,12 @@ def _write_not_ready(n, mean, sd, half_width, blocking_reason,
             "this crosses into READY.",
         ]
     if samples:
-        L += ["", "## Samples so far", "", "| date | VRP (pts) | DTE used | trading day |",
-              "|---|---|---|---|"]
-        for d, vrp, dte_used, is_td in samples:
-            L.append(f"| {d} | {vrp:+.3f} | {dte_used} | {'yes' if is_td else 'no (stale close)'} |")
+        L += ["", "## Samples so far",
+              "", "| date | VRP (pts) | DTE used | trading day | source |",
+              "|---|---|---|---|---|"]
+        for d, vrp, dte_used, is_td, source in samples:
+            L.append(f"| {d} | {vrp:+.3f} | {dte_used} | "
+                     f"{'yes' if is_td else 'no (stale close)'} | {source} |")
     if skipped:
         L += ["", "## Skipped", ""]
         for d, reason in skipped:
@@ -303,21 +360,23 @@ def _write_ready(samples, mean, sd, half_width, skipped) -> None:
         f"- mean corrected VRP: **{mean:+.3f}** vol points (sd {sd:.3f})",
         f"- 90% CI half-width: **{half_width:.3f}** (target <= {TARGET_HALF_WIDTH}, met)",
         "",
-        "Enough data exists to responsibly START a proper D3 recalibration "
+        "Enough data exists to responsibly START a proper recalibration "
         "study. This script stops here on purpose: deriving the actual new "
         "threshold number needs its own reasoning (e.g. what false-accept "
         "rate the original 1.0 implicitly assumed, whether to fit against "
         "realised P&L rather than just the VRP distribution's shape), and "
         "that reasoning should be written down and decided by Nilay, dated, "
-        "in `research/DEPLOYMENT_DECISIONS.md` as D3 -- the same way D1 and "
-        "D2 were, not mechanically applied by this script.",
+        "in `research/DEPLOYMENT_DECISIONS.md` as **D4** (D3 is already the "
+        "T4-vs-T7 tenor proposal) -- the same way D1, D2 and D3 were, not "
+        "mechanically applied by this script.",
         "",
         "## Samples", "",
-        "| date | VRP (pts) | DTE used | trading day |",
-        "|---|---|---|---|",
+        "| date | VRP (pts) | DTE used | trading day | source |",
+        "|---|---|---|---|---|",
     ]
-    for d, vrp, dte_used, is_td in samples:
-        L.append(f"| {d} | {vrp:+.3f} | {dte_used} | {'yes' if is_td else 'no (stale close)'} |")
+    for d, vrp, dte_used, is_td, source in samples:
+        L.append(f"| {d} | {vrp:+.3f} | {dte_used} | "
+                 f"{'yes' if is_td else 'no (stale close)'} | {source} |")
     if skipped:
         L += ["", "## Skipped", ""]
         for d, reason in skipped:
