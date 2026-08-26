@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -56,11 +56,24 @@ def load_label(label: str) -> list[dict]:
 def batch_key(ts: str) -> str | None:
     """Round a timestamp down to the nearest BATCH_MINUTES so the three
     labels' near-simultaneous cycles from one --compare-all run land in the
-    same row, without needing them to share an exact timestamp."""
+    same row, without needing them to share an exact timestamp.
+
+    Normalises to UTC before flooring, not after: agent.py's main decision
+    record uses ET while its hedge/exit/flatten sub-artifacts used UTC until
+    2026-08-26 (a real bug, fixed at the source, not just here). Flooring an
+    un-normalised timestamp compares clock digits, not real instants, so two
+    records written seconds apart could land in different rows purely
+    because one carried a UTC offset and the other ET's -04:00 -- exactly
+    what produced the phantom 16:45-19:45 rows this fix removes. Historical
+    entries written before the source fix still carry the old, inconsistent
+    offsets, so this stays defensive rather than assuming every record from
+    here on is ET."""
     try:
         dt = datetime.fromisoformat(ts)
     except ValueError:
         return None
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc)
     floored_minute = (dt.minute // BATCH_MINUTES) * BATCH_MINUTES
     dt = dt.replace(minute=floored_minute, second=0, microsecond=0)
     return dt.isoformat()
@@ -114,16 +127,27 @@ def main() -> None:
     for bk in ordered:
         row = batches[bk]
         cells = [cell(row.get(label)) for label in LABELS]
-        ts_display = bk[:16].replace("T", " ")
+        # Display each batch's OWN recorded timestamp (T4 preferred, since
+        # it always has a full decision cycle), not the UTC-normalised
+        # bucket key -- that key exists only to group same-instant records
+        # correctly, not to be read. Records written before the 2026-08-26
+        # timestamp fix may still show a UTC-flavoured time here; that is a
+        # known historical artifact, not a new bug.
+        rep = row.get("T4") or row.get("T6") or row.get("T7")
+        ts_display = (rep.get("timestamp", bk) if rep else bk)[:16].replace("T", " ")
         L.append(f"| {ts_display} | {cells[0]} | {cells[1]} | {cells[2]} |")
         print(f"  {ts_display}: " + "  ".join(f"{lb}={cell(row.get(lb))}" for lb in LABELS))
 
     # Daily summary, since an hourly schedule makes the per-cycle table long
     # fast: for each ET calendar date, how often did gate 7 pass and how
-    # often would each candidate actually have entered.
+    # often would each candidate actually have entered. Built from the
+    # deduplicated `batches`, not raw per_label records -- each real cycle
+    # writes TWO lines (a hedge sub-entry, then the main decision), so
+    # counting raw records here double-counted "cycles" even though the
+    # per-cycle table above was already correct.
     by_date: dict[str, dict[str, list[dict]]] = defaultdict(lambda: defaultdict(list))
-    for label in LABELS:
-        for rec in per_label[label]:
+    for row in batches.values():
+        for label, rec in row.items():
             day = rec.get("timestamp", "")[:10]
             if day:
                 by_date[day][label].append(rec)
@@ -145,11 +169,14 @@ def main() -> None:
             vrp_range = f"{min(vrps):+.2f} to {max(vrps):+.2f}" if vrps else "n/a"
             L.append(f"| {day} | {label} | {len(recs)} | {g7_pass} | {n_enter} | {vrp_range} |")
 
-    n_enter_total = {label: sum(1 for r in per_label[label] if r.get("action") == "enter")
+    cycles_by_label = {label: sum(1 for row in batches.values() if label in row)
+                       for label in LABELS}
+    n_enter_total = {label: sum(1 for row in batches.values()
+                                if row.get(label, {}).get("action") == "enter")
                      for label in LABELS}
     L += ["", "## Overall tally", "", "| label | cycles logged | would-enter cycles |", "|---|---|---|"]
     for label in LABELS:
-        L.append(f"| {label} | {len(per_label[label])} | {n_enter_total[label]} |")
+        L.append(f"| {label} | {cycles_by_label[label]} | {n_enter_total[label]} |")
 
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text("\n".join(L) + "\n", encoding="utf-8")

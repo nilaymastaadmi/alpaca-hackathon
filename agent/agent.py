@@ -30,7 +30,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -341,7 +341,7 @@ def _manage_hedge(broker, cfg, equity, today, market_open, broker_positions,
         quotes = broker.vix_chain(cfg.hedge_dte_min, cfg.hedge_dte_max)
     except Exception as exc:
         rec = {"action": "error", "reason": f"could not fetch VIX chain: {str(exc)[:160]}"}
-        log.append({"timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        log.append({"timestamp": datetime.now(ET).isoformat(timespec="seconds"),
                     "action": "hedge:error", "hedge": rec})
         return rec
 
@@ -353,7 +353,7 @@ def _manage_hedge(broker, cfg, equity, today, market_open, broker_positions,
                "reason": "no VIX call cleared the spread, dispersion or budget "
                         "checks; not hedging off an untrustworthy read",
                "n_quotes": len(quotes)}
-        log.append({"timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        log.append({"timestamp": datetime.now(ET).isoformat(timespec="seconds"),
                     "action": "hedge:no_candidate", "hedge": rec})
         return rec
 
@@ -362,7 +362,7 @@ def _manage_hedge(broker, cfg, equity, today, market_open, broker_positions,
                       "bought" if out.get("filled") else "resting_unfilled"),
            "plan": plan.to_dict(), "execution": {k: v for k, v in out.items()
                                                  if k != "order"}}
-    log.append({"timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    log.append({"timestamp": datetime.now(ET).isoformat(timespec="seconds"),
                "action": f"hedge:{rec['action']}", "hedge": rec})
     return rec
 
@@ -413,7 +413,7 @@ def _flatten_all(broker, ledger, held, today, dry_run, log) -> list[dict]:
             if out.get("filled"):
                 ledger.remove(p.id)
 
-        log.append({"timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        log.append({"timestamp": datetime.now(ET).isoformat(timespec="seconds"),
                     "action": f"flatten:{rec['action']}", "flatten": rec})
         results.append(rec)
     return results
@@ -472,7 +472,7 @@ def _manage_exits(broker, ledger, held, today, cfg, dry_run, log) -> list[dict]:
                 p.peak_profit_frac = sig.profit_frac
                 ledger.update(p)
 
-        log.append({"timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        log.append({"timestamp": datetime.now(ET).isoformat(timespec="seconds"),
                     "action": f"exit_check:{rec['action']}", "exit": rec})
         results.append(rec)
     return results
