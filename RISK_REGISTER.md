@@ -110,7 +110,7 @@ for separate reasons.
 
 ## 4. Operational failure modes
 
-### 4.1 THE BIG ONE: the laptop sleeping kills the agent. Three separate causes found across three checks; all three now fixed, still not fully proven over a real overnight stretch
+### 4.1 THE BIG ONE: the laptop sleeping kills the agent. Four separate causes found across four checks; all four now fixed, first clean overnight window achieved 2026-08-26
 US market hours are 19:00 to 01:30 IST. The agent must run unattended overnight,
 every night, Mon 31 Aug to Fri 4 Sep.
 
@@ -183,8 +183,37 @@ Fixed: `powercfg /change monitor-timeout-dc 0`, verified via
 sub-cause turned out to be incomplete, do not treat this as closed on
 paper alone.** The real test is an unattended overnight stretch with no
 missed scheduled-task runs; the daily D3 comparison and IV snapshot tasks
-are themselves now serving as that canary; check `Get-ScheduledTaskInfo`
-for both after the next 1-2 nights before trusting this for the live week.
+are themselves now serving as that canary.
+
+**First clean overnight window: 2026-08-26, 21:23 to 12:08 next day (~15
+hours), zero sleep/wake events, every scheduled run fired on time.** Real
+evidence, not just settings verified on paper.
+
+**A FOURTH, completely different cause found 2026-08-27, invisible to
+everything above.** `AlpacaHackathon-D3Compare` failed its 02:40 run with
+Win32 error 4320, "the operator or administrator has refused the request"
+-- no sleep or wake event logged anywhere near that time, because this
+isn't a sleep problem at all. Both scheduled tasks were created with
+Windows Task Scheduler's own default: `DisallowStartIfOnBatteries = True`,
+`StopIfGoingOnBatteries = True`. On battery power, at the scheduled
+moment, the task refuses to even start -- silently, with no sleep event to
+find in a log, which is exactly why the three fixes above wouldn't have
+caught it. This is a materially different risk from "the machine went to
+sleep": the machine can be fully awake and the scheduled run can still
+never happen.
+
+Fixed: `Set-ScheduledTask` on both tasks with
+`AllowStartIfOnBatteries`/`DontStopIfGoingOnBatteries`/`StartWhenAvailable`.
+Verified by manually triggering `AlpacaHackathon-D3Compare` immediately
+after: `LastTaskResult` went from the error to `0`, and a genuine new cycle
+landed in `research/D3_COMPARISON_LOG.md`.
+
+**This generalises beyond these two tools.** Any Windows Scheduled Task
+created with default settings on this machine will refuse to run on
+battery. If the live agent itself is ever scheduled the same way for the
+hackathon week (rather than run interactively via `agent/watchdog.py`),
+its settings need the same fix BEFORE kickoff, checked explicitly, not
+assumed from these two tasks having been fixed.
 
 The watchdog remains as defence for any other cause of a hung cycle.
 

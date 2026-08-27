@@ -130,20 +130,22 @@ during this pass, is MITIGATED, RESOLVED or ACCEPTED.
 
 ## What's still open, and whose job each one is
 
-1. **Laptop sleep — THREE separate causes found and fixed across three
-   checks, still not proven over a real unattended night.** (1) idle
-   timeout, (2) lid-close, (3) found 2026-08-25 when both scheduled tasks
-   went quiet for 19+ hours across two nights: display timeout on battery
-   was still 180s, and on this Modern Standby machine screen-off drags the
-   whole system into suspend regardless of the idle-timeout setting. All
-   three now set to "never." A genuine low-battery forced-hibernate was also
-   found and deliberately left alone (real safety feature) -- **keep the
-   machine on AC for the live week**, don't rely on the sleep fixes alone.
-   Full detail and the exact commands: `RISK_REGISTER.md` 4.1. **Given the
-   first two "fixes" each turned out incomplete, treat this as unverified
-   until the D3 comparison and IV snapshot scheduled tasks show 2-3 clean
-   consecutive nights with no missed runs** (`Get-ScheduledTaskInfo` on
-   both). `agent/watchdog.py` remains as defence for any other hang cause.
+1. **Laptop sleep/scheduling — FOUR separate causes found and fixed.** (1)
+   idle timeout, (2) lid-close, (3) display timeout on battery dragging
+   Modern Standby into suspend regardless of the idle setting -- first
+   clean 15-hour overnight window achieved 2026-08-26 with zero sleep
+   events. (4) found 2026-08-27, a DIFFERENT class of bug: both scheduled
+   tasks had Task Scheduler's default `DisallowStartIfOnBatteries`, so on
+   battery the run is silently refused with no sleep event at all -- fixed
+   via `Set-ScheduledTask`, verified by a successful manual re-trigger.
+   **If the live agent is ever run via a Scheduled Task rather than
+   interactively, check its settings for this explicitly** -- do not
+   assume it inherits the fix just because these two tasks got it. A
+   genuine low-battery forced-hibernate was also found and deliberately
+   left alone (real safety feature) -- **keep the machine on AC for the
+   live week** regardless of all four fixes. Full detail:
+   `RISK_REGISTER.md` 4.1. `agent/watchdog.py` remains as defence for any
+   other hang cause.
 2. **D2 threshold recalibration — decide T7 (D3) first, or run in parallel.**
    `prep/recalibrate_threshold.py` exists and reports NOT READY (1 usable
    sample of the corrected quantity, as of 2026-08-22; Aug 19 was pre-fix,
