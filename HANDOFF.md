@@ -154,16 +154,42 @@ during this pass, is MITIGATED, RESOLVED or ACCEPTED.
    was missed to the sleep bug now fixed above). Re-run any time; it is
    nightly-safe and self-reports how many more nights are needed from its
    own current variance estimate.
+2b. **THE BIG ONE, new 2026-08-27: the agent may not trade at all during
+   the judged week.** Every cycle ever logged has refused (13 production
+   artifacts + 9 comparison batches, zero entries). At the deployed
+   threshold of 1.0 against a measured mean VRP of +0.114, the odds of
+   even one entry across the window are roughly **28-33%, and that is
+   optimistic** because volatility regimes persist. Full numbers,
+   caveats and the three options: `research/LIVE_WEEK_TRADE_ODDS.md`.
+   **This is a D4 deployment decision for Nilay, and if the threshold
+   changes it must be reasoned and dated BEFORE the number is picked**,
+   never back-filled after a quiet Monday.
+
 3. **D3 decision: adopt T7 (5-10 DTE) as the deployed tenor, or keep T4.**
    New as of 2026-08-22. See `research/DEPLOYMENT_DECISIONS.md` D3. This is
    the one item on this list that is a genuine judgement call for Nilay, not
    a blocked-on-data or blocked-on-time item — the backtest evidence exists
    now, the question is whether one clean development-window pass is enough
    to change what trades live money in the judged week.
-4. **Fresh submission-only paper account.** Deliberately NOT created yet —
-   confirmed with Nilay 2026-08-22 there's no reason to rush it. Do it a day
-   or two before kickoff (not day-of, in case options-level-3 approval has
-   any delay), then run one live fill test on it before 31 Aug.
+4. **Fresh submission-only paper account. DUE NOW** — Nilay committed to
+   creating it the night of 2026-08-27. Once it exists: swap the keys in
+   `.env`, confirm options level 3, and run ONE live fill test before
+   Monday 31 Aug. **`AlpacaHackathon-LiveAgent` (below) fires Monday
+   18:50 IST and will trade whatever account `.env` points at** — if the
+   keys are still the practice account (`PA308NOY3X36`, permanently
+   disqualified) that whole session is wasted and pollutes the artifact
+   trail with entries from the wrong account.
+
+4b. **`AlpacaHackathon-LiveAgent` scheduled task, created 2026-08-27.**
+   Fires daily 18:50 IST starting **Mon 31 Aug** (10 min before the 19:00
+   open), runs `watchdog.py --publish --max-cycles 85` (~7h at the 5min
+   interval, self-terminating after the 01:30 IST close so each night's
+   run ends clean). Battery restrictions already removed at creation, the
+   bug that silently killed two other tasks. Smoke-tested end to end on
+   2026-08-27 (1 dry-run cycle, completed, auto-published, commit
+   `621665e`). **Friday 28 Aug's post-kickoff session is deliberately NOT
+   covered** — run it by hand if wanted, since you are at the keyboard
+   for kickoff anyway and the fresh account may not be swapped in yet.
 5. **Presentation: video, slides, cover image.** All mandatory, all still at
    zero. **Nilay's own task** ("we'll make the presentation dw", 2026-08-22),
    not something to push on unprompted.
