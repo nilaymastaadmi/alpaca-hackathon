@@ -99,7 +99,8 @@ def kill_verified(proc: subprocess.Popen, grace: float = 10.0) -> str:
         return "UNKILLABLE"          # surfaced loudly; do not pretend otherwise
 
 
-def run_cycle(dry_run: bool, publish: bool, timeout: int) -> dict:
+def run_cycle(dry_run: bool, publish: bool, timeout: int,
+             env_file: str | None = None) -> dict:
     """One agent cycle in its own process, with an OS-enforced timeout."""
     cmd = [
         "uv", "run", "--with", "requests", "--with", "tzdata",
@@ -109,6 +110,8 @@ def run_cycle(dry_run: bool, publish: bool, timeout: int) -> dict:
         cmd.append("--dry-run")
     if publish:
         cmd.append("--publish")
+    if env_file:
+        cmd += ["--env-file", env_file]
 
     started = time.time()
     creation = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
@@ -153,6 +156,10 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--publish", action="store_true",
                     help="commit and push artifacts each cycle")
+    ap.add_argument("--env-file", type=str, default=None,
+                    help="passed through to each agent.py cycle. Defaults to "
+                         ".env (practice account); the live submission "
+                         "account's credentials belong in .env.live.")
     ap.add_argument("--max-cycles", type=int, default=0,
                     help="stop after N cycles; 0 means run until stopped")
     args = ap.parse_args()
@@ -187,7 +194,7 @@ def main() -> None:
     while not stop:
         cycle_started = time.time()
         stats["cycles"] += 1
-        res = run_cycle(args.dry_run, args.publish, args.timeout)
+        res = run_cycle(args.dry_run, args.publish, args.timeout, args.env_file)
 
         if res["outcome"] == "completed":
             stats["completed"] += 1

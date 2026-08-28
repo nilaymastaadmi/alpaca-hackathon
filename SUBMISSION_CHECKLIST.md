@@ -12,20 +12,18 @@ before closing the laptop.
 
 ## Blocking, will invalidate or damage the submission if missed
 
-- [ ] **Flip the GitHub repo to PUBLIC.** The rules require a public repository.
-      Currently PRIVATE by decision (see below). One click:
-      `gh repo edit nilaymastaadmi/alpaca-hackathon --visibility public`
-      Changing visibility does NOT break the Streamlit deployment or its URL.
-- [ ] **Create a BRAND NEW Alpaca paper account** for the submission, around
-      26-27 Aug. "Projects run on an existing or reused account will not be
-      eligible for judging." The practice account is `PA308NOY3X36` and is
-      **disqualified**. Keys go in a separate env file, never mixed.
-- [ ] **Submit the FRESH account ID**, not the practice one. Judges pull P&L
-      directly from whatever ID is submitted.
-- [ ] **Disambiguate the practice account inside the repo before going public.**
-      `HANDOFF.md` names `PA308NOY3X36`. A judge skimming could mistake it for
-      the submission account and conclude a reused account was used. Label it
-      unmistakably or remove it.
+- [x] **Flip the GitHub repo to PUBLIC.** Done well before this checklist item
+      was revisited — repo has been public since early in the build week, by
+      deliberate decision ("keep the repo public"), confirmed reachable.
+- [x] **Create a BRAND NEW Alpaca paper account** for the submission — done
+      2026-08-28. Verified live, not assumed: `PA37R35A5ZGW`, ACTIVE, zero
+      orders, zero positions, options level 3 approved, $100,000 equity.
+      Keys in `.env.live`, gitignored, never mixed into `.env`.
+- [ ] **Submit the FRESH account ID: `PA37R35A5ZGW`**, not the practice one.
+      Judges pull P&L directly from whatever ID is submitted.
+- [x] **Disambiguate the practice account inside the repo before going public.**
+      `HANDOFF.md` already labels it unmistakably: "Practice account (dev-only,
+      DO NOT submit): `PA308NOY3X36`".
 - [ ] **Commit artifacts during the live week** so the deployed dashboard is not
       stale. It renders whatever is committed; without this a judge opening the
       URL on 3 Sep sees decisions from 20 Aug.

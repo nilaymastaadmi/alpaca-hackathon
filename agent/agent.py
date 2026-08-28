@@ -68,7 +68,8 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
               publish_artifacts: bool = False,
               artifact_path: Path | None = None,
               ledger_path: Path | None = None,
-              state_path: Path | None = None) -> Decision:
+              state_path: Path | None = None,
+              env_file: Path | None = None) -> Decision:
     """
     artifact_path/ledger_path/state_path default to the real deployment
     paths (ArtifactLog, Ledger and STATE_PATH's own defaults) when None, so
@@ -76,6 +77,12 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
     is how a comparison run (see --compare) stays fully isolated from the
     real decision log, ledger and session state, while still reading the
     same live account through the same MCP connection.
+
+    env_file selects which Alpaca account MCPClient authenticates as.
+    Defaults to MCPClient's own default (.env, the practice account) when
+    None. The live submission account lives in .env.live, gitignored and
+    never mixed into .env, so ordinary dry-runs and the comparison harness
+    keep using the practice account unless --env-file is passed explicitly.
     """
     log = ArtifactLog(artifact_path) if artifact_path else ArtifactLog()
     engine = RiskEngine(cfg)
@@ -83,7 +90,8 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
     now_et = datetime.now(ET)
     today = now_et.date()
 
-    with MCPClient() as mcp:
+    mcp_kwargs = {"env_file": env_file} if env_file else {}
+    with MCPClient(**mcp_kwargs) as mcp:
         broker = Broker(mcp, cfg)
 
         # --- read the world ------------------------------------------------
@@ -280,6 +288,7 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
             size_contracts=contracts or None,
             structure=plan.to_dict() if plan else None,
             note=note,
+            account_number=acct.get("account_number"),
         )
 
         rec = decision.to_dict()
@@ -589,6 +598,13 @@ def main() -> None:
     ap.add_argument("--compare-all", action="store_true",
                     help="run --compare for every candidate (T4, T6, T7) in "
                          "one invocation, one cycle each")
+    ap.add_argument("--env-file", type=str, default=None,
+                    help="Alpaca credentials file, passed straight to the MCP "
+                         "server. Defaults to .env (the practice account). "
+                         "The live submission account's credentials belong in "
+                         ".env.live -- pass --env-file .env.live to use them. "
+                         "Ignored by --compare/--compare-all, which always use "
+                         "the default.")
     args = ap.parse_args()
 
     if args.seal:
@@ -605,7 +621,9 @@ def main() -> None:
         run_compare_cycle(args.compare)
         return
 
-    run_cycle(DEFAULT, dry_run=args.dry_run, publish_artifacts=args.publish)
+    env_file = Path(args.env_file) if args.env_file else None
+    run_cycle(DEFAULT, dry_run=args.dry_run, publish_artifacts=args.publish,
+             env_file=env_file)
 
 
 if __name__ == "__main__":

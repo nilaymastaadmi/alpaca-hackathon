@@ -171,25 +171,43 @@ during this pass, is MITIGATED, RESOLVED or ACCEPTED.
    a blocked-on-data or blocked-on-time item — the backtest evidence exists
    now, the question is whether one clean development-window pass is enough
    to change what trades live money in the judged week.
-4. **Fresh submission-only paper account. DUE NOW** — Nilay committed to
-   creating it the night of 2026-08-27. Once it exists: swap the keys in
-   `.env`, confirm options level 3, and run ONE live fill test before
-   Monday 31 Aug. **`AlpacaHackathon-LiveAgent` (below) fires Monday
-   18:50 IST and will trade whatever account `.env` points at** — if the
-   keys are still the practice account (`PA308NOY3X36`, permanently
-   disqualified) that whole session is wasted and pollutes the artifact
-   trail with entries from the wrong account.
+4. **Fresh submission-only paper account — CREATED 2026-08-28.** Account
+   number **`PA37R35A5ZGW`** (this is the ID to submit — not the practice
+   one). Verified live via the real MCP path, not assumed from the
+   dashboard: status ACTIVE, not blocked, options_trading_level 3 already
+   approved, zero orders, zero positions, $100,000 starting equity,
+   created_at 2026-08-28T06:31:05Z. Genuinely fresh and distinct from
+   `PA308NOY3X36`.
 
-4b. **`AlpacaHackathon-LiveAgent` scheduled task, created 2026-08-27.**
-   Fires daily 18:50 IST starting **Mon 31 Aug** (10 min before the 19:00
-   open), runs `watchdog.py --publish --max-cycles 85` (~7h at the 5min
-   interval, self-terminating after the 01:30 IST close so each night's
-   run ends clean). Battery restrictions already removed at creation, the
-   bug that silently killed two other tasks. Smoke-tested end to end on
-   2026-08-27 (1 dry-run cycle, completed, auto-published, commit
-   `621665e`). **Friday 28 Aug's post-kickoff session is deliberately NOT
-   covered** — run it by hand if wanted, since you are at the keyboard
-   for kickoff anyway and the fresh account may not be swapped in yet.
+   Credentials live in **`.env.live`**, gitignored (`.env.*` pattern),
+   deliberately kept separate from `.env` (the practice account) so
+   nothing accidentally mixes the two. `agent.py` and `watchdog.py` both
+   take `--env-file` now (defaults to `.env` if omitted) — the comparison
+   harness and any ad-hoc dry-run keep using the practice account unless
+   `--env-file .env.live` is passed explicitly.
+
+   Every `Decision` artifact now also records `account_number` (added
+   2026-08-28), since the artifact log itself now spans a switch between
+   two accounts and nothing else in the record said which one produced a
+   given entry.
+
+   **Still to do, needs the market open: run ONE live fill test on the
+   fresh account before Monday 31 Aug**, the same check already done on
+   the practice account. Not run yet — market was closed both times this
+   was touched today.
+
+4b. **`AlpacaHackathon-LiveAgent` scheduled task, created 2026-08-27,
+   pointed at the fresh account 2026-08-28.** Fires daily 18:50 IST
+   starting **Mon 31 Aug** (10 min before the 19:00 open), runs
+   `watchdog.py --publish --max-cycles 85 --env-file .env.live` (~7h at
+   the 5min interval, self-terminating after the 01:30 IST close so each
+   night's run ends clean). Battery restrictions already removed at
+   creation. Smoke-tested end to end on 2026-08-27 against the practice
+   account (1 dry-run cycle, completed, auto-published, commit
+   `621665e`) and again on 2026-08-28 against the fresh account directly
+   via `agent.py --dry-run --env-file .env.live` (completed, real
+   `account_number` in the artifact). **Friday 28 Aug's post-kickoff
+   session is deliberately NOT covered** — run it by hand if wanted.
 5. **Presentation: video, slides, cover image.** All mandatory, all still at
    zero. **Nilay's own task** ("we'll make the presentation dw", 2026-08-22),
    not something to push on unprompted.

@@ -73,6 +73,13 @@ class Decision:
     size_contracts: int | None = None
     structure: dict[str, Any] | None = None
     note: str = ""
+    # Which Alpaca account this decision was evaluated against. Not load-bearing
+    # for any gate, but the artifact log spans a switch from the disqualified
+    # practice account to the fresh submission account (2026-08-28), and
+    # nothing else in the record says which one produced a given entry. A judge
+    # -- or a future session -- checking the trail against the submitted
+    # account ID should not have to guess.
+    account_number: str | None = None
 
     # Gates 0 and 1 describe the ENVIRONMENT, not a judgement about the trade.
     # "The market is closed" is not a decision the agent made, and attributing
@@ -120,6 +127,7 @@ class Decision:
             "size_contracts": self.size_contracts,
             "structure": self.structure,
             "note": self.note,
+            "account_number": self.account_number,
         }
 
 

@@ -70,10 +70,19 @@ not the rulebook, mentioned core AI functionality being built in-window.
 Cheap to confirm in the Discord, expensive to assume. Git history is honest about
 what was built when, which is the right posture either way.
 
-### 2.3 Reused account disqualification. OPEN until the fresh account exists
+### 2.3 Reused account disqualification. MITIGATED 2026-08-28
 "Projects run on an existing or reused account will not be eligible for judging."
 The practice account `PA308NOY3X36` has trade history on it from the fill test and
-is permanently disqualified. Tracked in `SUBMISSION_CHECKLIST.md`.
+is permanently disqualified — never submit it.
+
+Fresh account `PA37R35A5ZGW` created 2026-08-28, credentials in gitignored
+`.env.live`, never mixed into `.env`. Genuinely fresh, checked live rather than
+assumed: zero orders, zero positions, ACTIVE, not blocked, options level 3
+already approved, $100,000 starting equity. `AlpacaHackathon-LiveAgent` points
+at it via `--env-file .env.live`; every other tool (comparison harness, ad-hoc
+dry-runs) keeps defaulting to the practice account so nothing accidentally
+trades or queries on the wrong one. Still open: the one live fill test on this
+account, blocked on market hours, not yet run.
 
 ### 2.4 Commit attribution. RESOLVED
 All 16 commits authored and committed as Nilay Toshniwal. No Claude or Anthropic
