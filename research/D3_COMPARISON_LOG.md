@@ -1,6 +1,6 @@
 # D3 comparison log: T4 vs T6 vs T7
 
-Generated 2026-08-28T19:15:46 by `agent/compare_report.py` from `agent/agent.py --compare-all`, scheduled hourly 19:15-01:15 IST (matching `agent/config.py`'s own trade_window). Purely observational -- every row below is a dry-run decision, no order was ever sent. See `research/DEPLOYMENT_DECISIONS.md` D3 for the backtest case; this file is the live-market evidence gathered in parallel while that decision stays open until kickoff.
+Generated 2026-08-29T01:15:35 by `agent/compare_report.py` from `agent/agent.py --compare-all`, scheduled hourly 19:15-01:15 IST (matching `agent/config.py`'s own trade_window). Purely observational -- every row below is a dry-run decision, no order was ever sent. See `research/DEPLOYMENT_DECISIONS.md` D3 for the backtest case; this file is the live-market evidence gathered in parallel while that decision stays open until kickoff.
 
 | ET timestamp | T4 (7-14 DTE, deployed) | T6 (21-45 DTE) | T7 (5-10 DTE, proposed) |
 |---|---|---|---|
@@ -19,6 +19,12 @@ Generated 2026-08-28T19:15:46 by `agent/compare_report.py` from `agent/agent.py 
 | 2026-08-27 14:45 | refuse [g7 fail] (VRP +0.20) | **ENTER** [g7 pass] (VRP +1.84) | refuse [g7 fail] (VRP +0.15) |
 | 2026-08-27 15:45 | refuse [g7 fail] (VRP -0.13) | refuse [g7 pass] (VRP +1.58) | refuse [g7 fail] (VRP -0.28) |
 | 2026-08-28 09:45 | refuse [g7 fail] (VRP -0.17) | **ENTER** [g7 pass] (VRP +2.82) | **ENTER** [g7 pass] (VRP +1.09) |
+| 2026-08-28 10:45 | refuse [g7 fail] (VRP -0.62) | **ENTER** [g7 pass] (VRP +2.42) | refuse [g7 fail] (VRP +0.23) |
+| 2026-08-28 11:46 | refuse [g7 fail] (VRP -0.72) | **ENTER** [g7 pass] (VRP +2.52) | refuse [g7 fail] (VRP +0.13) |
+| 2026-08-28 12:46 | refuse [g7 fail] (VRP -0.36) | **ENTER** [g7 pass] (VRP +2.67) | refuse [g7 fail] (VRP +0.52) |
+| 2026-08-28 13:45 | refuse [g7 fail] (VRP -0.44) | **ENTER** [g7 pass] (VRP +2.66) | refuse [g7 fail] (VRP +0.56) |
+| 2026-08-28 14:45 | refuse [g7 fail] (VRP -0.76) | **ENTER** [g7 pass] (VRP +2.46) | refuse [g7 fail] (VRP +0.12) |
+| 2026-08-28 15:45 | refuse [g7 fail] (VRP -0.83) | refuse [g7 pass] (VRP +2.43) | refuse [g7 fail] (VRP -0.06) |
 
 ## Daily summary
 
@@ -36,14 +42,14 @@ Generated 2026-08-28T19:15:46 by `agent/compare_report.py` from `agent/agent.py 
 | 2026-08-27 | T4 | 6 | 0 | 0 | -0.13 to +0.57 |
 | 2026-08-27 | T6 | 6 | 6 | 4 | +1.01 to +1.84 |
 | 2026-08-27 | T7 | 6 | 0 | 0 | -0.28 to +0.57 |
-| 2026-08-28 | T4 | 1 | 0 | 0 | -0.17 to -0.17 |
-| 2026-08-28 | T6 | 1 | 1 | 1 | +2.82 to +2.82 |
-| 2026-08-28 | T7 | 1 | 1 | 1 | +1.09 to +1.09 |
+| 2026-08-28 | T4 | 7 | 0 | 0 | -0.83 to -0.17 |
+| 2026-08-28 | T6 | 7 | 7 | 6 | +2.42 to +2.82 |
+| 2026-08-28 | T7 | 7 | 1 | 1 | -0.06 to +1.09 |
 
 ## Overall tally
 
 | label | cycles logged | would-enter cycles |
 |---|---|---|
-| T4 | 15 | 0 |
-| T6 | 15 | 5 |
-| T7 | 15 | 1 |
+| T4 | 21 | 0 |
+| T6 | 21 | 10 |
+| T7 | 21 | 1 |
