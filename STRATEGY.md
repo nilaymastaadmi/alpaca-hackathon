@@ -83,8 +83,10 @@ What it won on instead:
 ## 3. Judging maths
 
 Five criteria **[measured]** from the rules page: P&L Performance, Technology Implementation,
-Creativity & Originality, Presentation & Execution, Social Engagement (optional bonus, up to 5
-posts). No published weights.
+Creativity & Originality, Presentation & Execution, Social Engagement (up to 5 posts). No
+published weights. **[sourced, official kickoff email, 2026-08-29]** Social Engagement also
+carries its own separate prize podium (2 teams x $500 plus a month of Algo Trader Plus each),
+on top of whatever weight it has in the main score. Total pool $6,000, not $5,000.
 
 P&L is **one of five**, and over 4.5 days it is mostly noise for everyone. The other four are
 fully deterministic and fully under our control. **[assumed]** Effort should split roughly

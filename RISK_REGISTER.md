@@ -269,7 +269,11 @@ in the submission rather than banking the flattery.
 ## 5. Watch list, no action yet
 
 - Technology partners were "to be announced" and may add prize surfaces.
-- Whether Social Engagement is a separate podium, as it was in the precursor
-  Kraken event, is ambiguous on the page. Ask at kickoff.
 - The measured 1.5% round-trip fill is n=1 in calm conditions. Re-run the ladder
   across different sessions before treating it as a constant.
+
+**Resolved 2026-08-29 from the official kickoff email, removed from this
+list:** Social Engagement IS a separate podium, 2 teams x $500 plus a month
+of Algo Trader Plus each, distinct from the 1st/2nd/3rd prizes. Total pool
+is $6,000, not the $5,000 assumed everywhere in this repo until now. See
+`HANDOFF.md` and `SUBMISSION_CHECKLIST.md` for the full breakdown.

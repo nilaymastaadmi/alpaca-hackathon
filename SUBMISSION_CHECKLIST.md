@@ -59,26 +59,42 @@ before closing the laptop.
       move are the same move.
 - [ ] `make seal` and confirm `make verify` passes before submitting.
 
-## Ask the organisers at kickoff, 28 Aug
+## Resolved by the official kickoff email, 28 Aug
 
-- [ ] **Is Social Engagement a separate prize podium?** The precursor Kraken
-      hackathon ran it as its own podium with 3 winners. Alpaca's page lists it
-      both as a judging criterion and as an "extra challenge", which is ambiguous.
-      If separate, that is 3 more prize slots most technical entrants ignore.
-- [ ] **Any restriction on pre-kickoff work?** The rulebook contains no clause
-      about when code may be written, and the event page explicitly says to "get a
-      head start on your project" and to "use any paper account you like during
-      development". A general lablab guidance article (not the rulebook) mentioned
-      core AI functionality being built in-window. Cheap to confirm, expensive to
-      assume.
+- [x] **Is Social Engagement a separate prize podium? YES, confirmed.** 2 teams
+      x $500 plus a month of Algo Trader Plus per member, distinct from the
+      1st/2nd/3rd podium. Fewer slots than the precursor Kraken event's 3, but
+      real and worth the up-to-5 social posts.
+- [x] **Total prize pool is $6,000**, not the $5,000 this repo assumed
+      everywhere until now: 1st $2,500 + $300 Featherless credits, 2nd $1,500,
+      3rd $1,000, Social Engagement 2 x $500 (+ Algo Trader Plus).
+- [ ] **New requirement from the same email: a one-page write-up covering AI
+      logic, risk gates, and Alpaca infrastructure implementation.** Distinct
+      from the "long description" field below. Not yet drafted; the source
+      material already exists across `STRATEGY.md`, `RISK_REGISTER.md` and
+      `HANDOFF.md`, condensing it is the remaining work.
+- [ ] **Still open: "Options Alpha Agents" vs "Track 2: Volatility and Event."**
+      The kickoff email calls the main challenge "Options Alpha Agents," this
+      repo has used "Track 2: Volatility and Event" throughout (from how the
+      event page read on 19 Aug). Check the actual hackathon page before
+      finalising submission text; may be the same thing under a different
+      label, may not be.
+- [ ] **Any restriction on pre-kickoff work?** Still technically unconfirmed
+      in writing, though moot now that kickoff has happened. The event page
+      always said to "get a head start" and to "use any paper account you
+      like during development," which the official email now explicitly
+      restates ("While building: use any Alpaca paper account you like.
+      Prototype freely.").
 - [ ] Were technology partners announced? They were "to be announced" and may add
       partner prize surfaces.
 
 ## Standing decisions, do not relitigate
 
-- Track 2, Volatility and Event. Locked 19 Aug with full reasoning in `STRATEGY.md`.
+- Track 2, Volatility and Event (see the open naming question above). Locked
+  19 Aug with full reasoning in `STRATEGY.md`.
 - Solo, by choice, despite teams being allowed up to 6.
-- Repo PRIVATE until submission, so competitors cannot read `STRATEGY.md` and the
-  8 research documents during the build week. Public at submission.
+- Repo made PUBLIC early, deliberately, superseding the original "stay
+  private until submission" plan recorded here. No downside found; see
+  `HANDOFF.md`.
 - Live sizing is 5 concurrent at 3% each (15% concurrent), a deliberate deviation
   from the 1% research sizing, recorded in `research/DEPLOYMENT_DECISIONS.md`.

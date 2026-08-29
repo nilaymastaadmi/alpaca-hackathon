@@ -9,15 +9,34 @@ index, not the detail — the files it points to hold the actual reasoning.
 
 Entry for the **Alpaca AI Trading Agents Hackathon** (lablab.ai x Alpaca).
 Online build **28 Aug – 4 Sep 2026**, kickoff Fri 28 Aug 20:30 IST, deadline
-Fri 4 Sep 20:30 IST. $5,000 pool. Judged on P&L, Technology Implementation,
-Creativity & Originality, Presentation & Execution, Social Engagement (no
-published weights). Solo entry, by explicit choice.
+Fri 4 Sep 20:30 IST. **$6,000 total prize pool, corrected 2026-08-29 from the
+official kickoff email** (this file previously said $5,000, never verified
+against a primary source): 1st $2,500 + $300 Featherless credits, 2nd
+$1,500, 3rd $1,000, **Social Engagement is confirmed as its own podium, not
+folded into the main score: 2 teams x $500 plus a month of Algo Trader Plus
+each.** That was an open question in `RISK_REGISTER.md` until now. Judged
+on P&L, Technology Implementation, Creativity & Originality, Presentation &
+Execution, Social Engagement (no published weights). Solo entry, by
+explicit choice.
 
-Binding rules: strategy must trade options (Track 2, Volatility & Event,
-locked 2026-08-19); must use Alpaca's MCP server or CLI, not raw REST; final
-submission needs a brand-new paper account (the practice account below is
+Binding rules, per the official email: autonomous agent using Alpaca's
+Trading API; must use Alpaca's MCP server or CLI, not raw REST; strategy
+must incorporate options trading; final submission needs a brand-new paper
+account starting at exactly $100,000 (the practice account below is
 disqualified, has trade history on it); repo must be public **at submission**
-(currently already public — flipped early, no downside, see below).
+(currently already public — flipped early, no downside, see below). **New
+from the same email, not yet in `SUBMISSION_CHECKLIST.md`: a one-page
+write-up covering AI logic, risk gates, and Alpaca infrastructure
+implementation** — distinct from the "long description" submission field,
+not yet drafted.
+
+**Open question, not yet resolved:** the email calls the main challenge
+"Options Alpha Agents," not "Track 2: Volatility and Event" (the name this
+whole repo uses, locked 2026-08-19 from the event page as it read then).
+Unclear whether tracks were renamed/consolidated or "Options Alpha Agents"
+is just how they describe the single challenge and our track name still
+holds internally. Check the actual hackathon page before the submission
+text is finalized.
 
 ## Repo and deployment state, verified not assumed
 
