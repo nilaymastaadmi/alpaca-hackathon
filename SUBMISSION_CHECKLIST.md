@@ -59,7 +59,7 @@ before closing the laptop.
       move are the same move.
 - [ ] `make seal` and confirm `make verify` passes before submitting.
 
-## Resolved by the official kickoff email, 28 Aug
+## Resolved by the official kickoff email (28 Aug) and the live hackathon page (29 Aug)
 
 - [x] **Is Social Engagement a separate prize podium? YES, confirmed.** 2 teams
       x $500 plus a month of Algo Trader Plus per member, distinct from the
@@ -73,12 +73,20 @@ before closing the laptop.
       from the "long description" field below. Not yet drafted; the source
       material already exists across `STRATEGY.md`, `RISK_REGISTER.md` and
       `HANDOFF.md`, condensing it is the remaining work.
-- [ ] **Still open: "Options Alpha Agents" vs "Track 2: Volatility and Event."**
-      The kickoff email calls the main challenge "Options Alpha Agents," this
-      repo has used "Track 2: Volatility and Event" throughout (from how the
-      event page read on 19 Aug). Check the actual hackathon page before
-      finalising submission text; may be the same thing under a different
-      label, may not be.
+- [x] **"Options Alpha Agents" vs "Track 2: Volatility and Event", resolved.**
+      Checked the live hackathon page directly, 29 Aug: there is exactly one
+      main challenge, "Options Alpha Agents," no separate tracks exist.
+      "Track 2" was this repo's own framing, not an official category. Use
+      "Options Alpha Agents" for the submission's category/tag field.
+- [ ] **"Demo application platform" field.** The submission form lists this
+      separately from "Application URL" — name the platform (Streamlit
+      Community Cloud) explicitly, not just the link.
+- [ ] **If this places: payment needs a W-9 (US) or W-8BEN (non-US),
+      government photo ID, and bank details, filed within 90 days of winner
+      notification or the prize is forfeited.** Prizes pay to one individual,
+      not a team. Non-US payments face 30% US withholding unless a
+      tax-treaty claim is filed on the W-8BEN. Nothing to do now; flagging
+      so it isn't a scramble later.
 - [ ] **Any restriction on pre-kickoff work?** Still technically unconfirmed
       in writing, though moot now that kickoff has happened. The event page
       always said to "get a head start" and to "use any paper account you

@@ -96,8 +96,11 @@ fully deterministic and fully under our control. **[assumed]** Effort should spl
 
 ## 4. Track decision, re-examined rather than defended
 
-**Staying with Track 2, Volatility & Event Trading Agents.** But the research broke the naive
-version of it, and the mechanism changes substantially.
+**Staying with a volatility-mispricing entry** (originally framed as "Track 2, Volatility &
+Event," a category name read off the event page on 19 Aug; the live page as of 29 Aug shows a
+single main challenge, "Options Alpha Agents," with no separate named tracks. The substance
+below is unaffected. "Track 2" survives in this document only as informal shorthand). But the
+research broke the naive version of it, and the mechanism changes substantially.
 
 ### What the research killed
 

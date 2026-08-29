@@ -1,6 +1,6 @@
 # An options agent that refuses to trade
 
-**Alpaca AI Trading Agents Hackathon 2026. Track 2: Volatility and Event.**
+**Alpaca AI Trading Agents Hackathon 2026. Main challenge: Options Alpha Agents.**
 
 Most trading agents are built to trade. This one measures whether volatility is
 actually expensive before selling it, and declines when it is not. On its first

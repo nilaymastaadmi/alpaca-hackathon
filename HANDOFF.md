@@ -30,13 +30,38 @@ write-up covering AI logic, risk gates, and Alpaca infrastructure
 implementation** — distinct from the "long description" submission field,
 not yet drafted.
 
-**Open question, not yet resolved:** the email calls the main challenge
-"Options Alpha Agents," not "Track 2: Volatility and Event" (the name this
-whole repo uses, locked 2026-08-19 from the event page as it read then).
-Unclear whether tracks were renamed/consolidated or "Options Alpha Agents"
-is just how they describe the single challenge and our track name still
-holds internally. Check the actual hackathon page before the submission
-text is finalized.
+**Resolved 2026-08-29, checked against the live hackathon page directly.**
+There is no "Track 2" or "Volatility and Event" track on the current page —
+just one main challenge, "Options Alpha Agents," open-ended ("options,
+trading agents, portfolio income, or other approaches"). "Track 2" was
+either dropped between 19 Aug and now or was always this repo's own
+shorthand, not an official category. Fixed in `README.md`'s tagline;
+`STRATEGY.md` keeps "Track 2" as informal internal shorthand with a note
+explaining it, since the underlying research reasoning is unaffected.
+
+**Also confirmed from the live page, not previously precise:**
+- Prize pool is **$6,000 cash** (1st $2,500, 2nd $1,500, 3rd $1,000, Social
+  Engagement 2x$500) **plus $300 in Featherless credit for 1st place and
+  $25 per participant regardless of placement** — the page states both
+  "$6,000" and "$6,300" depending on whether the Featherless credits are
+  counted; $6,000 is the cash actually paid by AlpacaDB.
+- Payment mechanics, relevant if this places: prizes pay to an
+  **individual**, not a team/company; requires **W-9 (US) or W-8BEN
+  (non-US)**, government photo ID, bank details; **non-US payments face
+  30% US withholding unless a tax-treaty claim is filed on the W-8BEN**;
+  paid within 90 days of documents clearing.
+- Submission fields include a **"Demo application platform"** field
+  distinct from the Application URL itself (i.e., naming Streamlit Cloud
+  specifically, not just the link).
+- **Worth knowing, not confirmed as current-cohort:** the hackathon page's
+  submissions showcase includes "SPY Sentinel AI" — "analyzes market
+  structure... applies risk gates... refuses to trade when an edge is not
+  proven," strikingly close to this project's own framing. Given the
+  event started hours before this was checked and that entry already has
+  a produced video, it is almost certainly carried-over showcase content
+  from a precursor event, not a live competitor — but worth a glance if
+  time allows, since convergent framing from other builders is itself
+  informative either way.
 
 ## Repo and deployment state, verified not assumed
 
