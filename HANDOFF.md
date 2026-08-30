@@ -250,11 +250,18 @@ during this pass, is MITIGATED, RESOLVED or ACCEPTED.
    via `agent.py --dry-run --env-file .env.live` (completed, real
    `account_number` in the artifact). **Friday 28 Aug's post-kickoff
    session is deliberately NOT covered** — run it by hand if wanted.
-5. **Presentation: video, slides, cover image.** All mandatory, all still at
-   zero. **Nilay's own task** ("we'll make the presentation dw", 2026-08-22),
-   not something to push on unprompted.
-6. **Social posts** (up to 5, X/LinkedIn) — correctly not started, since the
-   rules require they be dated *during* the hackathon window.
+5. **Presentation: video and slide polish wait for real live-week data,
+   deliberately** (Nilay, 2026-08-30). Cover image and a slide draft exist
+   in `presentation/`; the deck's live-results slide is a marked
+   placeholder. The one-page write-up (AI logic, risk gates, Alpaca
+   infrastructure) does not need real results and is not deferred -- see
+   `presentation/WRITEUP.md`.
+6. **Social posts: DECLINED, not merely unstarted.** Nilay confirmed
+   2026-08-30 there will be no social posts for this submission. This
+   forfeits the Social Engagement judging axis and both $500 podium slots
+   entirely -- a deliberate scope decision, not a gap to close. Do not
+   draft, suggest, or post social content for this project; do not re-raise
+   this as an open item.
 
 ## Explicitly investigated and rejected, don't re-raise without new evidence
 

@@ -40,7 +40,10 @@ before closing the laptop.
 - [ ] **Public GitHub repository** URL
 - [ ] **Application URL** (the Streamlit Cloud deployment, for interactive evaluation)
 - [ ] **Alpaca paper account ID** (the fresh one)
-- [ ] Up to 5 social post links, each dated **during** 28 Aug to 4 Sep
+- [x] ~~Up to 5 social post links~~ **DECLINED by Nilay, 2026-08-30.** No
+      social posts for this submission. Submit with this field empty;
+      forfeits the Social Engagement axis and both $500 slots. Do not
+      re-raise.
 
 ## Live week operations, 31 Aug to 4 Sep
 
