@@ -99,10 +99,13 @@ c1, c2, c3, c4, c5 = st.columns(5)
 equity = pf.get("equity")
 c1.metric("Equity", f"${equity:,.0f}" if equity else "n/a",
           f"{pf.get('session_pnl_pct', 0) * 100:+.2f}% today")
-c2.metric("VRP", f"{sig.get('vrp', 0):+.2f} pts",
-          help="ATM implied vol minus trailing 21 day realised vol. Positive "
-               "means implied is richer than what actually happened, which is "
-               "the premium this agent sells.")
+short_vrp = sig.get("short_strike_vrp")
+c2.metric("VRP (short strikes)",
+          f"{short_vrp:+.2f} pts" if short_vrp is not None else "n/a",
+          help="Implied vol of the actual strikes the agent would sell minus "
+               "trailing 21 day realised vol. This is what gate 7 acts on. "
+               "n/a means the traded tenor had no two-sided quote that cycle "
+               "(gate 7 refuses rather than falling back to a biased proxy).")
 c3.metric("Term structure", f"{sig.get('term_ratio', 0):.3f}",
           "contango" if sig.get("contango") else "BACKWARDATION",
           delta_color="normal" if sig.get("contango") else "inverse")
@@ -167,7 +170,8 @@ with s1:
     st.markdown("**Signals**")
     st.json({k: sig.get(k) for k in
              ("spot", "atm_iv_near", "atm_iv_far", "term_ratio", "contango",
-              "trailing_rv", "vrp", "near_dte", "far_dte")}, expanded=True)
+              "trailing_rv", "atm_vrp", "short_strike_iv", "short_strike_dte",
+              "short_strike_vrp", "near_dte", "far_dte")}, expanded=True)
 with s2:
     st.markdown("**Structure considered**")
     st.json(latest.get("structure") or {"note": "no structure priced this cycle"},
@@ -175,7 +179,8 @@ with s2:
 
 # --- signal history -------------------------------------------------------
 
-hist = [{"t": d.get("timestamp"), "VRP": d.get("signals", {}).get("vrp"),
+hist = [{"t": d.get("timestamp"),
+         "short-strike VRP": d.get("signals", {}).get("short_strike_vrp"),
          "ATM IV": d.get("signals", {}).get("atm_iv_near"),
          "trailing RV": d.get("signals", {}).get("trailing_rv"),
          "term ratio": d.get("signals", {}).get("term_ratio")}
@@ -185,7 +190,9 @@ if len(hist) > 1:
     hdf = pd.DataFrame(hist).set_index("t")
     st.line_chart(hdf[["ATM IV", "trailing RV"]])
     st.caption("When implied sits above realised, premium is rich and the agent "
-               "sells it. When the lines cross, it stops.")
+               "sells it. When the lines cross, it stops. (Both lines are the "
+               "30-day ATM comparison; gate 7 itself acts on the short-strike "
+               "VRP shown above, not this chart.)")
 
 # --- open positions -------------------------------------------------------
 
