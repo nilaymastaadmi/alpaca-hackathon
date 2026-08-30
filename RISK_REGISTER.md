@@ -264,6 +264,37 @@ Documented by Alpaca: order quantity is not checked against NBBO size, so paper
 can fill far more than really exists. We size as if liquidity were real and say so
 in the submission rather than banking the flattery.
 
+### 4.6 T6's 21-45 DTE positions will not close naturally before judging. MITIGATED 2026-08-30
+D3 (`research/DEPLOYMENT_DECISIONS.md`) switched the deployed tenor from T4
+(7-14 DTE) to T6 (21-45 DTE) on 2026-08-30, because T4 had gone 0-for-21 on
+real would-enter cycles while T6 went 10-for-21. The tradeoff: a 21-45 DTE
+position opened any day during the live week (31 Aug - 4 Sep) cannot reach
+its own natural profit-target or DTE exit before the 4 Sep 11:00 ET
+deadline. Left alone, judges would see a mark-to-market snapshot of an open
+position rather than a realised result.
+
+Found the same day: `event_derisk_fraction` in `agent/config.py` existed for
+exactly this class of problem (reduce exposure ahead of a scheduled event)
+and was never wired to an action anywhere -- gate 8 blocked new entries near
+NFP/FOMC but nothing ever reduced an existing position, despite README
+describing that as what the gate does. The same "the gate's message
+overpromises the code" bug 4.4 and the original drawdown-flatten fix (audit,
+2026-08-20) already caught once, in different gates.
+
+**Fixed with a dedicated mechanism, not a reuse of the event-derisk path**:
+`deadline_flatten_enabled` (default on) forces an unconditional full flatten
+of every open position starting 90 minutes before the submission deadline
+(market open on 4 Sep, using the whole available window rather than one
+attempt at the buzzer) and blocks all new entries once that window opens.
+Tested in `tests/test_deadline_flatten.py` (the trigger-window logic, a pure
+function of config and time) and `tests/test_flatten.py` (the actual close
+mechanics, reused from the drawdown breaker's flatten, unchanged). `gate 8`'s
+own `event_derisk_fraction` remains unwired and is a separate, lower-priority
+gap -- NFP/FOMC are temporary de-risk-and-resume events where "block new
+entries, leave existing ones" is a defensible partial mitigation on its own;
+the deadline is final and gets its own mechanism instead of stretching that
+one to cover a case it was not designed for.
+
 ---
 
 ## 5. Watch list, no action yet
