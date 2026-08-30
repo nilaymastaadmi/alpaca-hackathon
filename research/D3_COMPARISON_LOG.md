@@ -1,6 +1,6 @@
 # D3 comparison log: T4 vs T6 vs T7
 
-Generated 2026-08-29T01:15:35 by `agent/compare_report.py` from `agent/agent.py --compare-all`, scheduled hourly 19:15-01:15 IST (matching `agent/config.py`'s own trade_window). Purely observational -- every row below is a dry-run decision, no order was ever sent. See `research/DEPLOYMENT_DECISIONS.md` D3 for the backtest case; this file is the live-market evidence gathered in parallel while that decision stays open until kickoff.
+Generated 2026-08-29T22:15:36 by `agent/compare_report.py` from `agent/agent.py --compare-all`, scheduled hourly 19:15-01:15 IST (matching `agent/config.py`'s own trade_window). Purely observational -- every row below is a dry-run decision, no order was ever sent. See `research/DEPLOYMENT_DECISIONS.md` D3 for the backtest case; this file is the live-market evidence gathered in parallel while that decision stays open until kickoff.
 
 | ET timestamp | T4 (7-14 DTE, deployed) | T6 (21-45 DTE) | T7 (5-10 DTE, proposed) |
 |---|---|---|---|
@@ -25,6 +25,9 @@ Generated 2026-08-29T01:15:35 by `agent/compare_report.py` from `agent/agent.py 
 | 2026-08-28 13:45 | refuse [g7 fail] (VRP -0.44) | **ENTER** [g7 pass] (VRP +2.66) | refuse [g7 fail] (VRP +0.56) |
 | 2026-08-28 14:45 | refuse [g7 fail] (VRP -0.76) | **ENTER** [g7 pass] (VRP +2.46) | refuse [g7 fail] (VRP +0.12) |
 | 2026-08-28 15:45 | refuse [g7 fail] (VRP -0.83) | refuse [g7 pass] (VRP +2.43) | refuse [g7 fail] (VRP -0.06) |
+| 2026-08-29 09:45 | refuse [g7 fail] (VRP -0.58) | refuse [g7 pass] (VRP +2.48) | refuse [g7 fail] (VRP +0.58) |
+| 2026-08-29 10:48 | refuse [g7 fail] (VRP -0.58) | refuse [g7 pass] (VRP +2.48) | - |
+| 2026-08-29 11:49 | refuse [g7 fail] (VRP -0.58) | refuse [g7 pass] (VRP +2.48) | refuse [g7 fail] (VRP +0.58) |
 
 ## Daily summary
 
@@ -45,11 +48,14 @@ Generated 2026-08-29T01:15:35 by `agent/compare_report.py` from `agent/agent.py 
 | 2026-08-28 | T4 | 7 | 0 | 0 | -0.83 to -0.17 |
 | 2026-08-28 | T6 | 7 | 7 | 6 | +2.42 to +2.82 |
 | 2026-08-28 | T7 | 7 | 1 | 1 | -0.06 to +1.09 |
+| 2026-08-29 | T4 | 3 | 0 | 0 | -0.58 to -0.58 |
+| 2026-08-29 | T6 | 3 | 3 | 0 | +2.48 to +2.48 |
+| 2026-08-29 | T7 | 2 | 0 | 0 | +0.58 to +0.58 |
 
 ## Overall tally
 
 | label | cycles logged | would-enter cycles |
 |---|---|---|
-| T4 | 21 | 0 |
-| T6 | 21 | 10 |
-| T7 | 21 | 1 |
+| T4 | 24 | 0 |
+| T6 | 24 | 10 |
+| T7 | 23 | 1 |

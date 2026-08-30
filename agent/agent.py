@@ -64,6 +64,20 @@ def save_state(s: dict, path: Path = STATE_PATH) -> None:
     path.write_text(json.dumps(s, indent=2), encoding="utf-8")
 
 
+def _is_deadline_close(cfg: Config, now_et: datetime) -> tuple[bool, float]:
+    """
+    Pure function of config and the current time, deliberately factored out
+    of run_cycle so the trigger window can be tested without mocking a full
+    cycle (MCP, broker, ledger). Returns (should_flatten, hours_to_deadline).
+    hours_to_deadline is negative once the deadline has passed.
+    """
+    if not cfg.deadline_flatten_enabled:
+        return False, float("inf")
+    deadline = datetime.fromisoformat(cfg.submission_deadline_et)
+    hours = (deadline - now_et.replace(tzinfo=None)).total_seconds() / 3600.0
+    return (0.0 <= hours <= cfg.deadline_flatten_hours_before), hours
+
+
 def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
               publish_artifacts: bool = False,
               artifact_path: Path | None = None,
@@ -186,7 +200,17 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
         dd_gate = next((g for g in gates if g.gate == "drawdown_breaker"), None)
         drawdown_breached = dd_gate is not None and not dd_gate.passed
 
-        if engine.all_passed(gates):
+        # Submission deadline: a harder, final version of the event-proximity
+        # idea (gate 8), not a variant of it. NFP/FOMC are temporary
+        # de-risk-and-resume events; this one does not resume. Judging reads
+        # whatever the account shows at this instant, so once inside the
+        # window every cycle attempts a full flatten and no new entry is
+        # considered regardless of what the gates said -- a position that
+        # cannot close before judging is not a trade, it is noise on the
+        # number a judge will actually see.
+        deadline_close, hours_to_deadline = _is_deadline_close(cfg, now_et)
+
+        if engine.all_passed(gates) and not deadline_close:
             plan = broker.build_condor(chain, spot, today)
             if plan is None:
                 from risk import GateResult
@@ -219,7 +243,16 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
                     equity=equity,
                 )
 
-        if engine.all_passed(gates) and plan is not None:
+        if deadline_close and held:
+            action = "flatten"
+            flatten_results = _flatten_all(broker, ledger, held, today, dry_run, log)
+            n_closed = sum(1 for r in flatten_results if r["action"] == "closed")
+            n_failed = sum(1 for r in flatten_results if r["action"] == "close_failed")
+            note = (f"submission deadline in {hours_to_deadline:.2f}h; "
+                    f"{n_closed}/{len(held)} flattened, {n_failed} failed to close")
+            if dry_run:
+                note = "DRY RUN, nothing sent: " + note
+        elif engine.all_passed(gates) and plan is not None:
             action = "enter"
             if dry_run:
                 note = "dry run: structure priced and sized, no order sent"
@@ -271,6 +304,9 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
         elif engine.is_halt(gates):
             action = "halt"
             note = "circuit breaker tripped; no new risk"
+        elif deadline_close:
+            note = (f"submission deadline in {hours_to_deadline:.2f}h; "
+                    f"already flat, no new entries considered")
 
         decision = Decision(
             timestamp=now_et.isoformat(timespec="seconds"),

@@ -212,11 +212,14 @@ writes to `config.py`. As of 2026-08-22: **NOT READY, 1 usable sample.**
 
 ---
 
-## D3. PROPOSED, not decided: switch deployed tenor from T4 (7-14 DTE) to T7 (5-10 DTE)
+## D3. DECIDED 2026-08-30: switch deployed tenor from T4 (7-14 DTE) to T6 (21-45 DTE)
 
-**Found 2026-08-22, following amendment A3 to the pre-registration. Not yet
-decided by Nilay -- recorded here as a proposal with the numbers in front of
-it, the same way D1 and D2 were presented before being decided.**
+**Superseded its own earlier conclusion. Originally proposed T7 (5-10 DTE) on
+2026-08-22, based on the backtest alone. Eight more days of real live-market
+comparison data (`research/D3_COMPARISON_LOG.md`, `agent/agent.py --compare`)
+changed the answer. Both the original T7 analysis and the reasoning that
+overturned it are kept below, in order, rather than rewritten as if T6 were
+obvious from the start.**
 
 ### What was tested and why
 
@@ -283,6 +286,76 @@ isolate tenor as the only variable). Everything else in D1 (5 concurrent,
 3% risk each) and D2 (gate 7 measuring the actual traded strikes) is
 unaffected by this and would carry over unchanged.
 
-**Decision needed from Nilay: adopt T7 as the deployed tenor, keep T4, or
-wait for more data before deciding.** Not applied to `config.py` by this
-entry.
+### What changed: eight more days of real evidence
+
+The proposal above was correct that this needed live data, not just a
+backtest, before being decided. `agent/agent.py --compare-all` ran T4, T6 and
+T7 side by side, hourly, against the real market, from 22 to 29 Aug (21
+comparable cycles, 5 separate trading days, none of it touching real orders).
+
+| | T4 (was deployed) | T6 | T7 (proposed above) |
+|---|---|---|---|
+| Would-enter cycles | **0 / 21** | **10 / 21** | 1 / 21 |
+| Days with at least one entry | 0 / 5 | 2 / 5 (the two most recent) | 1 / 5 |
+| Gate 7 pass rate, last 2 days | 0% | **100% (13/13)** | 8% (1/13) |
+| VRP trend, last 2 days | falling further negative | **+1.0 to +2.8, climbing** | flat near zero |
+
+T7's backtest case (Sharpe +1.697, best of 7, no cost-sensitivity anomaly)
+is unchanged and still correct on its own terms. It simply has not been
+where the live market's richness actually showed up: 1 real signal in 21
+cycles is not meaningfully different from T4's 0. T6 -- the trial passed
+over in 2026-08-19's original deployment choice for capturing too little of
+its own credit in a short window -- is the one that has actually been
+firing, repeatedly, on both of the two most recent real trading days.
+
+### Why this matters more than the backtest ranking
+
+The hackathon's own P&L Performance criterion reads: "Judges will consider
+the project's P&L **and how effectively the strategy performs through its
+trading activity**." An agent that never trades cannot demonstrate that,
+whatever its research says. `research/LIVE_WEEK_TRADE_ODDS.md` already put
+T4's odds of even one entry across the judged week at 28-33%; 0-for-21 real
+cycles since is consistent with the pessimistic end of that, not a
+statistical fluke this project's own discipline should wave away.
+
+### The honest cost of switching, not hidden
+
+1. **T6 carries the cost-sensitivity anomaly** `RESULT_H3_ROBUSTNESS.md`
+   flagged: doubling transaction costs improved its backtested Sharpe
+   (+1.614 to +1.728), which is only possible if its threshold fit is
+   partly selecting noise rather than a clean edge. This was the reason T7
+   looked like the safer upgrade over T6 in the first proposal. It is still
+   true. It has not stopped T6 from being the one that actually trades.
+2. **A 21-45 DTE position will not reach natural expiry inside the judged
+   week under any realistic entry timing.** T4 and T7's shorter holds at
+   least had a chance of a natural profit-target or DTE exit before 4 Sep;
+   T6's cannot. Left alone, the number judges see would be a mark-to-market
+   snapshot of an open position, not a realised result.
+3. Mitigated, not ignored: found the same day, `event_derisk_fraction` in
+   `agent/config.py` existed to handle exactly this class of problem and
+   was never wired to an action -- gate 8 blocked new entries near a
+   scheduled event but nothing ever reduced an existing one, the same
+   "the gate's message overpromises what the code does" bug the drawdown
+   breaker's flatten already fixed once, in a different gate. Fixed
+   properly this time with a dedicated mechanism rather than reusing gate
+   8's event-derisk path: `deadline_flatten_enabled` forces a full,
+   unconditional flatten of every open position starting 90 minutes before
+   the 4 Sep 11:00 ET submission deadline (market open on the deadline day,
+   using the whole available window rather than one attempt at the buzzer),
+   and blocks all new entries once that window has started. Tested in
+   `tests/test_deadline_flatten.py`; the actual close mechanics reuse
+   `_flatten_all`, already covered by `tests/test_flatten.py`.
+
+### Decision
+
+**Adopt T6.** `agent/config.py`: `dte_min=7`->`21`, `dte_max=14`->`45`,
+`dte_target=10`->`33`. `short_delta` unchanged at 0.16. D1's sizing (5
+concurrent, 3% risk each) and D2's gate-7 fix are unaffected and carry over
+unchanged. The deadline-flatten mechanism above ships in the same change,
+since deploying a longer-duration tenor without it would be deploying only
+half of what this decision actually requires.
+
+This can be revisited if the live week's own early data disagrees with the
+comparison harness's read -- the harness keeps running throughout the week
+regardless of what is deployed, so that disagreement would be visible, not
+silent.

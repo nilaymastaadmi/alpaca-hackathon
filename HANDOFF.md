@@ -121,12 +121,19 @@ One shot permitted, only after a dev trial clears its bar. Do not spend it.
   readiness on every run and never proposes a number itself — see
   `research/RECALIBRATION_STATUS.md`. As of 2026-08-22: **NOT READY, 1
   usable sample.**
-- **D3, PROPOSED not decided**: switch the deployed tenor from T4 (7-14 DTE)
-  to T7 (5-10 DTE). A properly pre-registered trial (amendment A3,
-  2026-08-22) cleared a freshly recomputed N=7 bar at Sharpe +1.697, best of
-  all seven trials, without T6's cost-stress anomaly. Full case and the
-  open decision: see D3 below and `research/RESULT_H3_T7.md`. **Not applied
-  to `agent/config.py`.**
+- **D3, DECIDED 2026-08-30**: deployed tenor switched from T4 (7-14 DTE) to
+  **T6 (21-45 DTE)**. Not T7, despite T7 having the cleaner backtest case
+  (Sharpe +1.697, no cost-stress anomaly) — eight days of live comparison
+  data (`research/D3_COMPARISON_LOG.md`) showed T4 at 0/21 would-enter
+  cycles and T7 at 1/21, while T6 went 10/21, all in the two most recent
+  days, with VRP climbing. An agent that never trades cannot score on the
+  P&L Performance criterion regardless of research quality. T6's known
+  cost-sensitivity anomaly is real and disclosed, not hidden. Applied to
+  `agent/config.py`. Shipped together with a new `deadline_flatten_enabled`
+  mechanism (forces a full flatten 90 minutes before the 4 Sep submission
+  deadline) since T6's longer hold will not reach natural expiry inside the
+  judged week otherwise. Full reasoning: `research/DEPLOYMENT_DECISIONS.md`
+  D3.
 
 ## The agent (`agent/`)
 
@@ -190,31 +197,22 @@ during this pass, is MITIGATED, RESOLVED or ACCEPTED.
    live week** regardless of all four fixes. Full detail:
    `RISK_REGISTER.md` 4.1. `agent/watchdog.py` remains as defence for any
    other hang cause.
-2. **D2 threshold recalibration — decide T7 (D3) first, or run in parallel.**
-   `prep/recalibrate_threshold.py` exists and reports NOT READY (1 usable
-   sample of the corrected quantity, as of 2026-08-22; Aug 19 was pre-fix,
-   Aug 20's logged snapshot had no delta-bearing contract in the traded DTE
-   band despite the live D2 verification succeeding that same day, Aug 21
-   was missed to the sleep bug now fixed above). Re-run any time; it is
-   nightly-safe and self-reports how many more nights are needed from its
-   own current variance estimate.
-2b. **THE BIG ONE, new 2026-08-27: the agent may not trade at all during
-   the judged week.** Every cycle ever logged has refused (13 production
-   artifacts + 9 comparison batches, zero entries). At the deployed
-   threshold of 1.0 against a measured mean VRP of +0.114, the odds of
-   even one entry across the window are roughly **28-33%, and that is
-   optimistic** because volatility regimes persist. Full numbers,
-   caveats and the three options: `research/LIVE_WEEK_TRADE_ODDS.md`.
-   **This is a D4 deployment decision for Nilay, and if the threshold
-   changes it must be reasoned and dated BEFORE the number is picked**,
-   never back-filled after a quiet Monday.
+2. **D2 threshold recalibration — still open, independent of D3 now that D3
+   is decided.** `prep/recalibrate_threshold.py` exists and self-reports
+   readiness; last checked NOT READY. Re-run any time; nightly-safe. Note
+   the threshold it is calibrating (gate 7's VRP bar) now governs T6's
+   21-45 DTE strikes, not T4's, since D3 switched tenors — the readiness
+   check reads whatever `agent/config.py` currently deploys, so this is
+   already correct without needing its own update.
+2b. **LIVE_WEEK_TRADE_ODDS.md's 28-33% figure was about T4 specifically,
+   and D3 (below) responds directly to it.** That analysis is why D3 was
+   revisited rather than left as a backtest-only proposal. Worth a fresh
+   odds calculation for T6 once a few live week days exist, but the
+   qualitative answer already changed: T6 has been entering multiple times
+   a day on real market data, not sitting at zero.
 
-3. **D3 decision: adopt T7 (5-10 DTE) as the deployed tenor, or keep T4.**
-   New as of 2026-08-22. See `research/DEPLOYMENT_DECISIONS.md` D3. This is
-   the one item on this list that is a genuine judgement call for Nilay, not
-   a blocked-on-data or blocked-on-time item — the backtest evidence exists
-   now, the question is whether one clean development-window pass is enough
-   to change what trades live money in the judged week.
+3. **D3 — DECIDED, see below.** Deployed tenor is T6 (21-45 DTE), not T4
+   or T7. Full reasoning: `research/DEPLOYMENT_DECISIONS.md` D3.
 4. **Fresh submission-only paper account — CREATED 2026-08-28.** Account
    number **`PA37R35A5ZGW`** (this is the ID to submit — not the practice
    one). Verified live via the real MCP path, not assumed from the
@@ -278,11 +276,16 @@ to N=7 (0.760 to 0.792) before the result was seen.
 **T7 clears the recomputed bar at Sharpe +1.697, the best of all seven
 trials, and does not show T6's noise-selection red flag** (Sharpe falls
 under cost stress, the normal direction, instead of rising). Full result:
-`research/RESULT_H3_T7.md`. This is now a live, undecided deployment
-question, not a rejected path — see **D3** in
-`research/DEPLOYMENT_DECISIONS.md`: switch the live tenor from T4 (7-14 DTE)
-to T7 (5-10 DTE)? Proposed, not yet decided by Nilay. Not applied to
-`agent/config.py`.
+`research/RESULT_H3_T7.md`. This made T7 the natural first pick, and it was
+proposed as such (D3) on this basis alone.
+
+**It was not, in the end, what got deployed.** Eight days of live comparison
+data disagreed with the backtest-only picture: T7 traded almost as rarely as
+T4 (1/21 live cycles), while T6 -- backtest-flagged but not backtest-broken
+-- actually fired repeatedly on real market data. D3 was revised 2026-08-30
+to deploy T6 instead, with the known caveat disclosed rather than hidden.
+See `research/DEPLOYMENT_DECISIONS.md` D3 for the full reasoning on both
+sides.
 
 ## Standing rules for this project, don't relitigate
 

@@ -29,11 +29,24 @@ class Config:
     # structure means the same thing at SPY 180 and SPY 770.
     wing_pct: float = 0.0065
 
-    # RESEARCH: 4.5 day judging window. 42 DTE captures only 7-9% of its credit
-    # in that time; 0-3 DTE was the worst tenor tested at Sharpe +0.238.
-    dte_min: int = 7
-    dte_max: int = 14
-    dte_target: int = 10
+    # DEPLOYMENT DECISION D3, REVISED 2026-08-30: T6 (21-45 DTE), not T4
+    # (7-14 DTE). Originally T4, chosen because a 4.5 day judging window
+    # captures only 7-9% of a 42 DTE position's credit. That reasoning was
+    # sound and is not what changed: T4 went 0-for-21 would-enter across
+    # every real cycle logged from 22-29 Aug, spanning 5 separate trading
+    # days. T6 went 10-for-21 over the same period, all in the most recent
+    # two days, with VRP climbing (not falling) each day. P&L Performance is
+    # a judged criterion that explicitly reads "how effectively the strategy
+    # performs through its trading activity" -- an agent that never trades
+    # scores near zero on it regardless of research quality. Full numbers
+    # and the honest counter-argument (T6 showed a cost-sensitivity anomaly
+    # in RESULT_H3_ROBUSTNESS.md suggesting partial noise-selection, and its
+    # longer hold will not reach natural expiry inside the judged week) are
+    # in DEPLOYMENT_DECISIONS.md D3. The second concern is why
+    # deadline_flatten_enabled exists below, not a reason to avoid T6.
+    dte_min: int = 21
+    dte_max: int = 45
+    dte_target: int = 33
 
     # --- sizing, DEPLOYMENT decision D1 ------------------------------------
     # Deliberate deviation from the 1%/one-position research sizing. At research
@@ -110,11 +123,33 @@ class Config:
     # before the submission deadline. A naked short-gamma book into that could
     # wreck the final P&L in the last hour judges see.
     event_derisk_enabled: bool = True
-    event_derisk_fraction: float = 0.50   # cut short-vega exposure by this
+    # NOT currently wired to an action anywhere -- gate 8 blocks NEW entries
+    # near a scheduled event, but nothing reduces an already-open position by
+    # this fraction despite README describing that as what gate 8 does. Known
+    # gap, see RISK_REGISTER.md. Left unused rather than removed since fixing
+    # it properly needs a partial-close primitive build_condor's sibling
+    # functions don't have yet.
+    event_derisk_fraction: float = 0.50
     scheduled_events: tuple[tuple[str, str], ...] = (
         ("2026-09-04", "US nonfarm payrolls 08:30 ET"),
         ("2026-09-16", "FOMC decision 14:00 ET"),
     )
+
+    # --- submission deadline, a DIFFERENT kind of event from the ones above -
+    # NFP and FOMC are temporary de-risk-and-resume events; this is final.
+    # Judging reads whatever the account shows at this instant, so an open
+    # position becomes a mark-to-market snapshot rather than a realised
+    # result. T6 (21-45 DTE, deployed 2026-08-30, see DEPLOYMENT_DECISIONS.md
+    # D3) makes this a real, not hypothetical, concern: its positions will
+    # not reach natural expiry inside the judged window under any sequence of
+    # entries.
+    deadline_flatten_enabled: bool = True
+    submission_deadline_et: str = "2026-09-04T11:00:00"   # ISO, naive ET
+    # 90 minutes: NFP prints 08:30 ET and options can't be closed before the
+    # 09:30 ET open regardless, so the real usable window is 09:30-11:00 ET.
+    # Triggering at the open uses the whole window, giving ~18 cycles at the
+    # 5 minute interval to actually get filled rather than one attempt.
+    deadline_flatten_hours_before: float = 1.5
 
     # --- execution ---------------------------------------------------------
     # MEASURED: net-credit mleg limits filled 1 cent off mid on entry, 2 on exit.
