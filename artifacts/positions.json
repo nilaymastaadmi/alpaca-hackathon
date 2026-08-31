@@ -1,4 +1,20 @@
 {
-  "updated_at": "2026-08-31T14:15:11+00:00",
-  "open": []
+  "updated_at": "2026-08-31T14:21:40+00:00",
+  "open": [
+    {
+      "id": "pos-14aabefe5a",
+      "opened_at": "2026-08-31T14:21:40+00:00",
+      "expiry": "2026-10-02",
+      "contracts": 7,
+      "credit": 1.09,
+      "max_loss_per_contract": 3.835,
+      "short_call": "SPY261002C00792000",
+      "long_call": "SPY261002C00797000",
+      "short_put": "SPY261002P00731000",
+      "long_put": "SPY261002P00726000",
+      "entry_limit": "-1.09",
+      "entry_order_id": "f4bb3d2d-cbf8-42db-bb8b-b4b361a1b805",
+      "peak_profit_frac": 0.0
+    }
+  ]
 }
