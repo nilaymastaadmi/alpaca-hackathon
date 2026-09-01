@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-01T14:25:09+00:00",
+  "updated_at": "2026-09-01T14:30:10+00:00",
   "open": [
     {
       "id": "pos-adopt-bf4b6642",
@@ -29,7 +29,7 @@
       "long_put": "SPY261002P00727000",
       "entry_limit": "-1.13",
       "entry_order_id": "66ee2bf5-2780-4803-8fee-cd8ce88a6fc6",
-      "peak_profit_frac": 0.11403508771929835
+      "peak_profit_frac": 0.19298245614035048
     },
     {
       "id": "pos-adopt-642a8824",
