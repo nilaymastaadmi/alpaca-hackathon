@@ -239,7 +239,8 @@ def evaluate_exit(pos: OpenPosition, buyback: float | None, today: date,
 
 
 def reconcile(ledger_positions: list[OpenPosition],
-              broker_symbols: set[str]) -> tuple[list[OpenPosition], list[dict]]:
+              broker_symbols: set[str],
+              underlying: str | None = None) -> tuple[list[OpenPosition], list[dict]]:
     """
     Compare the ledger against what the broker actually holds.
 
@@ -249,6 +250,19 @@ def reconcile(ledger_positions: list[OpenPosition],
       - SOME legs present: a partial close or an assignment. This is the
         dangerous one, because a condor missing its long wing is a naked short.
         Flagged loudly rather than quietly repaired.
+
+    And one outcome in the OTHER direction, when `underlying` is given: an
+    option leg on that underlying held at the broker but covered by no ledger
+    position is an ORPHAN, flagged CRITICAL. This direction was missing on
+    2026-08-31: a parse bug fed this function an empty broker view, it dropped
+    every ledger entry as "closed elsewhere" (the info path above), and the
+    agent stacked four condors it then could not see, manage, or flatten. The
+    ledger-to-broker check alone passes vacuously on an empty ledger; only the
+    broker-to-ledger direction can catch the book the agent does not know it
+    owns. Orphans are flagged, never auto-closed: guessing the structure from
+    loose legs and closing wrong is the naked-short failure mode this module's
+    header warns about. Legs on other roots (the VIX hedge, stock positions)
+    are out of scope by the prefix-and-length filter.
     """
     healthy, issues = [], []
     for p in ledger_positions:
@@ -266,4 +280,25 @@ def reconcile(ledger_positions: list[OpenPosition],
                                     "inspection before any further trading",
                            "expected_legs": p.legs, "present_legs": present})
             healthy.append(p)
+
+    if underlying:
+        covered = {s for p in ledger_positions for s in p.legs}
+        # OCC option symbols are root + YYMMDD + C/P + 8-digit strike, so an
+        # option on this underlying is exactly 15 characters past the root; a
+        # bare stock position ("SPY") and other roots ("VIX...") fall out.
+        orphans = sorted(
+            s for s in broker_symbols
+            if s.startswith(underlying)
+            and len(s) >= len(underlying) + 15
+            and s not in covered)
+        if orphans:
+            issues.append({
+                "position": None, "severity": "CRITICAL",
+                "issue": f"{len(orphans)} option leg(s) on {underlying} at the "
+                         f"broker are covered by no ledger position. The agent "
+                         f"cannot manage, exit, or flatten what it does not "
+                         f"know it owns. No new risk until they are adopted "
+                         f"into the ledger or closed by hand",
+                "orphan_legs": orphans,
+            })
     return healthy, issues

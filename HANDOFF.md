@@ -1,9 +1,30 @@
 # HANDOFF
 
-Last updated 2026-08-22. Rewritten from scratch; the 2026-08-19 version is
-entirely superseded (that version predates the strategy, the agent, and
-everything else below). Read this file first in any new session; it is the
-index, not the detail — the files it points to hold the actual reasoning.
+Last updated 2026-09-01 (live-week status added; body below otherwise from
+2026-08-22, which superseded the 2026-08-19 version entirely). Read this
+file first in any new session; it is the index, not the detail — the files
+it points to hold the actual reasoning.
+
+## Live week status, as of Tue 2026-09-01 morning
+
+- **The agent is LIVE on the fresh account `PA37R35A5ZGW` and holds 4 iron
+  condors** (28 contract-sets, all exp 2026-10-02, max risk $10,840 = 10.8%
+  of equity, P&L about -$100). It was supposed to be 1 position; a parse
+  bug read the account as flat every cycle and stacked 4. Full incident,
+  root cause, and fix: `RISK_REGISTER.md` 4.7. The 3 extras were ADOPTED
+  into the ledger (Nilay's call, 2026-09-01), not closed.
+- **A second same-day save:** fastmcp 4.0.0 shipped upstream and kills
+  `alpaca-mcp-server` at startup; versions now pinned in `mcp_client.py`.
+  See `RISK_REGISTER.md` 4.8. Do not unpin during the competition.
+- The daily task (`AlpacaHackathon-LiveAgent`, 18:50 IST, 85 cycles x 5
+  min) now has RestartOnFailure 3x5min; Monday's run was killed at cycle
+  13 of 85 by a console close (exit 0xC000013A). Do not close the console
+  window it opens.
+- Flatten policy per Nilay 2026-09-01: trade the maximum available cycles.
+  Deadline flatten stays as configured, Friday 09:30-11:00 ET, AFTER the
+  08:30 ET NFP print. Gate 8 blocks new entries 3-4 Sep as designed.
+- Tests: 211 passing (9 new regression tests in
+  `tests/test_position_sync.py`). Merkle seal verifies.
 
 ## What this project is
 
@@ -53,15 +74,19 @@ explaining it, since the underlying research reasoning is unaffected.
 - Submission fields include a **"Demo application platform"** field
   distinct from the Application URL itself (i.e., naming Streamlit Cloud
   specifically, not just the link).
-- **Worth knowing, not confirmed as current-cohort:** the hackathon page's
-  submissions showcase includes "SPY Sentinel AI" — "analyzes market
-  structure... applies risk gates... refuses to trade when an edge is not
-  proven," strikingly close to this project's own framing. Given the
-  event started hours before this was checked and that entry already has
-  a produced video, it is almost certainly carried-over showcase content
-  from a precursor event, not a live competitor — but worth a glance if
-  time allows, since convergent framing from other builders is itself
-  informative either way.
+- **Corrected 2026-09-01: the showcase is LIVE and rotating, these are real
+  current competitors.** A repeat page read a day apart showed a different
+  entry set both times, so the earlier "almost certainly carried-over"
+  guess was wrong and is withdrawn. As of 1 Sep the showcase lists roughly
+  40 entries, of which one, "VRP Engine: Autonomous Options Agent on
+  Alpaca," pitches a near-identical strategy (VRP harvesting, defined-risk
+  spreads, risk gates, API+MCP+CLI), and at least 6 more lead with
+  refuses-by-default / auditable / deterministic-gates framing (Vetoed,
+  Aegis, EdgeStack, Horizon Blackline, SPY Sentinel AI, Vermilion). The
+  refusal line is no longer a differentiator on its own; the pre-registered
+  research discipline (git-provable timestamps, N-corrected bars, sealed
+  holdout, recorded wrong predictions) is what nobody else claims, and the
+  pitch should lead with it.
 
 ## Repo and deployment state, verified not assumed
 

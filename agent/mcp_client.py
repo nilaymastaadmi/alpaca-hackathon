@@ -73,8 +73,18 @@ class MCPClient:
     def __init__(self, command: list[str] | None = None,
                  env_file: Path = DEFAULT_ENV_FILE,
                  timeout: float = 60.0):
+        # Every version here is PINNED, as of 2026-09-01. An unpinned `uvx
+        # alpaca-mcp-server` re-resolves dependencies whenever PyPI moves, and
+        # on the morning of 1 Sep it started pulling fastmcp 4.0.0, which
+        # removed the fastmcp.tools.tool module alpaca-mcp-server 2.3.0
+        # imports: the server then dies at startup, before the first request.
+        # The live agent had run the previous evening only because uvx still
+        # had the old resolution (fastmcp 3.4.7, mcp 1.29.1) cached. Caught by
+        # a pre-session dry-run, not by any test, since every test mocks this
+        # boundary. Do not unpin mid-competition.
         self.command = command or [
-            "uvx", "alpaca-mcp-server", "--env-file", str(env_file),
+            "uvx", "--with", "fastmcp==3.4.7", "--with", "mcp==1.29.1",
+            "alpaca-mcp-server==2.3.0", "--env-file", str(env_file),
         ]
         self.timeout = timeout
         self.proc: subprocess.Popen | None = None

@@ -1,6 +1,51 @@
 {
-  "updated_at": "2026-08-31T14:21:40+00:00",
+  "updated_at": "2026-09-01T05:40:23+00:00",
   "open": [
+    {
+      "id": "pos-adopt-bf4b6642",
+      "opened_at": "2026-08-31T13:45:14.510345Z",
+      "expiry": "2026-10-02",
+      "contracts": 7,
+      "credit": 1.11,
+      "max_loss_per_contract": 3.89,
+      "short_call": "SPY261002C00792000",
+      "long_call": "SPY261002C00797000",
+      "short_put": "SPY261002P00731000",
+      "long_put": "SPY261002P00726000",
+      "entry_limit": "-1.09",
+      "entry_order_id": "bf4b6642-190e-4323-a5ba-bafbe344b974",
+      "peak_profit_frac": 0.036036036036036265
+    },
+    {
+      "id": "pos-adopt-66ee2bf5",
+      "opened_at": "2026-08-31T13:56:01.600866Z",
+      "expiry": "2026-10-02",
+      "contracts": 7,
+      "credit": 1.14,
+      "max_loss_per_contract": 3.86,
+      "short_call": "SPY261002C00792000",
+      "long_call": "SPY261002C00797000",
+      "short_put": "SPY261002P00732000",
+      "long_put": "SPY261002P00727000",
+      "entry_limit": "-1.13",
+      "entry_order_id": "66ee2bf5-2780-4803-8fee-cd8ce88a6fc6",
+      "peak_profit_frac": 0.05263157894736789
+    },
+    {
+      "id": "pos-adopt-642a8824",
+      "opened_at": "2026-08-31T14:05:38.347634Z",
+      "expiry": "2026-10-02",
+      "contracts": 7,
+      "credit": 1.1,
+      "max_loss_per_contract": 3.9,
+      "short_call": "SPY261002C00792000",
+      "long_call": "SPY261002C00797000",
+      "short_put": "SPY261002P00731000",
+      "long_put": "SPY261002P00726000",
+      "entry_limit": "-1.1",
+      "entry_order_id": "642a8824-8335-4d79-8caf-9d3d3f4d2699",
+      "peak_profit_frac": 0.027272727272727497
+    },
     {
       "id": "pos-14aabefe5a",
       "opened_at": "2026-08-31T14:21:40+00:00",
@@ -14,7 +59,7 @@
       "long_put": "SPY261002P00726000",
       "entry_limit": "-1.09",
       "entry_order_id": "f4bb3d2d-cbf8-42db-bb8b-b4b361a1b805",
-      "peak_profit_frac": 0.0
+      "peak_profit_frac": 0.01834862385321123
     }
   ]
 }

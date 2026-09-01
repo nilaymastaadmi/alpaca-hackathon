@@ -91,9 +91,34 @@ class Broker:
         return r.get("data", r)
 
     def positions(self) -> list[dict]:
+        """
+        The MCP server wraps this payload as {"data": {"result": [...]}}. This
+        method used to look for a "positions" key that does not exist in that
+        wrapper and so returned [] for EVERY response, populated or not. On
+        2026-08-31 that read a live account holding condors as flat on every
+        cycle: reconcile() dropped each ledger entry as "closed elsewhere" and
+        the agent re-entered at full size four times (artifacts seq 28-42).
+        The bug survived because the practice account really was flat, so the
+        empty and the broken read were indistinguishable in every dry run.
+
+        An unrecognised shape now RAISES instead of returning []. "The account
+        is flat" is an active claim that the ledger reconcile, the capacity
+        gate and the stagger gate all build on, not a safe default, and the
+        one time it was wrongly defaulted it cost exactly the failure the
+        ledger exists to prevent.
+        """
         r = self.mcp.call("get_all_positions")
-        d = r.get("data", r)
-        return d if isinstance(d, list) else d.get("positions", [])
+        d = r.get("data", r) if isinstance(r, dict) else r
+        if isinstance(d, list):
+            return d
+        if isinstance(d, dict):
+            for key in ("result", "positions"):
+                v = d.get(key)
+                if isinstance(v, list):
+                    return v
+        raise RuntimeError(
+            "get_all_positions returned an unrecognised shape; refusing to "
+            f"treat it as an empty book: {str(d)[:200]}")
 
     def spot(self) -> float:
         r = self.mcp.call("get_stock_snapshot", {"symbols": self.cfg.underlying})

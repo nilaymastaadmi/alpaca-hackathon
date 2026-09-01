@@ -160,10 +160,12 @@ class RiskEngine:
         return GateResult(
             "position_integrity", 0, ok,
             "ledger and broker agree on every open position" if ok else
-            f"{len(critical)} position(s) PARTIAL at the broker. A condor missing "
-            f"a wing is a naked short, so the defined-risk assumption behind the "
-            f"3% sizing no longer holds. No new risk until inspected: "
-            f"{[i.get('position') for i in critical]}",
+            f"{len(critical)} critical ledger/broker mismatch(es): a position "
+            f"partial at the broker (a condor missing a wing is a naked short) "
+            f"or broker legs no ledger position covers. Either way the "
+            f"defined-risk assumption behind the 3% sizing no longer holds. "
+            f"No new risk until inspected: "
+            f"{[i.get('position') or 'orphan-legs' for i in critical]}",
             {"critical": len(critical), "total_issues": len(issues),
              "detail": critical[:3]},
         )

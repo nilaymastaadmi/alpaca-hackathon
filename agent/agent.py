@@ -131,7 +131,8 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
         # Exits come first on purpose. An agent that opens before it closes can
         # sit at capacity holding a position it should already have exited.
         ledger = Ledger(ledger_path) if ledger_path else Ledger()
-        held, recon_issues = reconcile(ledger.load(), broker_symbols)
+        held, recon_issues = reconcile(ledger.load(), broker_symbols,
+                                       underlying=cfg.underlying)
         ledger.save(held)
         exits = _manage_exits(broker, ledger, held, today, cfg, dry_run, log)
         held = ledger.load()

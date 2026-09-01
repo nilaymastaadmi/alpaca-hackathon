@@ -297,6 +297,73 @@ one to cover a case it was not designed for.
 
 ---
 
+### 4.7 LIVE INCIDENT 2026-08-31: the agent stacked 4 condors believing it was flat every time. FIXED 2026-09-01, positions adopted
+
+What happened, from the sealed artifacts and the broker's own order log:
+on the first live morning the agent entered 4 iron condors in 36 minutes
+(fills 09:45, 09:55, 10:05, 10:21 ET, 7 contracts each, all expiring
+2026-10-02), where the design (`one_per_expiry=True`) intended exactly 1.
+Every cycle read the account as flat: gate 5 said 0/5 open at 10:20 while
+the broker already held 3 condors. Combined max risk reached $10,840,
+10.8% of equity, inside the 15% D1 cap by luck, not by any gate.
+
+Root cause, one line: `broker.positions()` parsed the MCP payload with a
+"positions" key that does not exist; the server wraps it as
+`{"data": {"result": [...]}}`. It therefore returned [] for EVERY response,
+and `reconcile()` dropped each ledger entry as "closed elsewhere" one cycle
+after its fill. The bug survived 12 days of dry runs because the practice
+account really was flat, so the empty and the broken read were identical.
+The orders path 280 lines below parses "result" correctly.
+
+The evidence that pinned it is the project's own audit trail: artifact seq
+30 contains BOTH the raw MCP response listing `SPY261002C00792000` AND the
+reconcile drop that ignored it, in the same sealed record. The Merkle log
+did exactly what it was built for, against its own author.
+
+Second failure in the same window: the watchdog was killed at 19:52 IST
+(exit 0xC000013A, a console close or Ctrl+C) after 13 of 85 planned cycles,
+so the stacked book then sat unmonitored from Mon 10:21 ET to Tue evening.
+
+Fixes, all landed 2026-09-01 before the Tuesday session:
+1. `positions()` parses the real wrapper and RAISES on an unrecognised
+   shape rather than defaulting to "flat". An empty book is an active claim
+   the whole risk stack builds on, never a safe fallback.
+2. `reconcile()` now checks the broker-to-ledger direction too: option legs
+   on the traded underlying covered by no ledger position are CRITICAL
+   orphans, which gate 0 turns into a HALT. The ledger-to-broker check
+   alone passes vacuously on an empty ledger, which is precisely how this
+   ran unnoticed.
+3. The 3 orphan condors were adopted into the ledger from their real fill
+   records (order ids, fill prices, fill timestamps), decided by Nilay
+   2026-09-01 over trimming back to 1: 10.8% concurrent risk is within the
+   15% D1 cap, and exits, breakers and the deadline flatten now manage all
+   4. Realised cost of the incident so far: roughly -$100 unrealised at
+   Tuesday 01:40 ET, each position valued at +2% to +5% of max profit.
+4. The scheduled task got RestartOnFailure (3 restarts, 5 minutes apart),
+   so a killed watchdog self-heals instead of silently ending the day.
+5. 9 regression tests in `tests/test_position_sync.py`, including the
+   exact live wrapper shape and the exact orphan set from this incident.
+
+### 4.8 Upstream dependency broke the MCP server overnight. PINNED 2026-09-01
+
+`uvx alpaca-mcp-server` re-resolves its environment whenever PyPI moves. On
+the morning of 2026-09-01 it started pulling fastmcp 4.0.0 (with mcp 2.1.1),
+and alpaca-mcp-server 2.3.0 imports `fastmcp.tools.tool`, which 4.0.0
+removed: the server dies at startup, before the first request. Monday's
+live run worked only because uvx still had the previous resolution cached
+(fastmcp 3.4.7, mcp 1.29.1). Tuesday's session would have started with
+zero working cycles; RestartOnFailure would have retried into the same
+crash 3 times and stopped.
+
+Caught by running one dry-run cycle against the live account during the
+2026-09-01 audit, not by any test: every test mocks this boundary, which is
+the correct place for tests to stop and exactly why a daily pre-session
+smoke run earns its place. `mcp_client.py` now pins all three packages
+(`fastmcp==3.4.7`, `mcp==1.29.1`, `alpaca-mcp-server==2.3.0`). Do not unpin
+mid-competition.
+
+---
+
 ## 5. Watch list, no action yet
 
 - Technology partners were "to be announced" and may add prize surfaces.
