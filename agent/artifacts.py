@@ -232,8 +232,19 @@ def _cli() -> None:
         # has no import dependency on the agent package.
         environmental = ("market_open", "session_window")
 
+        # Opportunity accounting runs over CYCLE decisions only. Hedge,
+        # exit-check and flatten sub-artifacts carry no gates, so the old
+        # version's "eb is None means it was an opportunity" default counted
+        # every hedge:no_candidate row as a declined opportunity: 22 reported
+        # where the true cycle count was 10, found when the dashboard's
+        # corrected headline stopped matching this command's output. Two
+        # judge-facing surfaces must agree with each other and with the log.
+        cycle_actions = ("enter", "refuse", "halt", "flatten")
+
         for r in recs:
             actions[r.get("action", "?")] = actions.get(r.get("action", "?"), 0) + 1
+            if r.get("action") not in cycle_actions:
+                continue
 
             bg = r.get("blocking_gate")
             eb = r.get("environmental_block")
@@ -253,6 +264,12 @@ def _cli() -> None:
                 opportunities += 1
                 if bg:
                     blocking[bg] = blocking.get(bg, 0) + 1
+                elif r.get("action") == "refuse":
+                    # Every gate passed and the entry ladder walked its rungs
+                    # without a fill. A real refusal outcome, priced by the
+                    # market rather than a gate; same label the dashboard uses.
+                    key = "entry ladder unfilled (all gates passed)"
+                    blocking[key] = blocking.get(key, 0) + 1
             if eb:
                 env[eb] = env.get(eb, 0) + 1
 

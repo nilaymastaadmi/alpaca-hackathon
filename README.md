@@ -105,7 +105,7 @@ estimated.
 ## Architecture
 
 ```
-market data ──> signals ──> 10 risk gates ──> execute or refuse ──> artifact
+market data ──> signals ──> 11 risk gates ──> execute or refuse ──> artifact
    (MCP)          │             │                    (MCP)            │
                   │             │                                     v
                   │             └── circuit breakers halt        Merkle tree
@@ -116,20 +116,26 @@ market data ──> signals ──> 10 risk gates ──> execute or refuse ─�
 **Everything at runtime goes through Alpaca's MCP server**, not the REST SDK. The
 rules require it, and a project that calls REST directly does not satisfy them
 however well it trades. `agent/mcp_client.py` spawns the official server and
-speaks JSON-RPC 2.0 over stdio. Verified against Alpaca MCP Server v3.4.7 with 74
-tools exposed. Every MCP request and response is recorded, including failures, so
+speaks JSON-RPC 2.0 over stdio. Verified against alpaca-mcp-server 2.3.0
+(FastMCP 3.4.7) with 74 tools exposed; all three package versions are pinned,
+because fastmcp 4.0.0 shipped mid-competition and kills the unpinned server at
+import. Every MCP request and response is recorded, including failures, so
 "we used the MCP server" is checkable rather than claimed.
 
-**Ten numbered gates**, evaluated at decision time rather than applied afterwards
-as a filter, because the rules are path dependent. All gates are evaluated rather
-than short-circuiting on the first failure, so one artifact shows the whole
-picture. Gates 2 and 3 are **circuit breakers** distinguished from ordinary
-refusals in code: a refusal means no trade now, a halt means stop.
+**Eleven numbered gates (0 to 10), plus a stagger rule** that refuses a second
+position on an expiry already held. Evaluated at decision time rather than
+applied afterwards as a filter, because the rules are path dependent. All gates
+are evaluated rather than short-circuiting on the first failure, so one artifact
+shows the whole picture. Gates 0, 2 and 3 are **circuit breakers** distinguished
+from ordinary refusals in code: a refusal means no trade now, a halt means stop.
 
-**A tail hedge**, because the core book is five correlated short-volatility
-positions that hit max loss together. Long VIX calls following Cboe's VXTH
-methodology, sized at 1% of equity. Index options expose no greeks on this data
-feed, so the VIX forward is recovered from put-call parity.
+**A tail hedge, designed and coded but honestly inoperative live.** Long VIX
+calls following Cboe's VXTH methodology, sized at 1% of equity, with the VIX
+forward recovered from put-call parity because index options expose no greeks on
+this feed. Live, Alpaca's option data has served zero VIX contracts on either
+feed since at least 28 Aug (RISK_REGISTER 4.9), so the agent logs a refusal to
+hedge off an empty read every cycle rather than pretending, and the purchased
+wings remain the only crash protection. The refusal artifacts are the evidence.
 
 **A watchdog**, because the most likely way to lose the week is not strategic.
 US hours are 19:00 to 01:30 IST, and a sleeping laptop hangs in-flight HTTP
@@ -139,7 +145,7 @@ timeout, since an in-process timer cannot rescue a thread stuck in a syscall.
 ## Verify it yourself
 
 ```bash
-make test      # 138 tests
+make test      # 211 tests
 make verify    # recompute the Merkle root over every logged decision
 make dry-run   # run one full cycle, place nothing
 make dash      # the dashboard, locally
@@ -173,12 +179,12 @@ detection works even when a forger recomputes the leaf hashes consistently.
 
 | Path | What |
 |---|---|
-| `agent/` | The live agent: MCP client, signals, 10 gates, execution, hedge, watchdog |
+| `agent/` | The live agent: MCP client, signals, 11 gates, execution, hedge, watchdog |
 | `backtest/` | Pre-registered research. Holdout sealed in code, not by memory |
 | `research/` | Pre-registration, every result including the failures, deployment decisions |
 | `dashboard/` | Streamlit cockpit, reads artifacts off disk so it renders with the market closed |
 | `prep/` | Capability probes and the daily IV logger |
-| `tests/` | 138 tests |
+| `tests/` | 211 tests |
 | `RISK_REGISTER.md` | What could bite during the live window, and what is done about it |
 
 Licensed MIT. Paper trading only.

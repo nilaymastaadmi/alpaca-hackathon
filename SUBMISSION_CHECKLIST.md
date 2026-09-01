@@ -24,9 +24,10 @@ before closing the laptop.
 - [x] **Disambiguate the practice account inside the repo before going public.**
       `HANDOFF.md` already labels it unmistakably: "Practice account (dev-only,
       DO NOT submit): `PA308NOY3X36`".
-- [ ] **Commit artifacts during the live week** so the deployed dashboard is not
-      stale. It renders whatever is committed; without this a judge opening the
-      URL on 3 Sep sees decisions from 20 Aug.
+- [x] **Commit artifacts during the live week** so the deployed dashboard is not
+      stale. Working: the live agent publishes every cycle (13 auto-commits on
+      31 Aug alone), and the dashboard's Merkle badge verifies in production.
+      Keep confirming daily that the 18:50 IST task actually fired.
 
 ## Mandatory submission fields
 
@@ -47,19 +48,25 @@ before closing the laptop.
 
 ## Live week operations, 31 Aug to 4 Sep
 
-- [ ] Agent live and trading at **Mon 31 Aug 09:30 ET**. A late start loses a
-      quarter of the P&L window.
+- [x] Agent live and trading at **Mon 31 Aug 09:30 ET**: first fill 09:45 ET,
+      4 condors filled through MCP. Three of the four were a ledger-parsing
+      incident, since fixed and adopted (`RISK_REGISTER.md` 4.7, 4.8). The
+      watchdog was killed at cycle 13 of 85 by a console close; the task now
+      self-restarts. **Do not close the console window it opens at 18:50 IST.**
 - [ ] Visit the Streamlit app daily. Community Cloud apps sleep after roughly 12
       hours without traffic and take about 30 seconds to wake. A judge should not
       be the one waking it.
 - [ ] Capture screenshots and logs **as they happen**, not reconstructed later.
-- [ ] **Thu 3 Sep close: the NFP de-risk fires.** Nonfarm payrolls lands Fri 4 Sep
-      08:30 ET, inside the window and 2.5 hours before the deadline. This is the
-      demo's best moment. Capture it.
-- [ ] Consider being **flat at submission**. Open positions get marked at whatever
-      the tape says; flat means realised, unambiguous P&L. It also pairs exactly
-      with the NFP de-risk, so the risk-correct move and the presentation-correct
-      move are the same move.
+- [ ] **Thu 3 Sep and Fri 4 Sep: gate 8 refuses all NEW entries** (NFP lands
+      Fri 08:30 ET, within its 1-day window). What fires is a refusal
+      artifact, not a position reduction; `event_derisk_fraction` was never
+      wired and stays that way (RISK_REGISTER 4.6). Capture the refusal
+      artifacts, they are the event-awareness demo.
+- [x] **Flat at submission: DECIDED 2026-09-01 by Nilay, trade the maximum
+      cycles.** Positions ride through the NFP print and the deadline flatten
+      closes everything Fri 09:30-11:00 ET, before the 11:00 ET deadline.
+      Accepts the NFP gap on the open book as a conscious trade-off. Capture
+      the flatten artifacts Friday morning.
 - [ ] `make seal` and confirm `make verify` passes before submitting.
 
 ## Resolved by the official kickoff email (28 Aug) and the live hackathon page (29 Aug)
@@ -71,11 +78,10 @@ before closing the laptop.
 - [x] **Total prize pool is $6,000**, not the $5,000 this repo assumed
       everywhere until now: 1st $2,500 + $300 Featherless credits, 2nd $1,500,
       3rd $1,000, Social Engagement 2 x $500 (+ Algo Trader Plus).
-- [ ] **New requirement from the same email: a one-page write-up covering AI
-      logic, risk gates, and Alpaca infrastructure implementation.** Distinct
-      from the "long description" field below. Not yet drafted; the source
-      material already exists across `STRATEGY.md`, `RISK_REGISTER.md` and
-      `HANDOFF.md`, condensing it is the remaining work.
+- [x] **One-page write-up covering AI logic, risk gates, and Alpaca
+      infrastructure**: drafted at `presentation/WRITEUP.md`, corrected
+      2026-09-01 (gate count, hedge reality, dev bar 0.791, the live
+      incident). One final-numbers pass on Thursday before submitting.
 - [x] **"Options Alpha Agents" vs "Track 2: Volatility and Event", resolved.**
       Checked the live hackathon page directly, 29 Aug: there is exactly one
       main challenge, "Options Alpha Agents," no separate tracks exist.

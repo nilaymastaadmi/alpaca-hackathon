@@ -115,19 +115,48 @@ c5.metric("Drawdown", f"{pf.get('drawdown', 0) * 100:.2f}%",
 
 # --- the headline number: refusals ---------------------------------------
 
-blocking = Counter(d.get("blocking_gate") for d in cycles if d.get("blocking_gate"))
-n_enter = sum(1 for d in cycles if d.get("action") == "enter")
-n_refuse = sum(1 for d in cycles if d.get("action") == "refuse")
-n_halt = sum(1 for d in cycles if d.get("action") == "halt")
-total = max(len(cycles), 1)
+# Opportunity accounting mirrors `make summary` (agent/artifacts.py): a cycle
+# only counts as a decision when the market was open and inside the trading
+# window. This headline used to count every logged cycle, so 21 market-closed
+# rows inflated the refusal rate a judge would then fail to reproduce from
+# the summary command the README invites them to run. Legacy records logged
+# an environmental gate as the blocking one; reclassify at read time, never
+# by rewriting the sealed log.
+ENVIRONMENTAL = ("market_open", "session_window")
+
+
+def _classify(d: dict) -> tuple[bool, str | None]:
+    bg, eb = d.get("blocking_gate"), d.get("environmental_block")
+    if eb is None and bg in ENVIRONMENTAL:
+        eb, bg = bg, None
+    was_opp = d.get("was_an_opportunity")
+    if was_opp is None:
+        was_opp = eb is None
+    return bool(was_opp), bg
+
+
+opp = [(d, bg) for d in cycles for is_opp, bg in [_classify(d)] if is_opp]
+n_env = len(cycles) - len(opp)
+n_enter = sum(1 for d, _ in opp if d.get("action") == "enter")
+n_refuse = sum(1 for d, _ in opp if d.get("action") == "refuse")
+n_halt = sum(1 for d, _ in opp if d.get("action") == "halt")
+n_declined = len(opp) - n_enter
+blocking: Counter = Counter()
+for d, bg in opp:
+    if d.get("action") == "refuse":
+        blocking[bg or "entry ladder unfilled (all gates passed)"] += 1
+    elif d.get("action") == "halt" and bg:
+        blocking[bg] += 1
 
 st.subheader("What the agent decided")
 st.markdown(
-    f"**The agent evaluated {len(cycles)} opportunities and declined "
-    f"{n_refuse + n_halt} of them ({(n_refuse + n_halt) / total * 100:.0f}%).** "
-    "Most trading agents are built to trade. This one measures whether the "
-    "premium is actually there first, and the refusals carry the numbers that "
-    "caused them."
+    f"**Of {len(opp)} real decision opportunities (market open, inside the "
+    f"trading window), the agent entered {n_enter} and declined {n_declined} "
+    f"({n_declined / max(len(opp), 1) * 100:.0f}%).** Another {n_env} logged "
+    "cycles fell outside market hours and are recorded for completeness, not "
+    "counted as decisions. Most trading agents are built to trade. This one "
+    "measures whether the premium is actually there first, and the refusals "
+    "carry the numbers that caused them."
 )
 
 a, b = st.columns([1, 2])

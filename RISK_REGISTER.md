@@ -364,7 +364,25 @@ mid-competition.
 
 ---
 
-## 5. Watch list, no action yet
+### 4.9 The tail hedge is inoperative live: Alpaca serves no VIX option data. ACCEPTED 2026-09-01, claims corrected
+
+Every live hedge attempt has returned `n_quotes=0`: 12 of 12
+`hedge:no_candidate` artifacts on the main log since 28 Aug, and the same
+on every comparison log. Probed directly on 2026-09-01: `get_option_chain`
+for VIX returns an empty snapshot set on BOTH the `opra` and `indicative`
+feeds. The last time any VIX quote came back was 27 Aug (dry-run
+`hedge:would_buy` entries in the comparison logs), so the data went away
+upstream sometime around kickoff, after the 2026-08-20 verification that
+shaped the put-call-parity design.
+
+Consequence: the short book's only crash protection is the purchased
+wings. The hedge stays ENABLED deliberately, because "refused to hedge off
+an untrustworthy read" logged every cycle is honest evidence of the
+design working as specified, and disabling it would erase that trail.
+README and `presentation/WRITEUP.md` were corrected 2026-09-01 to say the
+hedge is designed and coded but has never engaged live, instead of
+implying it covers the book. If VIX data reappears mid-week the hedge
+buys itself with no code change.
 
 - Technology partners were "to be announced" and may add prize surfaces.
 - The measured 1.5% round-trip fill is n=1 in calm conditions. Re-run the ladder
