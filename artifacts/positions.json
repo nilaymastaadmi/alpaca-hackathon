@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-01T13:25:12+00:00",
+  "updated_at": "2026-09-01T13:30:13+00:00",
   "open": [
     {
       "id": "pos-adopt-bf4b6642",
@@ -14,7 +14,7 @@
       "long_put": "SPY261002P00726000",
       "entry_limit": "-1.09",
       "entry_order_id": "bf4b6642-190e-4323-a5ba-bafbe344b974",
-      "peak_profit_frac": 0.036036036036036265
+      "peak_profit_frac": 0.13063063063063063
     },
     {
       "id": "pos-adopt-66ee2bf5",
@@ -44,7 +44,7 @@
       "long_put": "SPY261002P00726000",
       "entry_limit": "-1.1",
       "entry_order_id": "642a8824-8335-4d79-8caf-9d3d3f4d2699",
-      "peak_profit_frac": 0.027272727272727497
+      "peak_profit_frac": 0.12272727272727273
     },
     {
       "id": "pos-14aabefe5a",
@@ -59,7 +59,7 @@
       "long_put": "SPY261002P00726000",
       "entry_limit": "-1.09",
       "entry_order_id": "f4bb3d2d-cbf8-42db-bb8b-b4b361a1b805",
-      "peak_profit_frac": 0.01834862385321123
+      "peak_profit_frac": 0.1146788990825688
     }
   ]
 }
