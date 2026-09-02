@@ -41,6 +41,9 @@ def test_publishable_list_is_narrow_and_explicit():
         # Added after the audit found the deployed dashboard rendering "Flat.
         # No open structures." while the agent held five live condors.
         "artifacts/positions.json",
+        # Added 2026-09-02 for the dashboard's three-agent scoreboard. A
+        # summary of counts, not the shadow logs themselves.
+        "artifacts/compare_summary.json",
     }
     for path in P.PUBLISHABLE:
         assert path.startswith("artifacts/"), "nothing outside artifacts/ may publish"

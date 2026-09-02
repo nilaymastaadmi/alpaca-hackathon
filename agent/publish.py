@@ -41,6 +41,10 @@ PUBLISHABLE = (
     # dashboard/app.py reads this file and it was gitignored. It holds
     # strikes, expiries and sizes, no secrets.
     "artifacts/positions.json",
+    # Added 2026-09-02. Counts and latest verdicts from the D3 shadow
+    # comparison (T4/T6/T7 dry-run agents), written by compare_report.py.
+    # The per-candidate logs stay gitignored; this holds no orders.
+    "artifacts/compare_summary.json",
 )
 
 

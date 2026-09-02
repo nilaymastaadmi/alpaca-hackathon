@@ -1,0 +1,315 @@
+{
+ "generated": "2026-09-02T17:20:20+00:00",
+ "labels": {
+  "T4": "7 to 14 DTE",
+  "T6": "21 to 45 DTE, deployed since 30 Aug",
+  "T7": "5 to 10 DTE"
+ },
+ "deployed": "T6",
+ "daily": [
+  {
+   "date": "2026-08-22",
+   "label": "T4",
+   "cycles": 2,
+   "gate7_pass": 0,
+   "would_enter": 0,
+   "vrp_min": -1.012,
+   "vrp_max": -1.012
+  },
+  {
+   "date": "2026-08-22",
+   "label": "T6",
+   "cycles": 2,
+   "gate7_pass": 2,
+   "would_enter": 0,
+   "vrp_min": 1.208,
+   "vrp_max": 1.208
+  },
+  {
+   "date": "2026-08-22",
+   "label": "T7",
+   "cycles": 2,
+   "gate7_pass": 0,
+   "would_enter": 0,
+   "vrp_min": -1.342,
+   "vrp_max": -1.342
+  },
+  {
+   "date": "2026-08-24",
+   "label": "T4",
+   "cycles": 2,
+   "gate7_pass": 0,
+   "would_enter": 0,
+   "vrp_min": -0.278,
+   "vrp_max": 0.593
+  },
+  {
+   "date": "2026-08-24",
+   "label": "T6",
+   "cycles": 2,
+   "gate7_pass": 2,
+   "would_enter": 0,
+   "vrp_min": 1.212,
+   "vrp_max": 1.633
+  },
+  {
+   "date": "2026-08-24",
+   "label": "T7",
+   "cycles": 2,
+   "gate7_pass": 0,
+   "would_enter": 0,
+   "vrp_min": -0.683,
+   "vrp_max": 0.378
+  },
+  {
+   "date": "2026-08-25",
+   "label": "T4",
+   "cycles": 4,
+   "gate7_pass": 0,
+   "would_enter": 0,
+   "vrp_min": -0.41,
+   "vrp_max": -0.209
+  },
+  {
+   "date": "2026-08-25",
+   "label": "T6",
+   "cycles": 4,
+   "gate7_pass": 0,
+   "would_enter": 0,
+   "vrp_min": 0.88,
+   "vrp_max": 0.996
+  },
+  {
+   "date": "2026-08-25",
+   "label": "T7",
+   "cycles": 4,
+   "gate7_pass": 0,
+   "would_enter": 0,
+   "vrp_min": -1.11,
+   "vrp_max": -0.88
+  },
+  {
+   "date": "2026-08-27",
+   "label": "T4",
+   "cycles": 6,
+   "gate7_pass": 0,
+   "would_enter": 0,
+   "vrp_min": -0.128,
+   "vrp_max": 0.567
+  },
+  {
+   "date": "2026-08-27",
+   "label": "T6",
+   "cycles": 6,
+   "gate7_pass": 6,
+   "would_enter": 4,
+   "vrp_min": 1.007,
+   "vrp_max": 1.844
+  },
+  {
+   "date": "2026-08-27",
+   "label": "T7",
+   "cycles": 6,
+   "gate7_pass": 0,
+   "would_enter": 0,
+   "vrp_min": -0.278,
+   "vrp_max": 0.567
+  },
+  {
+   "date": "2026-08-28",
+   "label": "T4",
+   "cycles": 7,
+   "gate7_pass": 0,
+   "would_enter": 0,
+   "vrp_min": -0.828,
+   "vrp_max": -0.171
+  },
+  {
+   "date": "2026-08-28",
+   "label": "T6",
+   "cycles": 7,
+   "gate7_pass": 7,
+   "would_enter": 6,
+   "vrp_min": 2.421,
+   "vrp_max": 2.819
+  },
+  {
+   "date": "2026-08-28",
+   "label": "T7",
+   "cycles": 7,
+   "gate7_pass": 1,
+   "would_enter": 1,
+   "vrp_min": -0.063,
+   "vrp_max": 1.094
+  },
+  {
+   "date": "2026-08-29",
+   "label": "T4",
+   "cycles": 3,
+   "gate7_pass": 0,
+   "would_enter": 0,
+   "vrp_min": -0.58,
+   "vrp_max": -0.58
+  },
+  {
+   "date": "2026-08-29",
+   "label": "T6",
+   "cycles": 3,
+   "gate7_pass": 3,
+   "would_enter": 0,
+   "vrp_min": 2.485,
+   "vrp_max": 2.485
+  },
+  {
+   "date": "2026-08-29",
+   "label": "T7",
+   "cycles": 2,
+   "gate7_pass": 0,
+   "would_enter": 0,
+   "vrp_min": 0.58,
+   "vrp_max": 0.58
+  },
+  {
+   "date": "2026-08-30",
+   "label": "T4",
+   "cycles": 6,
+   "gate7_pass": 6,
+   "would_enter": 0,
+   "vrp_min": 3.06,
+   "vrp_max": 3.06
+  },
+  {
+   "date": "2026-08-30",
+   "label": "T6",
+   "cycles": 6,
+   "gate7_pass": 6,
+   "would_enter": 0,
+   "vrp_min": 3.06,
+   "vrp_max": 3.06
+  },
+  {
+   "date": "2026-08-30",
+   "label": "T7",
+   "cycles": 6,
+   "gate7_pass": 0,
+   "would_enter": 0,
+   "vrp_min": -0.055,
+   "vrp_max": -0.055
+  },
+  {
+   "date": "2026-08-31",
+   "label": "T4",
+   "cycles": 4,
+   "gate7_pass": 4,
+   "would_enter": 4,
+   "vrp_min": 3.172,
+   "vrp_max": 3.419
+  },
+  {
+   "date": "2026-08-31",
+   "label": "T6",
+   "cycles": 4,
+   "gate7_pass": 4,
+   "would_enter": 4,
+   "vrp_min": 3.172,
+   "vrp_max": 3.419
+  },
+  {
+   "date": "2026-08-31",
+   "label": "T7",
+   "cycles": 4,
+   "gate7_pass": 0,
+   "would_enter": 0,
+   "vrp_min": -0.263,
+   "vrp_max": 0.299
+  },
+  {
+   "date": "2026-09-01",
+   "label": "T4",
+   "cycles": 7,
+   "gate7_pass": 7,
+   "would_enter": 6,
+   "vrp_min": 4.331,
+   "vrp_max": 4.948
+  },
+  {
+   "date": "2026-09-01",
+   "label": "T6",
+   "cycles": 7,
+   "gate7_pass": 7,
+   "would_enter": 6,
+   "vrp_min": 4.336,
+   "vrp_max": 4.988
+  },
+  {
+   "date": "2026-09-01",
+   "label": "T7",
+   "cycles": 7,
+   "gate7_pass": 7,
+   "would_enter": 6,
+   "vrp_min": 1.476,
+   "vrp_max": 2.948
+  },
+  {
+   "date": "2026-09-02",
+   "label": "T4",
+   "cycles": 4,
+   "gate7_pass": 4,
+   "would_enter": 4,
+   "vrp_min": 6.3,
+   "vrp_max": 7.009
+  },
+  {
+   "date": "2026-09-02",
+   "label": "T6",
+   "cycles": 4,
+   "gate7_pass": 4,
+   "would_enter": 4,
+   "vrp_min": 6.215,
+   "vrp_max": 7.069
+  },
+  {
+   "date": "2026-09-02",
+   "label": "T7",
+   "cycles": 4,
+   "gate7_pass": 4,
+   "would_enter": 4,
+   "vrp_min": 3.855,
+   "vrp_max": 4.819
+  }
+ ],
+ "tally": {
+  "T4": {
+   "cycles": 45,
+   "would_enter": 14
+  },
+  "T6": {
+   "cycles": 45,
+   "would_enter": 24
+  },
+  "T7": {
+   "cycles": 44,
+   "would_enter": 11
+  }
+ },
+ "last_batch": {
+  "T4": {
+   "timestamp": "2026-09-02T12:45:02-04:00",
+   "action": "enter",
+   "blocking_gate": null,
+   "short_strike_vrp": 6.544
+  },
+  "T6": {
+   "timestamp": "2026-09-02T12:45:12-04:00",
+   "action": "enter",
+   "blocking_gate": null,
+   "short_strike_vrp": 6.529
+  },
+  "T7": {
+   "timestamp": "2026-09-02T12:45:19-04:00",
+   "action": "enter",
+   "blocking_gate": null,
+   "short_strike_vrp": 3.889
+  }
+ }
+}

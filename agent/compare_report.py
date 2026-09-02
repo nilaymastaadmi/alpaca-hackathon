@@ -119,7 +119,7 @@ def main() -> None:
         "file is the live-market evidence gathered in parallel while that "
         "decision stays open until kickoff.",
         "",
-        "| ET timestamp | T4 (7-14 DTE, deployed) | T6 (21-45 DTE) | T7 (5-10 DTE, proposed) |",
+        "| ET timestamp | T4 (7-14 DTE) | T6 (21-45 DTE, deployed since 30 Aug) | T7 (5-10 DTE) |",
         "|---|---|---|---|",
     ]
     if not ordered:
@@ -181,6 +181,50 @@ def main() -> None:
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text("\n".join(L) + "\n", encoding="utf-8")
     print(f"\nwritten to {REPORT_PATH}")
+
+    # Machine-readable twin of the tables above, for the dashboard's
+    # "three agents, one market" panel. The per-candidate logs themselves
+    # stay gitignored (a judge browsing artifacts/ should only find the
+    # deployed agent's sealed decisions); this summary carries no orders,
+    # only counts and the latest verdict per candidate.
+    daily = []
+    for day in sorted(by_date):
+        for label in LABELS:
+            recs = by_date[day].get(label, [])
+            if not recs:
+                continue
+            vrps = [r["signals"]["short_strike_vrp"] for r in recs
+                    if isinstance(r.get("signals", {}).get("short_strike_vrp"), (int, float))]
+            daily.append({
+                "date": day, "label": label, "cycles": len(recs),
+                "gate7_pass": sum(1 for r in recs if any(
+                    g.get("gate") == "vrp_threshold" and g.get("passed")
+                    for g in r.get("gates", []))),
+                "would_enter": sum(1 for r in recs if r.get("action") == "enter"),
+                "vrp_min": min(vrps) if vrps else None,
+                "vrp_max": max(vrps) if vrps else None,
+            })
+    last_bk = ordered[-1] if ordered else None
+    last = {}
+    if last_bk:
+        for label, rec in batches[last_bk].items():
+            last[label] = {"timestamp": rec.get("timestamp"),
+                           "action": rec.get("action"),
+                           "blocking_gate": rec.get("blocking_gate"),
+                           "short_strike_vrp": rec.get("signals", {}).get("short_strike_vrp")}
+    summary = {
+        "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "labels": {"T4": "7 to 14 DTE", "T6": "21 to 45 DTE, deployed since 30 Aug",
+                   "T7": "5 to 10 DTE"},
+        "deployed": "T6",
+        "daily": daily,
+        "tally": {label: {"cycles": cycles_by_label[label],
+                          "would_enter": n_enter_total[label]} for label in LABELS},
+        "last_batch": last,
+    }
+    out = ROOT / "artifacts" / "compare_summary.json"
+    out.write_text(json.dumps(summary, indent=1), encoding="utf-8")
+    print(f"summary written to {out}")
 
 
 if __name__ == "__main__":

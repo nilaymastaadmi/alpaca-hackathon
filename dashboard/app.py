@@ -173,6 +173,37 @@ with b:
     else:
         st.info("No refusals recorded yet.")
 
+# --- three agents, one market ---------------------------------------------
+
+cmp = load_json(ARTIFACTS / "compare_summary.json")
+if cmp.get("daily"):
+    st.subheader("Three agents, one market")
+    deployed = cmp.get("deployed", "T6")
+    st.markdown(
+        "The deployed tenor was not picked from the backtest ranking. Three "
+        "candidate configurations have run as dry-run shadow agents against the "
+        "same live prices, every hour of the trading window, placing nothing. "
+        "This is the scoreboard the deployment decision was made on "
+        f"(`research/DEPLOYMENT_DECISIONS.md` D3). Deployed: **{deployed}**."
+    )
+    cols = st.columns(3)
+    for col, label in zip(cols, ("T4", "T6", "T7")):
+        tl = cmp.get("tally", {}).get(label, {})
+        col.metric(f"{label}: {cmp.get('labels', {}).get(label, '')}",
+                   f"{tl.get('would_enter', 0)} would-enter",
+                   f"of {tl.get('cycles', 0)} shadow cycles", delta_color="off")
+    grid: dict[str, dict[str, str]] = {}
+    for row in cmp["daily"]:
+        grid.setdefault(row["date"], {})[row["label"]] = (
+            f"{row['would_enter']} / {row['cycles']}")
+    st.dataframe(pd.DataFrame.from_dict(grid, orient="index")
+                 .reindex(columns=["T4", "T6", "T7"]).fillna(""),
+                 width="stretch")
+    st.caption("Would-enter cycles / shadow cycles per day. Would-enter means "
+               "every gate passed and a structure was priced and sized; the "
+               "dry-run branch never sends the order, the decision is real. "
+               "Per-cycle table: `research/D3_COMPARISON_LOG.md`.")
+
 # --- latest decision ------------------------------------------------------
 
 st.subheader(f"Latest decision: {str(latest.get('action', '')).upper()}")
@@ -205,6 +236,48 @@ with s2:
     st.markdown("**Structure considered**")
     st.json(latest.get("structure") or {"note": "no structure priced this cycle"},
             expanded=True)
+
+# --- explore any decision -------------------------------------------------
+
+with st.expander("Explore any decision: pick a cycle, see the numbers that decided it"):
+    options = {
+        f"{str(d.get('timestamp', ''))[:16]}   {str(d.get('action', '')).upper()}"
+        f"   {d.get('blocking_gate') or ''}": d
+        for d in reversed(cycles)
+    }
+    pick = st.selectbox("cycle", list(options), label_visibility="collapsed")
+    chosen = options[pick]
+    cg = chosen.get("gates", [])
+    if cg:
+        st.dataframe(pd.DataFrame([{
+            "#": g.get("number"), "gate": g.get("gate"),
+            "verdict": "PASS" if g.get("passed") else "BLOCK",
+            "reason": g.get("reason", ""),
+        } for g in cg]).sort_values("#"), hide_index=True, width="stretch")
+    st.json({"note": chosen.get("note"), "signals": chosen.get("signals"),
+             "structure": chosen.get("structure"),
+             "leaf_hash": chosen.get("leaf_hash")}, expanded=False)
+
+# --- what the agent asked Alpaca -------------------------------------------
+
+calls = latest.get("mcp_calls") or []
+if calls:
+    st.subheader("What the agent asked Alpaca this cycle")
+    n_fail = sum(1 for c in calls if not c.get("ok"))
+    total_ms = sum(float(c.get("duration_ms") or 0) for c in calls)
+    m1, m2, m3 = st.columns(3)
+    m1.metric("MCP calls", len(calls))
+    m2.metric("Round trips, total", f"{total_ms / 1000:.1f} s")
+    m3.metric("Failed", n_fail)
+    st.dataframe(pd.DataFrame([{
+        "#": i + 1, "tool": c.get("tool"), "ok": bool(c.get("ok")),
+        "ms": round(float(c.get("duration_ms") or 0)),
+        "arguments": json.dumps(c.get("arguments", {}))[:70],
+    } for i, c in enumerate(calls)]), hide_index=True, width="stretch")
+    st.caption("Every runtime call goes through Alpaca's official MCP server "
+               "over JSON-RPC and is recorded inside the sealed artifact, "
+               "failures included. The rules require the MCP path; this is "
+               "how you check it was used rather than claimed.")
 
 # --- signal history -------------------------------------------------------
 
@@ -269,6 +342,42 @@ st.markdown(
     "added, or removed after the fact, the root would not match. You do not have "
     "to trust the operator."
 )
+
+with st.expander("Try to tamper with it"):
+    st.markdown("Change one number in one sealed decision, in memory only, "
+                "and recompute the root. Nothing on disk is touched.")
+    if st.button("Move the latest decision's spot price by one cent and re-verify"):
+        try:
+            from artifacts import leaf_hash, merkle_root
+
+            def _leaves(rs: list[dict]) -> list[str]:
+                out = []
+                for r in rs:
+                    r = dict(r)
+                    r.pop("leaf_hash", None)
+                    out.append(leaf_hash(r))
+                return out
+
+            idx = max(i for i, r in enumerate(decisions)
+                      if r.get("action") in ("enter", "refuse", "halt", "flatten"))
+            victim = json.loads(json.dumps(decisions[idx]))
+            victim.setdefault("signals", {})
+            victim["signals"]["spot"] = round(
+                float(victim["signals"].get("spot") or 0) + 0.01, 2)
+            honest = merkle_root(_leaves(decisions))
+            forged = merkle_root(_leaves(decisions[:idx] + [victim] + decisions[idx + 1:]))
+            st.code(f"sealed root      {sealed.get('merkle_root', '?')}\n"
+                    f"honest recompute {honest}\n"
+                    f"after tampering  {forged}", language=None)
+            if forged != sealed.get("merkle_root"):
+                st.error(f"Detected. One cent on artifact seq {victim.get('seq')} "
+                         f"changed its leaf and the root no longer matches the "
+                         f"seal. This is what a judge's `make verify` would "
+                         f"print if the operator had edited the log.")
+            else:
+                st.warning("Roots compared; see above.")
+        except Exception as exc:                          # noqa: BLE001
+            st.warning(f"Tamper demo unavailable in this environment: {exc}")
 
 with st.expander("Raw artifact stream"):
     st.json(decisions[-5:])

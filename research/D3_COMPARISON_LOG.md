@@ -1,8 +1,8 @@
 # D3 comparison log: T4 vs T6 vs T7
 
-Generated 2026-09-02T22:15:28 by `agent/compare_report.py` from `agent/agent.py --compare-all`, scheduled hourly 19:15-01:15 IST (matching `agent/config.py`'s own trade_window). Purely observational -- every row below is a dry-run decision, no order was ever sent. See `research/DEPLOYMENT_DECISIONS.md` D3 for the backtest case; this file is the live-market evidence gathered in parallel while that decision stays open until kickoff.
+Generated 2026-09-02T22:50:20 by `agent/compare_report.py` from `agent/agent.py --compare-all`, scheduled hourly 19:15-01:15 IST (matching `agent/config.py`'s own trade_window). Purely observational -- every row below is a dry-run decision, no order was ever sent. See `research/DEPLOYMENT_DECISIONS.md` D3 for the backtest case; this file is the live-market evidence gathered in parallel while that decision stays open until kickoff.
 
-| ET timestamp | T4 (7-14 DTE, deployed) | T6 (21-45 DTE) | T7 (5-10 DTE, proposed) |
+| ET timestamp | T4 (7-14 DTE) | T6 (21-45 DTE, deployed since 30 Aug) | T7 (5-10 DTE) |
 |---|---|---|---|
 | 2026-08-22 09:04 | refuse [g7 fail] (VRP -1.01) | refuse [g7 pass] (VRP +1.21) | refuse [g7 fail] (VRP -1.34) |
 | 2026-08-22 12:10 | refuse [g7 fail] (VRP -1.01) | refuse [g7 pass] (VRP +1.21) | refuse [g7 fail] (VRP -1.34) |
