@@ -70,14 +70,14 @@ breach rate here is 0%, the audit's was ~13.5%. Best available explanation:
 this measures what actually happened along one realised 6.9 year price path
 (an empirical backtest), while the audit's figures read as a broader
 structural or stress-scenario estimate not tied to the specific sequence of
-moves that occurred historically — a real distinction, since a finite
+moves that occurred historically: a real distinction, since a finite
 historical sample cannot contain every tail scenario that could occur, only
 the ones that did. Both framings have a legitimate claim: this section's
 numbers are reproducible and grounded in what the strategy actually would have
 done; a structural worst-case bound (below) is not sample-dependent at all.
 **Neither should be read as a forecast for the specific live week.**
 
-**Trade count corrected too.** Not "10 to 15 trades" — closer to 1 trade
+**Trade count corrected too.** Not "10 to 15 trades": closer to 1 trade
 entered per week on average (66.8/year over a 5.5-week trading month), highly
 irregular, with roughly a third of any given week seeing no entry at all.
 
@@ -88,13 +88,13 @@ STRUCTURAL bound, not a probability estimate: defined by position sizing
 (5 x 3%) and the long wings, which cap loss per contract regardless of how bad
 the move gets. It does not depend on the historical sample the way the table
 above does. All five positions sit on the same underlying in the same
-direction — short volatility positions are highly correlated, a single large
+direction: short volatility positions are highly correlated, a single large
 adverse move takes all five to max loss together, and there is no
 diversification between them, only staggering.
 
 That hard cap has never been empirically approached: 0 of 1,737 historical
 windows came within half of the -10% gate-2 threshold, let alone -15%. That is
-reassuring but not proof of safety going forward — 6.9 years is a short sample
+reassuring but not proof of safety going forward: 6.9 years is a short sample
 for tail events by construction (the same lesson propdesk's power analysis
 already paid for), and the live week is one draw, not a resample of history.
 
@@ -185,7 +185,7 @@ judgement call, and needed no sign-off.
 **Not decided: the threshold value.** `vrp_threshold` stays at 1.0, carried
 over unchanged from before the fix. That number was never derived against the
 corrected quantity, because no calibration history existed at the 7-14 DTE
-tenor when this was fixed — `prep/snapshot_iv.py` only started collecting that
+tenor when this was fixed: `prep/snapshot_iv.py` only started collecting that
 range on 2026-08-20. Re-basing the threshold from real data (rather than
 guessing a new number) needs a few more nights of the corrected logger to
 accumulate before kickoff on 2026-08-28.
@@ -193,7 +193,7 @@ accumulate before kickoff on 2026-08-28.
 **Deliberately not guessed at.** Inventing a new threshold now, without data,
 would repeat exactly the mistake this project has avoided everywhere else:
 asserting a number because it seems reasonable rather than because it was
-measured. 1.0 unchanged is the safe direction to be wrong in — a threshold set
+measured. 1.0 unchanged is the safe direction to be wrong in: a threshold set
 too high costs trades, not money, which is a mispricing risk this agent is
 built to prefer over the alternative.
 
@@ -359,3 +359,32 @@ This can be revisited if the live week's own early data disagrees with the
 comparison harness's read -- the harness keeps running throughout the week
 regardless of what is deployed, so that disagreement would be visible, not
 silent.
+
+
+## D4. DECIDED 2026-09-02: freeze all new risk from the flatten window onwards, with no end
+
+**What was found.** The deadline flatten (D3) opens a 1.5 hour window before
+the 11:00 ET submission deadline in which every cycle flattens and no entry is
+considered. Two gaps, both found while answering "does Alpaca's index-options
+announcement change anything":
+
+1. The window is bounded, deliberately, so it does not retrigger closes after
+   judging. But the scheduled task fires daily and the Friday session runs to
+   16:20 ET, so from 11:00 ET the window test went false and the agent would
+   have resumed opening positions after judging, changing the account a judge
+   may read days later.
+2. The tail hedge ran before the deadline logic and outside it. A hedge bought
+   inside the window, or after the deadline, is a position the flatten never
+   sells, so it would sit unrealised on the judged number.
+
+**Decision.** `_entries_frozen(cfg, now)` is true from the start of the flatten
+window onwards and never turns false again while the deadline mechanism is
+enabled. New entries and new hedge buys both check it. The flatten window's
+own bound is unchanged. Four tests added. The hedge window (21 to 45 DTE)
+stays as it was; see RISK_REGISTER 4.9 for why widening it two sessions before
+the deadline is the wrong trade.
+
+**After Friday.** The Windows task keeps its daily trigger through the weekend
+only until it is given an end boundary on Thursday morning while idle; the
+freeze above is the safety net if that step is missed.
+

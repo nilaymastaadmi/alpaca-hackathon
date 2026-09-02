@@ -25,7 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "agent"))
 
-from agent import _is_deadline_close  # noqa: E402
+from agent import _entries_frozen, _is_deadline_close  # noqa: E402
 from config import Config  # noqa: E402
 
 DEADLINE_CFG = Config(
@@ -84,3 +84,31 @@ def test_default_config_has_the_flatten_enabled():
     cfg = Config()
     assert cfg.deadline_flatten_enabled is True
     assert cfg.submission_deadline_et == "2026-09-04T11:00:00"
+
+
+# --- the freeze on new risk, distinct from the bounded flatten window ------
+
+def test_entries_frozen_inside_the_flatten_window():
+    assert _entries_frozen(DEADLINE_CFG, datetime(2026, 9, 4, 10, 0)) is True
+
+
+def test_entries_stay_frozen_after_the_deadline_even_though_flatten_does_not_retrigger():
+    """
+    Found 2026-09-02. The flatten window is bounded (see the test above), but
+    the scheduled task fires daily and the Friday session runs until 16:20
+    ET. Without this the agent would open new positions after judging.
+    """
+    at = datetime(2026, 9, 4, 12, 0)
+    close, hours = _is_deadline_close(DEADLINE_CFG, at)
+    assert close is False and hours < 0.0
+    assert _entries_frozen(DEADLINE_CFG, at) is True
+
+
+def test_entries_not_frozen_the_day_before():
+    assert _entries_frozen(DEADLINE_CFG, datetime(2026, 9, 3, 10, 0)) is False
+
+
+def test_entries_never_frozen_when_disabled():
+    cfg = replace(DEADLINE_CFG, deadline_flatten_enabled=False)
+    assert _entries_frozen(cfg, datetime(2026, 9, 5, 10, 0)) is False
+

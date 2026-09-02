@@ -16,3 +16,6 @@ artifacts/watchdog.log
 # trail. Keeping these out of the repo so a judge browsing artifacts/ only
 # ever finds the real deployed agent's decisions.
 artifacts/compare/
+
+# keep-awake task output, local only
+prep/wake.log

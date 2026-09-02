@@ -64,8 +64,8 @@ in the record. I did not hide it, because the record would not let me.
 Live P&L: LIVE_PNL on a hundred thousand dollar paper account, realised by a
 deadline flatten ninety minutes before submission, not a mark-to-market
 snapshot. One week of options P&L is mostly noise, and the write-up says so.
-The tail hedge is designed and coded, and never engaged, because Alpaca served
-no VIX data all week. That refusal is logged every cycle too.
+The tail hedge is designed and coded, and never engaged, because no VIX expiry
+inside its window had a quote all week. That refusal is logged every cycle too.
 
 **[2:50, repo README]**
 Clone it. Run make test, make verify, make summary. You do not have to trust

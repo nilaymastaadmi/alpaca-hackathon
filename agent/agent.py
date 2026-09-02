@@ -78,6 +78,24 @@ def _is_deadline_close(cfg: Config, now_et: datetime) -> tuple[bool, float]:
     return (0.0 <= hours <= cfg.deadline_flatten_hours_before), hours
 
 
+def _entries_frozen(cfg: Config, now_et: datetime) -> bool:
+    """
+    True from the start of the flatten window onwards, with no end.
+
+    The flatten window itself is bounded on purpose (it must not retrigger
+    closes after judging, see test_after_the_deadline_has_passed_does_not_
+    retrigger), but the freeze on NEW risk is not. Found 2026-09-02: the
+    scheduled task keeps firing daily, and once the deadline had passed the
+    window test went false again, so the agent would have resumed opening
+    positions on the Friday afternoon after judging and changed the account
+    a judge may read days later. Covers the hedge too, for the same reason:
+    the flatten deliberately never sells the hedge, so a hedge bought inside
+    the window would sit unrealised on the judged number.
+    """
+    close, hours = _is_deadline_close(cfg, now_et)
+    return close or (cfg.deadline_flatten_enabled and hours < 0.0)
+
+
 def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
               publish_artifacts: bool = False,
               artifact_path: Path | None = None,
@@ -141,10 +159,21 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
         clock = broker.clock()
         market_open = bool(clock.get("is_open", False))
 
+        # Deadline status is needed before the hedge, not just before the
+        # entry decision (see _entries_frozen).
+        deadline_close, hours_to_deadline = _is_deadline_close(cfg, now_et)
+        entries_frozen = _entries_frozen(cfg, now_et)
+
         # Independent of the core book's decision below: this either already
         # holds the week's hedge, buys it, or logs why it could not.
-        hedge_result = _manage_hedge(broker, cfg, equity, today, market_open,
-                                     broker_positions, dry_run, log)
+        if entries_frozen:
+            hedge_result = {"action": "skip",
+                            "reason": "inside the submission flatten window or "
+                                      "past the deadline; a hedge bought now "
+                                      "could not be realised before judging"}
+        else:
+            hedge_result = _manage_hedge(broker, cfg, equity, today, market_open,
+                                         broker_positions, dry_run, log)
 
         spot = broker.spot()
         closes = broker.closes(days=60)
@@ -209,9 +238,7 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
         # considered regardless of what the gates said -- a position that
         # cannot close before judging is not a trade, it is noise on the
         # number a judge will actually see.
-        deadline_close, hours_to_deadline = _is_deadline_close(cfg, now_et)
-
-        if engine.all_passed(gates) and not deadline_close:
+        if engine.all_passed(gates) and not entries_frozen:
             plan = broker.build_condor(chain, spot, today)
             if plan is None:
                 from risk import GateResult
@@ -308,6 +335,9 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
         elif deadline_close:
             note = (f"submission deadline in {hours_to_deadline:.2f}h; "
                     f"already flat, no new entries considered")
+        elif entries_frozen:
+            note = (f"submission deadline passed {-hours_to_deadline:.2f}h ago; "
+                    f"entries frozen, nothing is opened after judging")
 
         decision = Decision(
             timestamp=now_et.isoformat(timespec="seconds"),

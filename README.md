@@ -52,7 +52,7 @@ the live agent does not trade on that number.** H1 tests the thesis using
 VIX minus subsequent realised vol, which needs no pricing model and is the
 right test for "does this edge exist at all." Gate 7, the one the live agent
 actually acts on, measures the implied vol of the specific strikes it is about
-to sell, at the tenor it actually trades — a different, narrower quantity, for
+to sell, at the tenor it actually trades: a different, narrower quantity, for
 reasons in `research/DEPLOYMENT_DECISIONS.md` D2. The two numbers are not
 interchangeable and can disagree on any given day; on 2026-08-22 H1's style of
 measurement read +0.00 while gate 7's actual live reading was -1.01, which is
@@ -79,11 +79,14 @@ repo with the same weight as the successes.
 - **The strategy result is fragile and the repo says so.** H3's best trial
   (T6, 21-45 DTE) clears its bar at Sharpe +1.614, but doubling transaction
   costs *improved* Sharpe, which is impossible and means the optimiser is
-  partly selecting noise. **The deployed agent trades 7-14 DTE, which is a
-  different trial (T4), scoring +1.201, not +1.614** — the 4.5 day window
-  ruled out the longer tenor for reasons unrelated to Sharpe (see [`STRATEGY.md`](STRATEGY.md)
-  §4). The ungated baseline beats the gated variants on average, at either
-  tenor. Full write-up in `research/RESULT_H3_ROBUSTNESS.md`.
+  partly selecting noise. **The deployed agent trades that same T6 tenor,
+  with the fragility disclosed rather than hidden.** It was first deployed
+  on T4 (7-14 DTE, Sharpe +1.201) because the 4.5 day window seemed to rule
+  out the longer tenor; eight days of live comparison then showed T4 entering
+  on 0 of 5 days against T6's 2 of 5, and the switch is recorded with its
+  costs in `research/DEPLOYMENT_DECISIONS.md` D3. The ungated baseline beats
+  the gated variants on average, at either tenor. Full write-up in
+  `research/RESULT_H3_ROBUSTNESS.md`.
 - **"Sell further out of the money" was an artifact of our own cost model.**
   Charging cost as a percentage of credit under-charged exactly the configs that
   looked best. Measured reality: the spread is 0.8% of a 35-delta option's price
@@ -132,10 +135,13 @@ from ordinary refusals in code: a refusal means no trade now, a halt means stop.
 **A tail hedge, designed and coded but honestly inoperative live.** Long VIX
 calls following Cboe's VXTH methodology, sized at 1% of equity, with the VIX
 forward recovered from put-call parity because index options expose no greeks on
-this feed. Live, Alpaca's option data has served zero VIX contracts on either
-feed since at least 28 Aug (RISK_REGISTER 4.9), so the agent logs a refusal to
-hedge off an empty read every cycle rather than pretending, and the purchased
-wings remain the only crash protection. The refusal artifacts are the evidence.
+this feed. Live, no VIX expiry inside the hedge's 21 to 45 day window had a
+single quote on the feed all week: the indicative feed quotes the monthly VIX
+expiries (16 Sep at 14 days, 21 Oct at 49 days) and returns nothing for the VIXW
+weeklies that sit inside the window, although those contracts exist and trade
+(RISK_REGISTER 4.9). So the agent logged a refusal to hedge off an empty read
+every cycle rather than pretending, and the purchased wings remained the only
+crash protection. The refusal artifacts are the evidence.
 
 **A watchdog**, because the most likely way to lose the week is not strategic.
 US hours are 19:00 to 01:30 IST, and a sleeping laptop hangs in-flight HTTP

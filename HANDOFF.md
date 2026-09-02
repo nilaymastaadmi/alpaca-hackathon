@@ -2,7 +2,7 @@
 
 Last updated 2026-09-01 (live-week status added; body below otherwise from
 2026-08-22, which superseded the 2026-08-19 version entirely). Read this
-file first in any new session; it is the index, not the detail — the files
+file first in any new session; it is the index, not the detail: the files
 it points to hold the actual reasoning.
 
 ## Live week status, as of Tue 2026-09-01 morning
@@ -45,14 +45,14 @@ Trading API; must use Alpaca's MCP server or CLI, not raw REST; strategy
 must incorporate options trading; final submission needs a brand-new paper
 account starting at exactly $100,000 (the practice account below is
 disqualified, has trade history on it); repo must be public **at submission**
-(currently already public — flipped early, no downside, see below). **New
+(currently already public: flipped early, no downside, see below). **New
 from the same email, not yet in `SUBMISSION_CHECKLIST.md`: a one-page
 write-up covering AI logic, risk gates, and Alpaca infrastructure
-implementation** — distinct from the "long description" submission field,
+implementation**: distinct from the "long description" submission field,
 not yet drafted.
 
 **Resolved 2026-08-29, checked against the live hackathon page directly.**
-There is no "Track 2" or "Volatility and Event" track on the current page —
+There is no "Track 2" or "Volatility and Event" track on the current page ,
 just one main challenge, "Options Alpha Agents," open-ended ("options,
 trading agents, portfolio income, or other approaches"). "Track 2" was
 either dropped between 19 Aug and now or was always this repo's own
@@ -63,7 +63,7 @@ explaining it, since the underlying research reasoning is unaffected.
 **Also confirmed from the live page, not previously precise:**
 - Prize pool is **$6,000 cash** (1st $2,500, 2nd $1,500, 3rd $1,000, Social
   Engagement 2x$500) **plus $300 in Featherless credit for 1st place and
-  $25 per participant regardless of placement** — the page states both
+  $25 per participant regardless of placement**: the page states both
   "$6,000" and "$6,300" depending on whether the Featherless credits are
   counted; $6,000 is the cash actually paid by AlpacaDB.
 - Payment mechanics, relevant if this places: prizes pay to an
@@ -90,17 +90,17 @@ explaining it, since the underlying research reasoning is unaffected.
 
 ## Repo and deployment state, verified not assumed
 
-- **GitHub: https://github.com/nilaymastaadmi/alpaca-hackathon — PUBLIC**, ~20
+- **GitHub: https://github.com/nilaymastaadmi/alpaca-hackathon: PUBLIC**, ~20
   commits, all authored `Nilay Toshniwal <toshniwalnilay@gmail.com>` (rule 9
   clean, checked against the remote, not just locally).
 - **Streamlit: https://alpaca-hackathon-wcjwdbkqifybupyd6ckzps.streamlit.app/
-  — confirmed PUBLIC** by following the full redirect chain with `curl -sL`
+ : confirmed PUBLIC** by following the full redirect chain with `curl -sL`
   (a single-hop check gives a false 303-to-login; the real app is behind an
-  auth broker that grants anonymous access and bounces back — 3 redirects,
+  auth broker that grants anonymous access and bounces back: 3 redirects,
   final HTTP 200). Renders live artifact data.
 - **195 tests passing**, run via `make test` (or
   `uv run --with pytest --with tzdata --with requests python -m pytest tests/ -q`
-  if the Makefile target ever drifts — it needs tzdata+requests because
+  if the Makefile target ever drifts: it needs tzdata+requests because
   `agent.py` imports `ZoneInfo("America/New_York")` at module load, and
   Windows ships no IANA tzdata by default).
 - Practice account (dev-only, DO NOT submit): `PA308NOY3X36`, keys in
@@ -116,13 +116,13 @@ measurably rich; refuse otherwise. Full reasoning: `STRATEGY.md`.
 **Research** (`research/`): `PREREGISTRATION_R1.md` (committed before any
 backtest code existed, provable from git history) plus two dated amendments
 (A1: sizing/units fixes; A2: flags that the pricing model's calibration data
-falls entirely inside the sealed holdout window — doesn't invalidate anything
+falls entirely inside the sealed holdout window: doesn't invalidate anything
 reported, but must be disclosed if the holdout is ever spent). Results in
 `RESULT_H1_H2.md` (H1 decisive, t=+4.74), `RESULT_PRICING_GATE.md` (failed at
 26.78% first, fixed, passed at 10.75%), `RESULT_H3.md` + `RESULT_H3_ROBUSTNESS.md`
-(clears its bar but is fragile — doubling costs improved Sharpe, which is
+(clears its bar but is fragile: doubling costs improved Sharpe, which is
 impossible, meaning the optimiser partly selects noise), `RESULT_SWEEP.md`
-(EXPLORATORY, not evidence — 35 configs, none promoted).
+(EXPLORATORY, not evidence: 35 configs, none promoted).
 
 **Holdout (2023-01-01 to 2026-08-18) has NEVER been touched.** Enforced in
 code (`backtest/data.py`'s `window()` raises unless deliberately unsealed).
@@ -143,12 +143,12 @@ One shot permitted, only after a dev trial clears its bar. Do not spend it.
   always in the permissive direction. Fixed in code
   (`signals.short_strike_iv`). **The threshold itself (1.0) stays
   provisional.** `prep/recalibrate_threshold.py` (added 2026-08-22) checks
-  readiness on every run and never proposes a number itself — see
+  readiness on every run and never proposes a number itself: see
   `research/RECALIBRATION_STATUS.md`. As of 2026-08-22: **NOT READY, 1
   usable sample.**
 - **D3, DECIDED 2026-08-30**: deployed tenor switched from T4 (7-14 DTE) to
   **T6 (21-45 DTE)**. Not T7, despite T7 having the cleaner backtest case
-  (Sharpe +1.697, no cost-stress anomaly) — eight days of live comparison
+  (Sharpe +1.697, no cost-stress anomaly): eight days of live comparison
   data (`research/D3_COMPARISON_LOG.md`) showed T4 at 0/21 would-enter
   cycles and T7 at 1/21, while T6 went 10/21, all in the two most recent
   days, with VRP climbing. An agent that never trades cannot score on the
@@ -184,7 +184,7 @@ A fresh-session audit (`research/AUDIT_2026-08-20.md`, prompt template in
 `AUDIT_PROMPT.md`) found real bugs. All fixed, each with tests that reproduce
 the original failure:
 - A double-open path (an order could duplicate after a lost network response)
-- Gate 2 said "HALT and flatten"; only halt was real — now actually flattens
+- Gate 2 said "HALT and flatten"; only halt was real: now actually flattens
 - The tail hedge module existed with 23 tests but was never called anywhere
 - Gate 7's tenor mismatch (D2, above)
 - A stop-loss blind spot when a single wing's quote went dark
@@ -195,7 +195,7 @@ the original failure:
   D1's dollar figures, a T6-vs-deployed-T4 Sharpe conflation, an overclaiming
   Newey-West sentence, a RISK_REGISTER mechanism error (confirmed against
   Alpaca's own docs: MLeg legs fill together or not at all, so "3 of 4 legs
-  filled" cannot happen — the real risk is parent-quantity partial fill)
+  filled" cannot happen: the real risk is parent-quantity partial fill)
 
 `RISK_REGISTER.md` tracks status on everything. As of 2026-08-22 two items
 are open by design, not by neglect: 2.2 (confirm pre-kickoff work is allowed,
@@ -206,7 +206,7 @@ during this pass, is MITIGATED, RESOLVED or ACCEPTED.
 
 ## What's still open, and whose job each one is
 
-1. **Laptop sleep/scheduling — FOUR separate causes found and fixed.** (1)
+1. **Laptop sleep/scheduling: FOUR separate causes found and fixed.** (1)
    idle timeout, (2) lid-close, (3) display timeout on battery dragging
    Modern Standby into suspend regardless of the idle setting -- first
    clean 15-hour overnight window achieved 2026-08-26 with zero sleep
@@ -222,11 +222,11 @@ during this pass, is MITIGATED, RESOLVED or ACCEPTED.
    live week** regardless of all four fixes. Full detail:
    `RISK_REGISTER.md` 4.1. `agent/watchdog.py` remains as defence for any
    other hang cause.
-2. **D2 threshold recalibration — still open, independent of D3 now that D3
+2. **D2 threshold recalibration: still open, independent of D3 now that D3
    is decided.** `prep/recalibrate_threshold.py` exists and self-reports
    readiness; last checked NOT READY. Re-run any time; nightly-safe. Note
    the threshold it is calibrating (gate 7's VRP bar) now governs T6's
-   21-45 DTE strikes, not T4's, since D3 switched tenors — the readiness
+   21-45 DTE strikes, not T4's, since D3 switched tenors: the readiness
    check reads whatever `agent/config.py` currently deploys, so this is
    already correct without needing its own update.
 2b. **LIVE_WEEK_TRADE_ODDS.md's 28-33% figure was about T4 specifically,
@@ -236,10 +236,10 @@ during this pass, is MITIGATED, RESOLVED or ACCEPTED.
    qualitative answer already changed: T6 has been entering multiple times
    a day on real market data, not sitting at zero.
 
-3. **D3 — DECIDED, see below.** Deployed tenor is T6 (21-45 DTE), not T4
+3. **D3: DECIDED, see below.** Deployed tenor is T6 (21-45 DTE), not T4
    or T7. Full reasoning: `research/DEPLOYMENT_DECISIONS.md` D3.
-4. **Fresh submission-only paper account — CREATED 2026-08-28.** Account
-   number **`PA37R35A5ZGW`** (this is the ID to submit — not the practice
+4. **Fresh submission-only paper account: CREATED 2026-08-28.** Account
+   number **`PA37R35A5ZGW`** (this is the ID to submit: not the practice
    one). Verified live via the real MCP path, not assumed from the
    dashboard: status ACTIVE, not blocked, options_trading_level 3 already
    approved, zero orders, zero positions, $100,000 starting equity,
@@ -249,7 +249,7 @@ during this pass, is MITIGATED, RESOLVED or ACCEPTED.
    Credentials live in **`.env.live`**, gitignored (`.env.*` pattern),
    deliberately kept separate from `.env` (the practice account) so
    nothing accidentally mixes the two. `agent.py` and `watchdog.py` both
-   take `--env-file` now (defaults to `.env` if omitted) — the comparison
+   take `--env-file` now (defaults to `.env` if omitted): the comparison
    harness and any ad-hoc dry-run keep using the practice account unless
    `--env-file .env.live` is passed explicitly.
 
@@ -260,7 +260,7 @@ during this pass, is MITIGATED, RESOLVED or ACCEPTED.
 
    **Still to do, needs the market open: run ONE live fill test on the
    fresh account before Monday 31 Aug**, the same check already done on
-   the practice account. Not run yet — market was closed both times this
+   the practice account. Not run yet: market was closed both times this
    was touched today.
 
 4b. **`AlpacaHackathon-LiveAgent` scheduled task, created 2026-08-27,
@@ -274,7 +274,7 @@ during this pass, is MITIGATED, RESOLVED or ACCEPTED.
    `621665e`) and again on 2026-08-28 against the fresh account directly
    via `agent.py --dry-run --env-file .env.live` (completed, real
    `account_number` in the artifact). **Friday 28 Aug's post-kickoff
-   session is deliberately NOT covered** — run it by hand if wanted.
+   session is deliberately NOT covered**: run it by hand if wanted.
 5. **Presentation: video and slide polish wait for real live-week data,
    deliberately** (Nilay, 2026-08-30). Cover image and a slide draft exist
    in `presentation/`; the deck's live-results slide is a marked
@@ -290,7 +290,7 @@ during this pass, is MITIGATED, RESOLVED or ACCEPTED.
 
 ## Explicitly investigated and rejected, don't re-raise without new evidence
 
-- **XSP as a second instrument** — checked live 2026-08-22: zero IV, zero
+- **XSP as a second instrument**: checked live 2026-08-22: zero IV, zero
   delta on every contract, same data gap VIX had. Building proper pricing for
   it would replicate days of already-done SPY-specific work. Not a lever.
 
@@ -325,7 +325,7 @@ Windows over WSL (explicit call, 2026-08-19). Solo (explicit call). Track 2
 (explicit call, "i need you to choose"). D1 sizing (explicit call, 2026-08-19,
 5 concurrent / 3%). Notion pipeline not used for this ("forget notion").
 Author on every commit is Nilay Toshniwal, never Claude/Anthropic (global
-rule 9). No em-dashes in anything written for this repo (global rule 1) —
+rule 9). No em-dashes in anything written for this repo (global rule 1) ,
 matters more than usual here since the repo is public.
 
 ## Resume commands

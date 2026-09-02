@@ -13,9 +13,9 @@ before closing the laptop.
 ## Blocking, will invalidate or damage the submission if missed
 
 - [x] **Flip the GitHub repo to PUBLIC.** Done well before this checklist item
-      was revisited — repo has been public since early in the build week, by
+      was revisited: repo has been public since early in the build week, by
       deliberate decision ("keep the repo public"), confirmed reachable.
-- [x] **Create a BRAND NEW Alpaca paper account** for the submission — done
+- [x] **Create a BRAND NEW Alpaca paper account** for the submission: done
       2026-08-28. Verified live, not assumed: `PA37R35A5ZGW`, ACTIVE, zero
       orders, zero positions, options level 3 approved, $100,000 equity.
       Keys in `.env.live`, gitignored, never mixed into `.env`.
@@ -88,7 +88,7 @@ before closing the laptop.
       "Track 2" was this repo's own framing, not an official category. Use
       "Options Alpha Agents" for the submission's category/tag field.
 - [ ] **"Demo application platform" field.** The submission form lists this
-      separately from "Application URL" — name the platform (Streamlit
+      separately from "Application URL": name the platform (Streamlit
       Community Cloud) explicitly, not just the link.
 - [ ] **If this places: payment needs a W-9 (US) or W-8BEN (non-US),
       government photo ID, and bank details, filed within 90 days of winner

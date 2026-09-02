@@ -73,7 +73,7 @@ what was built when, which is the right posture either way.
 ### 2.3 Reused account disqualification. MITIGATED 2026-08-28
 "Projects run on an existing or reused account will not be eligible for judging."
 The practice account `PA308NOY3X36` has trade history on it from the fill test and
-is permanently disqualified — never submit it.
+is permanently disqualified. Never submit it.
 
 Fresh account `PA37R35A5ZGW` created 2026-08-28, credentials in gitignored
 `.env.live`, never mixed into `.env`. Genuinely fresh, checked live rather than
@@ -81,8 +81,8 @@ assumed: zero orders, zero positions, ACTIVE, not blocked, options level 3
 already approved, $100,000 starting equity. `AlpacaHackathon-LiveAgent` points
 at it via `--env-file .env.live`; every other tool (comparison harness, ad-hoc
 dry-runs) keeps defaulting to the practice account so nothing accidentally
-trades or queries on the wrong one. Still open: the one live fill test on this
-account, blocked on market hours, not yet run.
+trades or queries on the wrong one. The first live fills on this account
+happened 31 Aug 09:45 ET (4 condors through the MCP path, see 4.7).
 
 ### 2.4 Commit attribution. RESOLVED
 All 16 commits authored and committed as Nilay Toshniwal. No Claude or Anthropic
@@ -100,8 +100,11 @@ Aug through Thu 3 Sep plus Friday morning. The agent must be live at Monday's op
 
 ### 3.2 NFP lands INSIDE the window. MITIGATED
 Nonfarm payrolls Fri 4 Sep 08:30 ET, 2.5 hours before the submission deadline.
-Gate 8 blocks new short premium within one day of a scheduled event and cuts
-existing exposure. Tested.
+Gate 8 blocks new short premium within one day of a scheduled event (so from
+Thursday's session onwards). It does NOT reduce existing exposure; that was
+an overpromise in an earlier version of this entry, see 4.6. The open book
+rides through the print by decision (2026-09-01, DEPLOYMENT_DECISIONS D3
+addendum) and is flattened 09:30 to 11:00 ET Friday.
 
 ### 3.3 Labor Day. NO IMPACT
 Mon 7 Sep is a market holiday, confirmed absent from the Alpaca calendar. It falls
@@ -110,10 +113,10 @@ so it cannot pick a non-existent 7 Sep expiry. The BACKTEST's synthetic
 Mon/Wed/Fri expiry generator would include it, which is a backtest artifact only.
 
 ### 3.4 Quarterly expiry. ACCEPTED
-Triple witching is Fri 18 Sep, outside the window. A position opened 3 Sep at the
-14 DTE maximum expires 17 Sep, just before it. FOMC is 15-16 Sep, also outside.
-Both are irrelevant if we are flat at submission, which the checklist recommends
-for separate reasons.
+Triple witching is Fri 18 Sep, outside the window. The deployed tenor (T6, 21
+to 45 DTE since D3) means every live position expires 2 Oct, well past both
+witching and the 15-16 Sep FOMC. Irrelevant either way, because the deadline
+flatten closes the book Friday morning before submission.
 
 ---
 
@@ -364,25 +367,37 @@ mid-competition.
 
 ---
 
-### 4.9 The tail hedge is inoperative live: Alpaca serves no VIX option data. ACCEPTED 2026-09-01, claims corrected
+### 4.9 The tail hedge never engaged live: no VIX expiry inside its window is quoted. ACCEPTED 2026-09-01, facts corrected 2026-09-02
 
-Every live hedge attempt has returned `n_quotes=0`: 12 of 12
-`hedge:no_candidate` artifacts on the main log since 28 Aug, and the same
-on every comparison log. Probed directly on 2026-09-01: `get_option_chain`
-for VIX returns an empty snapshot set on BOTH the `opra` and `indicative`
-feeds. The last time any VIX quote came back was 27 Aug (dry-run
-`hedge:would_buy` entries in the comparison logs), so the data went away
-upstream sometime around kickoff, after the 2026-08-20 verification that
-shaped the put-call-parity design.
+Every live hedge attempt returned `n_quotes=0`: 129 `hedge:no_candidate`
+artifacts through 2 Sep 12:50 ET. The first version of this entry said
+Alpaca served no VIX option data at all. Re-probed 2026-09-02 after Alpaca
+announced index options for live trading, with narrower questions:
 
-Consequence: the short book's only crash protection is the purchased
-wings. The hedge stays ENABLED deliberately, because "refused to hedge off
-an untrustworthy read" logged every cycle is honest evidence of the
-design working as specified, and disabling it would erase that trail.
-README and `presentation/WRITEUP.md` were corrected 2026-09-01 to say the
-hedge is designed and coded but has never engaged live, instead of
-implying it covers the book. If VIX data reappears mid-week the hedge
-buys itself with no code change.
+- `get_option_chain` VIX, indicative feed, 20 Sep to 25 Oct: quotes ARE
+  served, live-stamped, for the 21 Oct monthly (VIX261021C...).
+- The same call over the hedge's own window, 21 to 45 days (23 Sep to
+  17 Oct): empty snapshot set.
+- `get_option_contracts` VIX, calls, strike 20: the VIXW weeklies of 23 Sep
+  and 30 Sep exist, are active and tradable (open interest 15,434 and
+  2,977), and are exactly the expiries inside the window. The feed
+  returns no snapshots for them.
+- OPRA feed: 403, "OPRA agreement is not signed", on this account.
+
+So the precise statement is: the indicative feed quotes monthly VIX
+expiries only, and no monthly fell inside 21 to 45 days at any point in
+the live week (16 Sep was 14 to 16 days out, 21 Oct was 49 to 51). The
+hedge's window and the feed's coverage never overlapped. README and
+`presentation/WRITEUP.md` corrected the same day.
+
+Decision: hedge stays enabled and the window stays 21 to 45. Widening it
+to catch 21 Oct on the last two sessions would buy a position the deadline
+flatten deliberately never sells, leaving an unrealised VIX call on the
+judged number. From the start of the flatten window onwards, new hedge
+buys are frozen along with new entries (`_entries_frozen`, 2026-09-02).
+The refusal artifacts remain the evidence that the design refuses to hedge
+off an untrustworthy read; the purchased wings were the only crash
+protection all week.
 
 - Technology partners were "to be announced" and may add prize surfaces.
 - The measured 1.5% round-trip fill is n=1 in calm conditions. Re-run the ladder
