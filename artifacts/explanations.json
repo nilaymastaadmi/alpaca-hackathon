@@ -1775,13 +1775,49 @@
    "created_at": "2026-09-02T17:49:31+00:00",
    "prompt_tokens": 761,
    "completion_tokens": 69
+  },
+  "7cd7dbb12c6415c91bccd3be611a29a6df39d95c44ed4ba22079d03865b1c9b2": {
+   "seq": 864,
+   "timestamp": "2026-09-02T13:40:05-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute the trade because the \"stagger\" gate blocked it. This gate was looking at the fact that the agent already holds a position expiring on 2026-10-02, and holding five positions on one expiry would exceed the allowed concentration.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T17:52:28+00:00",
+   "prompt_tokens": 760,
+   "completion_tokens": 60
+  },
+  "1efecba42f91f0bf75bc8b1aafd974c75c951798ba9d2fb63da0c35b0eaa9bdc": {
+   "seq": 870,
+   "timestamp": "2026-09-02T13:45:05-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute the trade because the stagger gate blocked it. The stagger gate looked at the fact that the agent already holds a position expiring on 2026-10-02, and holding five positions on one expiry would exceed the risk limit.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T17:52:33+00:00",
+   "prompt_tokens": 761,
+   "completion_tokens": 57
+  },
+  "5f3d4b1cc52a328c51123f0a6b2753d104fce97fd2b0b260caa60f6c0e645c35": {
+   "seq": 876,
+   "timestamp": "2026-09-02T13:50:05-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute the trade because the stagger gate blocked it. The agent already holds a position expiring on 2026-10-02, and the rule limits holding five positions on one expiry to one position at 15%, not five at 3%.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T17:52:40+00:00",
+   "prompt_tokens": 760,
+   "completion_tokens": 60
   }
  },
  "model": "Qwen/Qwen2.5-72B-Instruct",
- "generated_at": "2026-09-02T17:49:31+00:00",
+ "generated_at": "2026-09-02T17:53:01+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
-  "explained": 148,
+  "explained": 151,
   "rejected": 0
  }
 }
