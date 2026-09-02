@@ -1,0 +1,167 @@
+{
+ "items": {
+  "53d630757976026555748e54146df6f576cb9a060eb06a4f85bd22c71c1859e6": {
+   "seq": 846,
+   "timestamp": "2026-09-02T13:25:06-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute the trade because the \"stagger\" gate blocked it. This gate was looking at the fact that the agent already holds a position expiring on 2026-10-02, and holding five positions on one expiry would exceed the allowed concentration limit.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T17:38:38+00:00",
+   "prompt_tokens": 761,
+   "completion_tokens": 61
+  },
+  "82fbfa9bac3d58b4f75dbdf9036ff584edf28286f0040a97bbd1023c71c91014": {
+   "seq": 852,
+   "timestamp": "2026-09-02T13:30:06-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute the trade because the \"stagger\" gate blocked it. This gate was looking at the fact that the agent already holds a position expiring on 2026-10-02, and holding five positions on one expiry would exceed the allowed concentration limit.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T17:38:42+00:00",
+   "prompt_tokens": 761,
+   "completion_tokens": 61
+  },
+  "03a174aef3f3ff5c145fe34fff4d49ce2979d67fb224f47beb351ae9a60cc02e": {
+   "seq": 858,
+   "timestamp": "2026-09-02T13:35:06-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute the trade because the \"stagger\" gate blocked it. This gate was looking at the fact that the agent already holds a position expiring on 2026-10-02.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T17:38:45+00:00",
+   "prompt_tokens": 760,
+   "completion_tokens": 47
+  },
+  "330d699077989a2e2b96a73e276897dfe4e6da199e6e7a7b7a90ac5c572d08c0": {
+   "seq": 19,
+   "timestamp": "2026-08-31T09:20:05-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the market was closed, as indicated by the \"market_open\" gate with a verdict of \"BLOCK.\" Additionally, the \"session_window\" gate also blocked the trade since the time 09:20 ET was outside the trading window.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T17:39:12+00:00",
+   "prompt_tokens": 728,
+   "completion_tokens": 58
+  },
+  "a4b3cc13539609a930928604ca2c5ba656aabac5a0851c6dbd3f299cbe6723fd": {
+   "seq": 20,
+   "timestamp": "2026-08-31T09:25:05-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the session window gate blocked the action. The time of the decision, 09:25 ET, was outside the approved trading window. The agent considered the market conditions and liquidity risks at this time.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T17:39:16+00:00",
+   "prompt_tokens": 729,
+   "completion_tokens": 51
+  },
+  "fb905fb245cf37a289889b27819179be1eec61caf6b076bbd97c90a71f48c26b": {
+   "seq": 22,
+   "timestamp": "2026-08-31T09:30:05-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the session window gate blocked it. The gate determined that 09:30 ET is outside the trading window, noting that spreads are widest at the open and liquidity thins into the close.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T17:39:19+00:00",
+   "prompt_tokens": 694,
+   "completion_tokens": 49
+  },
+  "43793ded4ee2efc59e40f8a8880d5c7ddc9eab18237a944bcf425183876a653f": {
+   "seq": 24,
+   "timestamp": "2026-08-31T09:35:05-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the session window gate blocked it. The time was 09:35 ET, which is outside the trading window.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T17:39:22+00:00",
+   "prompt_tokens": 694,
+   "completion_tokens": 34
+  },
+  "c5a4d17f4cbf1257d68c3e1f301072d91373c5d392587930213920b7481bc139": {
+   "seq": 26,
+   "timestamp": "2026-08-31T09:40:05-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the session window gate blocked it. The time was 09:40 ET, which is outside the trading window.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T17:39:24+00:00",
+   "prompt_tokens": 694,
+   "completion_tokens": 34
+  },
+  "b3f057836428a0e4eeb307fad67ac218bc73e8f5421d9647aab53f86606ce842": {
+   "seq": 28,
+   "timestamp": "2026-08-31T09:45:05-04:00",
+   "action": "enter",
+   "text": "The trading agent entered a trade by filling 7 contracts at an average price of -1.11 on rung 1. The decision was based on the VRP threshold gate, which passed because the VRP of 3.37 volatility points was above the 1.0 threshold.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T17:39:31+00:00",
+   "prompt_tokens": 949,
+   "completion_tokens": 61
+  },
+  "be11f23cb870bd768050073e6940a6b8c538d387060aadb8b3af0f38ec7e20ad": {
+   "seq": 30,
+   "timestamp": "2026-08-31T09:50:05-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to open a position because the ladder was exhausted without a fill. The ladder had limit prices of -1.22, -1.2, and -1.18. All gates passed their respective checks, including the position integrity, session window, drawdown breaker, daily loss limit, consecutive losses, capacity, regime, VRP threshold, event proximity, cost, and sizing.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T17:39:35+00:00",
+   "prompt_tokens": 1035,
+   "completion_tokens": 83
+  },
+  "8fd0196c502d3de42649e749559b35f84552ff60e4ffdf96c5c47c70c4f0268d": {
+   "seq": 32,
+   "timestamp": "2026-08-31T09:55:05-04:00",
+   "action": "enter",
+   "text": "The trading agent entered a trade by filling 7 contracts at an average price of -1.14 on rung 3. The decision was based on the VRP threshold gate, which passed because the VRP of 3.37 vol points was above the 1.0 threshold.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T17:39:39+00:00",
+   "prompt_tokens": 1043,
+   "completion_tokens": 61
+  },
+  "520a4a58e9714c5a3897ddca02147bebfb42f31686a148871f108e7de59013db": {
+   "seq": 34,
+   "timestamp": "2026-08-31T10:00:05-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to open a position because the ladder was exhausted without a fill. The ladder had limit prices of -1.2, -1.19, and -1.18. All gates passed their checks, including the VRP threshold of 3.34 vol points, which cleared the 1.0 threshold.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T17:39:42+00:00",
+   "prompt_tokens": 1037,
+   "completion_tokens": 70
+  },
+  "6d0305db8224f796a5cad936724aa262d6293aed9cd149998ee4aed599b2d1c3": {
+   "seq": 36,
+   "timestamp": "2026-08-31T10:05:05-04:00",
+   "action": "enter",
+   "text": "The trading agent entered a trade by filling 7 contracts at an average price of -1.1 on rung 2 of the ladder. The decision was based on the VRP threshold gate, which passed because the VRP of 3.31 volatility points exceeded the 1.0 threshold.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T17:39:46+00:00",
+   "prompt_tokens": 1033,
+   "completion_tokens": 62
+  }
+ },
+ "model": "Qwen/Qwen2.5-72B-Instruct",
+ "generated_at": "2026-09-02T17:39:46+00:00",
+ "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
+ "counts": {
+  "explained": 13,
+  "rejected": 0
+ }
+}
