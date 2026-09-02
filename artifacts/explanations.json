@@ -2099,13 +2099,37 @@
    "created_at": "2026-09-02T19:53:18+00:00",
    "prompt_tokens": 693,
    "completion_tokens": 34
+  },
+  "f3f89ef144230bff313e83f63adad29e890c82e4d90a6fa17ed714647f1f85eb": {
+   "seq": 1026,
+   "timestamp": "2026-09-02T15:55:06-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the session window gate blocked it. The time was 15:55 ET, which is outside the trading window.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T20:04:20+00:00",
+   "prompt_tokens": 694,
+   "completion_tokens": 34
+  },
+  "c7c810d7fa306222504ad2df7241ada9f01c7909b01e8cb1dec2302433e1a26b": {
+   "seq": 1031,
+   "timestamp": "2026-09-02T16:00:06-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the market was closed at 16:00 ET, as indicated by the \"market_open\" gate which blocked the action. The \"session_window\" gate also blocked the trade, noting that 16:00 ET is outside the trading window. These checks were based on the time of the decision and the trading window constraints.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T20:04:27+00:00",
+   "prompt_tokens": 728,
+   "completion_tokens": 78
   }
  },
  "model": "Qwen/Qwen2.5-72B-Instruct",
- "generated_at": "2026-09-02T19:53:18+00:00",
+ "generated_at": "2026-09-02T20:04:27+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
-  "explained": 175,
+  "explained": 177,
   "rejected": 0
  }
 }
