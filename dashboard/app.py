@@ -220,6 +220,9 @@ EXPL_ITEMS = EXPL.get("items", {})
 def show_explanation(rec: dict) -> None:
     item = EXPL_ITEMS.get(str(rec.get("leaf_hash")))
     if not item:
+        if EXPL_ITEMS:
+            st.caption("Plain-English explanation pending: the explain layer runs "
+                       "every 10 minutes, after the decision is sealed, never before.")
         return
     counts = EXPL.get("counts", {})
     label = (f"Explained after the fact by {item.get('model', 'a language model')} "
