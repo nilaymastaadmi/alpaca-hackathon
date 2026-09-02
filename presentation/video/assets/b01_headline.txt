@@ -1,0 +1,1 @@
+Of 81 real decision opportunities (market open, inside the trading window), the agent entered 4 and declined 77 (95%).
