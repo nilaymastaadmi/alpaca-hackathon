@@ -2,13 +2,14 @@ export type Caption = {start: number; end: number; text: string};
 
 export type Beat = {
   id: string;
-  kicker: string;
+  label: string;
   durationInFrames: number;
   lead: number;
   speech: number;
   audio: string | null;
   captions: Caption[];
   anchors: Record<string, number>;
+  copy: Record<string, string>;
 };
 
 export type GitLine = {hash: string; time: string; subject: string; highlight: boolean};
@@ -17,11 +18,15 @@ export type Tenor = {id: string; dte: string; cycles: string; days: string; depl
 
 export type Gate = {n: number; name: string; breaker: boolean};
 
+export type Clip = {src: string; last: string; frames: number};
+
 export type Timeline = {
   fps: number;
   width: number;
   height: number;
   transition: number;
+  subtitles: boolean;
+  strip: string;
   beats: Beat[];
   facts: Record<string, string | number>;
   verify: {command: string; output: string; count: string};
@@ -33,4 +38,5 @@ export type Timeline = {
   gates: Gate[];
   live: {pnl: string; pnlSub: string; book: string; flatten: string; noise: string; hedge: string; hedgeSub: string};
   close: {line: string; commands: string; url: string; tests: string};
+  clips: {top: Clip; positions: Clip};
 };

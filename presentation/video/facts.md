@@ -1,6 +1,6 @@
 # facts.md: every number the video uses, with its source
 
-Written 2026-09-02 by the video session. `build.py` reads the PARAMS block below
+Written 2026-09-02 by the video session, extended the same evening for the editorial cut. `build.py` reads the PARAMS block below
 and refuses to build if a number on screen is not in this file. Anything that
 could not be traced was cut from the script (list at the bottom).
 
@@ -59,6 +59,11 @@ PACE=1.0
 | 9 | 211 tests | `pytest tests/ --collect-only`: 211 collected; README "Verify it yourself" |
 | 9 | github.com/nilaymastaadmi/alpaca-hackathon | `git remote -v`; SUBMISSION_FORM.md |
 | all | Challenge name "Options Alpha Agents"; solo entry; paper account PA37R35A5ZGW | SUBMISSION_FORM.md; WRITEUP.md line 3 |
+| 1 | 77 declined (sticker "77 of 81 real opportunities: declined") | `make summary` refusals count; dashboard headline "declined 77 (95%)" |
+| 3 | "The correction shrinks t by 3.8x" | README "The thesis" paragraph: "The correction shrank t by 3.8x" (18.16 / 4.74 = 3.83) |
+| 7 | Combined max risk $10,840, 10.8% of equity | RISK_REGISTER 4.7 para 1 |
+| 7 | "3 orphan condors adopted, all 4 managed since" | RISK_REGISTER 4.7 fix 3 (3 orphans adopted; the 4th was already in the ledger) |
+| 1, 8 | Dashboard footage `assets/dash_top.mp4`, `assets/dash_positions.mp4` | Recorded by `record.py` from the public dashboard on 2026-09-02 (Playwright, real scroll and cursor) |
 
 ## Traceable but cut for time (not in the video)
 

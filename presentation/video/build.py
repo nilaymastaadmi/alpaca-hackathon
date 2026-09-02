@@ -6,7 +6,7 @@
 
     uv run presentation/video/build.py              # silent build (captions only)
     uv run presentation/video/build.py --voice      # generate missing narration with Sarvam, then build
-    uv run presentation/video/build.py --capture    # re-capture the dashboard and GitHub frames first
+    uv run presentation/video/build.py --capture    # re-capture GitHub frames and re-record the dashboard footage first
     uv run presentation/video/build.py --no-render  # write timeline.json and final.srt only
 
 Outputs: presentation/video/final.mp4 and presentation/video/final.srt.
@@ -179,55 +179,96 @@ def seq30_excerpt() -> dict:
 
 
 # ------------------------------------------------------------------ script
-def script(p: dict[str, str]) -> list[dict]:
+def script(p: dict[str, str], summ: dict[str, int]) -> list[dict]:
+    """Nine beats. `text` is the narration (also the .srt). `copy` is what is printed on screen:
+    short sticker lines, labels and sub-lines, the way a person would caption a cut."""
     live_n = int(p["LIVE_N"])
     live_pct = int(p["LIVE_PCT"])
     live_pnl = float(p["LIVE_PNL"])
+    declined = summ.get("refused") or int(round(live_n * live_pct / 100))
     return [
         {
-            "id": "b01", "kicker": "01  built to refuse",
+            "id": "b01", "label": "Live dashboard, 2 Sep 2026",
             "text": f"Most trading agents are built to trade. This one is built to refuse. Over the live week it evaluated {live_n} real opportunities and declined {live_pct} percent of them, and every refusal is a signed artifact you can verify yourself. Let me show you why that is the point, not a bug.",
-            "anchors": {"n81": f"evaluated {live_n}", "declined": "declined"},
+            "anchors": {"trade": "built to trade", "refuse": "built to refuse", "n81": f"evaluated {live_n}", "signed": "signed artifact", "point": "that is the point"},
+            "copy": {
+                "s1": "Most trading agents are built to trade.",
+                "s2": "This one is built to refuse.",
+                "s3": f"{declined} of {live_n} real opportunities: declined.",
+                "s4": "Every refusal is a signed artifact.",
+                "s5": "That is the point, not a bug.",
+            },
         },
         {
-            "id": "b02", "kicker": "02  pre-registered",
+            "id": "b02", "label": "The thesis",
             "text": "The thesis is the volatility risk premium: SPY options are priced richer than the movement that follows. Before a single line of backtest code, I pre-registered the hypotheses, the trial count, and a multiple-testing bar. The git history proves the order.",
             "anchors": {"pre": "Before a single line", "git": "The git history"},
+            "copy": {
+                "sub": "The volatility risk premium: implied volatility on SPY runs above the realised move that follows.",
+                "s1": "Pre-registered before a single line of backtest code.",
+            },
         },
         {
-            "id": "b03", "kicker": "03  the edge is real",
+            "id": "b03", "label": "Hypothesis 1, out of sample",
             "text": "Nearly seven years of SPY, out of sample: mean premium 3.68 vol points over 1,741 observations, Newey-West t of 4.74. The naive t of 18 is invalid, because the windows overlap. The edge is real, and the number is honest.",
-            "anchors": {"vrp": "3.68", "obs": "1,741", "t": "Newey-West", "naive": "The naive"},
+            "anchors": {"vrp": "3.68", "obs": "1,741", "t": "Newey-West", "naive": "The naive", "honest": "The edge is real"},
+            "copy": {
+                "sub": "21-day windows sampled daily overlap by 20 of 21 days. The correction shrinks t by 3.8x, and it still clears the bar.",
+                "s1": "Real edge. Honest number.",
+            },
         },
         {
-            "id": "b04", "kicker": "04  eleven gates",
+            "id": "b04", "label": "Before any order",
             "text": "The agent sells that premium with defined-risk iron condors, only after eleven numbered gates pass: position integrity, timing, circuit breakers, a contango filter, the premium threshold at the exact strikes it would sell, event proximity, cost, sizing, and a stagger rule. Every call goes through Alpaca's official MCP server, request and response recorded.",
             "anchors": {"eleven": "eleven numbered", "listStart": "position integrity", "listEnd": "sizing", "stagger": "stagger rule", "mcp": "Every call"},
+            "copy": {
+                "s1": "Gates 0, 2 and 3 are circuit breakers. A breach means stop, not skip.",
+                "sub": "Every call goes through Alpaca's official MCP server, 74 tools over JSON-RPC, request and response recorded.",
+            },
         },
         {
-            "id": "b05", "kicker": "05  raced live, not ranked",
+            "id": "b05", "label": "22 to 29 Aug, live, in parallel",
             "text": "The deployed tenor was not picked from the backtest ranking. Three candidates raced live in parallel for eight days on real market data, risking nothing. The one that actually traded won: two days of five, against zero and one.",
             "anchors": {"three": "Three candidates", "eight": "eight days", "won": "won"},
+            "copy": {
+                "s1": "2 of 5 days, against 0 and 1.",
+                "sub": "Source: research/DEPLOYMENT_DECISIONS.md, decision D3, 2026-08-30. 21 cycles over 5 trading days, no orders sent.",
+            },
         },
         {
-            "id": "b06", "kicker": "06  one command",
+            "id": "b06", "label": "One command",
             "text": "Every decision, fill and refusal is hashed into a Merkle tree, sealed before outcomes are known. One command recomputes the root. If anything had been edited after the fact, this line would not say verified.",
             "anchors": {"sealed": "sealed before", "command": "One command"},
+            "copy": {"s1": "Edited after the fact? This line would not say VERIFIED."},
         },
         {
-            "id": "b07", "kicker": "07  the record caught its author",
+            "id": "b07", "label": "The part I did not plan",
             "text": "Here is the strongest evidence that this works. On the first live morning, a payload-parsing bug read the account as flat, and the agent stacked four condors instead of one. The sealed log caught it: one artifact holds both the raw broker response with the legs, and the reconciliation that ignored them. Bug, fix, regression tests and the adopted positions are all in the record. I did not hide it. The record would not let me.",
             "anchors": {"morning": "On the first live morning", "flat": "read the account", "four": "stacked four", "raw": "the raw broker", "recon": "the reconciliation", "record": "Bug, fix"},
+            "copy": {
+                "sub": "Mon 31 Aug 2026. Fills at 09:45, 09:55, 10:05 and 10:21 ET, 7 contracts each. Combined max risk $10,840, 10.8% of equity.",
+                "s1": "Same sealed record. Artifact seq 30.",
+                "r1": "Bug: pinned by artifact seq 30",
+                "r2": "Fix: an unknown payload shape now raises",
+                "r3": "9 regression tests added",
+                "r4": "3 orphan condors adopted, all 4 managed since",
+            },
         },
         {
-            "id": "b08", "kicker": "08  live, so far",
+            "id": "b08", "label": "Live, so far",
             "text": f"Live P&L so far: {pnl_words(live_pnl)} on a hundred thousand dollar paper account. On Friday a deadline flatten closes every position ninety minutes before submission. Realised, not marked. One week of options P&L is mostly noise, and the write-up says so. The tail hedge is coded and never engaged: Alpaca served no VIX data all week. That refusal is logged every cycle too.",
             "anchors": {"friday": "On Friday", "noise": "One week", "hedge": "The tail hedge"},
+            "copy": {
+                "s1": "Friday: a deadline flatten closes every position 90 minutes before submission.",
+                "s2": "One week of options P&L is mostly noise. The write-up says so.",
+                "hedgeNo": "Never engaged live.",
+            },
         },
         {
-            "id": "b09", "kicker": "09  verify it yourself",
+            "id": "b09", "label": "Verify it yourself",
             "text": "Clone it. Run make test, make verify, make summary. You do not have to trust me. That is the whole design.",
-            "anchors": {"trust": "You do not"},
+            "anchors": {"clone": "Clone it", "trust": "You do not"},
+            "copy": {"sub": "That is the whole design."},
             "tail": 45,
         },
     ]
@@ -376,10 +417,18 @@ def build_beats(beats: list[dict]) -> list[dict]:
         for k, c in enumerate(caps):
             c["end"] = caps[k + 1]["start"] if k + 1 < len(caps) else duration - TRANSITION
         out.append({
-            "id": b["id"], "kicker": b["kicker"], "durationInFrames": duration, "lead": LEAD, "speech": speech,
-            "audio": b["audio"], "captions": caps, "anchors": anchors, "text": text,
+            "id": b["id"], "label": b["label"], "durationInFrames": duration, "lead": LEAD, "speech": speech,
+            "audio": b["audio"], "captions": caps, "anchors": anchors, "text": text, "copy": b["copy"],
         })
     return out
+
+
+def clip_meta(name: str) -> dict:
+    mp4 = ASSETS / f"{name}.mp4"
+    png = ASSETS / f"{name}_last.png"
+    if not mp4.exists() or not png.exists():
+        sys.exit(f"missing footage {mp4.name}; run `uv run --with playwright presentation/video/record.py`")
+    return {"src": f"assets/{name}.mp4", "last": f"assets/{name}_last.png", "frames": frames(ffprobe_duration(mp4))}
 
 
 def build_timeline(p: dict[str, str], beats: list[dict], verify: tuple[str, str], summ: dict[str, int]) -> dict:
@@ -392,6 +441,12 @@ def build_timeline(p: dict[str, str], beats: list[dict], verify: tuple[str, str]
     ]
     return {
         "fps": FPS, "width": W, "height": H, "transition": TRANSITION,
+        "subtitles": False,
+        "strip": "VRP agent / Nilay Toshniwal / Options Alpha Agents",
+        "clips": {
+            "top": clip_meta("dash_top"),
+            "positions": clip_meta("dash_positions"),
+        },
         "beats": build_beats(beats),
         "facts": {
             "LIVE_N": int(p["LIVE_N"]), "LIVE_PCT": int(p["LIVE_PCT"]), "LIVE_PNL": live_pnl,
@@ -423,8 +478,8 @@ def build_timeline(p: dict[str, str], beats: list[dict], verify: tuple[str, str]
             "book": "4 condors, 28 contracts, $3,108 credit collected, worst case capped at $10,840",
             "flatten": "Friday: a deadline flatten closes every position 90 minutes before submission. Realised, not marked.",
             "noise": "One week of options P&L is mostly noise. The write-up says so.",
-            "hedge": "VIX tail hedge: designed and coded, never engaged.",
-            "hedgeSub": f"Alpaca served 0 VIX contracts all week. {summ.get('hedge_refusals', '?')} refusals to hedge, logged one per cycle.",
+            "hedge": "VIX tail hedge: designed and coded.",
+            "hedgeSub": f"Alpaca served 0 VIX contracts all week. {summ.get('hedge_refusals', '?')} refusals to hedge, one per cycle.",
         },
         "close": {
             "line": "You do not have to trust me.",
@@ -467,7 +522,7 @@ def write_srt(tl: dict) -> int:
 def sync_assets() -> None:
     dst = PUBLIC / "assets"
     dst.mkdir(parents=True, exist_ok=True)
-    needed = ["b01_dashboard.png", "b02_prereg.png", "slide05.png", "b08_positions.png", "b09_readme.png"]
+    needed = ["b02_prereg.png", "b09_readme.png", "dash_top.mp4", "dash_top_last.png", "dash_positions.mp4", "dash_positions_last.png"]
     for name in needed:
         src = ASSETS / name
         if not src.exists():
@@ -479,7 +534,15 @@ def render(silent: bool) -> None:
     cmd = ["npx", "remotion", "render", "src/index.ts", "Final", str(FINAL_RAW), f"--props={TIMELINE}", "--crf=20", "--log=error"]
     log("rendering with Remotion (this is the slow step)")
     t0 = time.time()
-    run(cmd, cwd=REMOTION)
+    for attempt in (1, 2):
+        exe = shutil.which(cmd[0])
+        r = subprocess.run([exe, *cmd[1:]], cwd=str(REMOTION), capture_output=True, text=True, encoding="utf-8", errors="replace", env=ENV)
+        if r.returncode == 0 and FINAL_RAW.exists():
+            break
+        log(f"remotion render attempt {attempt} failed: {(r.stderr or r.stdout)[:600]}")
+        if attempt == 2:
+            sys.exit("remotion render failed twice")
+        time.sleep(5)
     log(f"remotion render finished in {time.time() - t0:.0f} s")
     if silent:
         run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(FINAL_RAW), "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo",
@@ -529,8 +592,9 @@ def main() -> None:
     log(f"params: LIVE_N={p['LIVE_N']} LIVE_PCT={p['LIVE_PCT']} LIVE_PNL={p['LIVE_PNL']} VOICE={p['VOICE']} PACE={p['PACE']}")
 
     if args.capture:
-        log("capturing dashboard and GitHub frames")
+        log("capturing GitHub frames and recording dashboard footage")
         run(["uv", "run", "--with", "playwright", "--with", "pymupdf", "python", str(HERE / "capture.py")])
+        run(["uv", "run", "--with", "playwright", "python", str(HERE / "record.py")])
     sync_assets()
 
     verify = verify_output()
@@ -544,7 +608,7 @@ def main() -> None:
         if pct != int(p["LIVE_PCT"]):
             log(f"WARNING: facts.md LIVE_PCT={p['LIVE_PCT']} but make summary implies {pct}%")
 
-    beats = script(p)
+    beats = script(p, summ)
     narration(beats, p, args.voice)
     silent = all(b["audio"] is None for b in beats)
     if silent:

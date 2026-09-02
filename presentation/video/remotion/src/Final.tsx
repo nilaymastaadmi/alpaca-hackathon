@@ -4,15 +4,20 @@ import {TransitionSeries, linearTiming} from '@remotion/transitions';
 import {fade} from '@remotion/transitions/fade';
 import type {Beat, Timeline} from './types';
 import {BEATS} from './beats';
-import {BG, BeatAudio, Captions, Kicker} from './ui';
+import {BeatAudio, Captions, INK, MONO, MUTED_I, MUTED_C} from './ui';
+
+const CREAM_BEATS = new Set(['b02', 'b04', 'b07', 'b09']);
 
 const BeatView: React.FC<{beat: Beat; tl: Timeline}> = ({beat, tl}) => {
   const Visual = BEATS[beat.id];
+  const onCream = CREAM_BEATS.has(beat.id);
   return (
-    <AbsoluteFill style={{backgroundColor: BG}}>
+    <AbsoluteFill style={{backgroundColor: INK}}>
       {Visual ? <Visual beat={beat} tl={tl} /> : null}
-      <Kicker text={beat.kicker} />
-      <Captions captions={beat.captions} />
+      <div style={{position: 'absolute', top: 76, right: 80, fontFamily: MONO, fontSize: 15, letterSpacing: 3, textTransform: 'uppercase', color: onCream ? MUTED_C : MUTED_I}}>
+        {tl.strip}
+      </div>
+      {tl.subtitles ? <Captions captions={beat.captions} /> : null}
       <BeatAudio beat={beat} />
     </AbsoluteFill>
   );
@@ -36,7 +41,7 @@ export const Final: React.FC<Timeline> = (tl) => {
     );
   });
   return (
-    <AbsoluteFill style={{backgroundColor: BG}}>
+    <AbsoluteFill style={{backgroundColor: INK}}>
       <TransitionSeries>{children}</TransitionSeries>
     </AbsoluteFill>
   );
