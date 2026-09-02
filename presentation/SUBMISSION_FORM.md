@@ -6,11 +6,13 @@ should need thinking on the night.
 
 ## Project title
 
-An Options Agent That Refuses to Trade
+Glass Box: a pre-registered options agent whose every decision you can verify
+
+(Decided 2026-09-02 after reading the previous lablab.ai trading winners: every one led with verifiability and numbers, none with a slogan. "Refuses to trade" stays as the opening hook inside the description and the video, not as the name.)
 
 ## Short description (one line)
 
-A pre-registered volatility risk premium agent on SPY iron condors that sells premium only when it is measurably there, refuses otherwise, and seals every decision in a Merkle tree a judge can verify with one command.
+Pre-registered SPY iron-condor agent on Alpaca MCP: 11 risk gates, 219 tests, 850+ sealed decisions in a Merkle log a judge recomputes with one command, three strategies raced live in parallel, and a log that caught its own author's bug on day one.
 
 ## Long description
 
