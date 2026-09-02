@@ -81,7 +81,7 @@ repo with the same weight as the successes.
   costs *improved* Sharpe, which is impossible and means the optimiser is
   partly selecting noise. **The deployed agent trades 7-14 DTE, which is a
   different trial (T4), scoring +1.201, not +1.614** — the 4.5 day window
-  ruled out the longer tenor for reasons unrelated to Sharpe (see `STRATEGY.md`
+  ruled out the longer tenor for reasons unrelated to Sharpe (see [`STRATEGY.md`](STRATEGY.md)
   §4). The ungated baseline beats the gated variants on average, at either
   tenor. Full write-up in `research/RESULT_H3_ROBUSTNESS.md`.
 - **"Sell further out of the money" was an artifact of our own cost model.**
@@ -185,6 +185,7 @@ detection works even when a forger recomputes the leaf hashes consistently.
 | `dashboard/` | Streamlit cockpit, reads artifacts off disk so it renders with the market closed |
 | `prep/` | Capability probes and the daily IV logger |
 | `tests/` | 211 tests |
-| `RISK_REGISTER.md` | What could bite during the live window, and what is done about it |
+| [`RISK_REGISTER.md`](RISK_REGISTER.md) | What could bite during the live window, and what is done about it |
+| [`STRATEGY.md`](STRATEGY.md) | Why short volatility, why iron condors, why this tenor |
 
 Licensed MIT. Paper trading only.
