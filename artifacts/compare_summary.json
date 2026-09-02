@@ -1,5 +1,5 @@
 {
- "generated": "2026-09-02T17:20:20+00:00",
+ "generated": "2026-09-02T17:45:29+00:00",
  "labels": {
   "T4": "7 to 14 DTE",
   "T6": "21 to 45 DTE, deployed since 30 Aug",
@@ -253,63 +253,63 @@
   {
    "date": "2026-09-02",
    "label": "T4",
-   "cycles": 4,
-   "gate7_pass": 4,
-   "would_enter": 4,
+   "cycles": 5,
+   "gate7_pass": 5,
+   "would_enter": 5,
    "vrp_min": 6.3,
    "vrp_max": 7.009
   },
   {
    "date": "2026-09-02",
    "label": "T6",
-   "cycles": 4,
-   "gate7_pass": 4,
-   "would_enter": 4,
+   "cycles": 5,
+   "gate7_pass": 5,
+   "would_enter": 5,
    "vrp_min": 6.215,
    "vrp_max": 7.069
   },
   {
    "date": "2026-09-02",
    "label": "T7",
-   "cycles": 4,
-   "gate7_pass": 4,
-   "would_enter": 4,
-   "vrp_min": 3.855,
+   "cycles": 5,
+   "gate7_pass": 5,
+   "would_enter": 5,
+   "vrp_min": 3.569,
    "vrp_max": 4.819
   }
  ],
  "tally": {
   "T4": {
-   "cycles": 45,
-   "would_enter": 14
+   "cycles": 46,
+   "would_enter": 15
   },
   "T6": {
-   "cycles": 45,
-   "would_enter": 24
+   "cycles": 46,
+   "would_enter": 25
   },
   "T7": {
-   "cycles": 44,
-   "would_enter": 11
+   "cycles": 45,
+   "would_enter": 12
   }
  },
  "last_batch": {
   "T4": {
-   "timestamp": "2026-09-02T12:45:02-04:00",
+   "timestamp": "2026-09-02T13:45:02-04:00",
    "action": "enter",
    "blocking_gate": null,
-   "short_strike_vrp": 6.544
+   "short_strike_vrp": 6.399
   },
   "T6": {
-   "timestamp": "2026-09-02T12:45:12-04:00",
+   "timestamp": "2026-09-02T13:45:12-04:00",
    "action": "enter",
    "blocking_gate": null,
-   "short_strike_vrp": 6.529
+   "short_strike_vrp": 6.339
   },
   "T7": {
-   "timestamp": "2026-09-02T12:45:19-04:00",
+   "timestamp": "2026-09-02T13:45:20-04:00",
    "action": "enter",
    "blocking_gate": null,
-   "short_strike_vrp": 3.889
+   "short_strike_vrp": 3.569
   }
  }
 }
