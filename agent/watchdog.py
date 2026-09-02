@@ -223,7 +223,8 @@ def main() -> None:
         with LOG.open("a", encoding="utf-8") as fh:
             fh.write(line + "\n")
             keep = res.get("tail", [])
-            if res["outcome"] == "completed":
+            publish_failed = any("publish: failed" in t for t in keep)
+            if res["outcome"] == "completed" and not publish_failed:
                 keep = keep[-4:]
             for t in keep:
                 fh.write(f"    | {t}\n")

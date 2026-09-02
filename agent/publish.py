@@ -60,6 +60,32 @@ def _git(*args: str, timeout: int = 60) -> subprocess.CompletedProcess:
     )
 
 
+def _is_non_fast_forward(stderr: str) -> bool:
+    s = (stderr or "").lower()
+    return "fetch first" in s or "non-fast-forward" in s or "[rejected]" in s
+
+
+def _rebase_onto_remote() -> PublishResult:
+    """
+    Replay the local artifact commits on top of origin/main. Never leaves a
+    rebase in progress: a conflict aborts and is reported, so the trading
+    loop's next cycle finds a normal working tree.
+    """
+    fetched = _git("fetch", "origin", timeout=120)
+    if fetched.returncode != 0:
+        return PublishResult(False, "failed",
+                             f"push rejected and fetch failed: "
+                             f"{fetched.stderr.strip()[:160]}")
+    rebased = _git("rebase", "origin/main", timeout=120)
+    if rebased.returncode != 0:
+        _git("rebase", "--abort")
+        return PublishResult(False, "failed",
+                             f"push rejected; rebase onto origin/main "
+                             f"conflicted and was aborted: "
+                             f"{(rebased.stderr or rebased.stdout).strip()[:160]}")
+    return PublishResult(True, "rebased", "replayed local commits onto origin/main")
+
+
 def publish(note: str = "", push: bool = True) -> PublishResult:
     """
     Stage, commit and push the artifact files. Safe to call every cycle.
@@ -93,6 +119,23 @@ def publish(note: str = "", push: bool = True) -> PublishResult:
             return PublishResult(True, "committed", "local commit only, push skipped")
 
         pushed = _git("push", "origin", "HEAD", timeout=180)
+        if pushed.returncode != 0 and _is_non_fast_forward(pushed.stderr):
+            # 2026-09-02: a README commit pushed from another checkout at
+            # 19:09 IST made every publish for the rest of the session fail
+            # this way, 42 cycles, and the public dashboard sat 3.5 hours
+            # stale while the artifact commits piled up locally. The local
+            # commits only ever touch artifacts/, so replaying them on top
+            # of the remote is conflict-free unless someone else edited the
+            # artifacts, in which case the rebase is abandoned and reported.
+            recovered = _rebase_onto_remote()
+            if recovered.ok:
+                pushed = _git("push", "origin", "HEAD", timeout=180)
+                if pushed.returncode == 0:
+                    return PublishResult(True, "pushed",
+                                         f"{msg.splitlines()[0]} (after rebase "
+                                         f"onto origin/main)")
+            else:
+                return recovered
         if pushed.returncode != 0:
             # Committed locally but not pushed. Recoverable, and the next cycle
             # will carry both commits, so this is a warning rather than a loss.
