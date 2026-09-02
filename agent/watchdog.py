@@ -54,6 +54,7 @@ from pathlib import Path
 AGENT = Path(__file__).resolve().parent / "agent.py"
 REPO = Path(__file__).resolve().parent.parent
 HEARTBEAT = REPO / "artifacts" / "watchdog.json"
+LOG = HEARTBEAT.with_name("watchdog.log")
 
 DEFAULT_INTERVAL = 300          # 5 minutes between cycles
 DEFAULT_TIMEOUT = 240           # a cycle taking over 4 minutes is hung
@@ -213,6 +214,19 @@ def main() -> None:
         print(line)
         for t in res.get("tail", [])[-4:]:
             print(f"    | {t}")
+
+        # Durable copy of the console. On 2026-09-01, 1 of 85 live cycles
+        # returned non-zero after writing its artifact and the cause was
+        # unrecoverable because this output only ever went to a console
+        # window. Full 25-line tail for anything that was not a clean
+        # completion, the last 4 lines otherwise. Gitignored, local only.
+        with LOG.open("a", encoding="utf-8") as fh:
+            fh.write(line + "\n")
+            keep = res.get("tail", [])
+            if res["outcome"] == "completed":
+                keep = keep[-4:]
+            for t in keep:
+                fh.write(f"    | {t}\n")
 
         write_heartbeat({
             "alive": True, "stats": stats, "consecutive_failures": consecutive,

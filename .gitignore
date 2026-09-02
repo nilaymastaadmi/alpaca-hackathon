@@ -9,6 +9,7 @@ backtest/cache/*.csv
 
 artifacts/state.json
 artifacts/watchdog.json
+artifacts/watchdog.log
 
 # D3 comparison dry-runs (agent/agent.py --compare): internal decision-support
 # data for choosing between T4/T6/T7, not the real submission's artifact

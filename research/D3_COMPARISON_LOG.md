@@ -1,6 +1,6 @@
 # D3 comparison log: T4 vs T6 vs T7
 
-Generated 2026-09-01T01:15:51 by `agent/compare_report.py` from `agent/agent.py --compare-all`, scheduled hourly 19:15-01:15 IST (matching `agent/config.py`'s own trade_window). Purely observational -- every row below is a dry-run decision, no order was ever sent. See `research/DEPLOYMENT_DECISIONS.md` D3 for the backtest case; this file is the live-market evidence gathered in parallel while that decision stays open until kickoff.
+Generated 2026-09-02T01:15:37 by `agent/compare_report.py` from `agent/agent.py --compare-all`, scheduled hourly 19:15-01:15 IST (matching `agent/config.py`'s own trade_window). Purely observational -- every row below is a dry-run decision, no order was ever sent. See `research/DEPLOYMENT_DECISIONS.md` D3 for the backtest case; this file is the live-market evidence gathered in parallel while that decision stays open until kickoff.
 
 | ET timestamp | T4 (7-14 DTE, deployed) | T6 (21-45 DTE) | T7 (5-10 DTE, proposed) |
 |---|---|---|---|
@@ -38,6 +38,13 @@ Generated 2026-09-01T01:15:51 by `agent/compare_report.py` from `agent/agent.py 
 | 2026-08-31 10:45 | **ENTER** [g7 pass] (VRP +3.28) | **ENTER** [g7 pass] (VRP +3.24) | refuse [g7 fail] (VRP +0.12) |
 | 2026-08-31 12:45 | **ENTER** [g7 pass] (VRP +3.19) | **ENTER** [g7 pass] (VRP +3.20) | refuse [g7 fail] (VRP -0.13) |
 | 2026-08-31 13:45 | **ENTER** [g7 pass] (VRP +3.17) | **ENTER** [g7 pass] (VRP +3.17) | refuse [g7 fail] (VRP -0.26) |
+| 2026-09-01 09:45 | **ENTER** [g7 pass] (VRP +4.51) | **ENTER** [g7 pass] (VRP +4.58) | **ENTER** [g7 pass] (VRP +2.13) |
+| 2026-09-01 10:45 | **ENTER** [g7 pass] (VRP +4.42) | **ENTER** [g7 pass] (VRP +4.46) | **ENTER** [g7 pass] (VRP +1.54) |
+| 2026-09-01 11:45 | **ENTER** [g7 pass] (VRP +4.33) | **ENTER** [g7 pass] (VRP +4.34) | **ENTER** [g7 pass] (VRP +1.48) |
+| 2026-09-01 12:45 | **ENTER** [g7 pass] (VRP +4.64) | **ENTER** [g7 pass] (VRP +4.62) | **ENTER** [g7 pass] (VRP +2.23) |
+| 2026-09-01 13:45 | **ENTER** [g7 pass] (VRP +4.60) | **ENTER** [g7 pass] (VRP +4.56) | **ENTER** [g7 pass] (VRP +2.04) |
+| 2026-09-01 14:45 | **ENTER** [g7 pass] (VRP +4.95) | **ENTER** [g7 pass] (VRP +4.99) | **ENTER** [g7 pass] (VRP +2.95) |
+| 2026-09-01 15:45 | refuse [g7 pass] (VRP +4.86) | refuse [g7 pass] (VRP +4.76) | refuse [g7 pass] (VRP +2.46) |
 
 ## Daily summary
 
@@ -67,11 +74,14 @@ Generated 2026-09-01T01:15:51 by `agent/compare_report.py` from `agent/agent.py 
 | 2026-08-31 | T4 | 4 | 4 | 4 | +3.17 to +3.42 |
 | 2026-08-31 | T6 | 4 | 4 | 4 | +3.17 to +3.42 |
 | 2026-08-31 | T7 | 4 | 0 | 0 | -0.26 to +0.30 |
+| 2026-09-01 | T4 | 7 | 7 | 6 | +4.33 to +4.95 |
+| 2026-09-01 | T6 | 7 | 7 | 6 | +4.34 to +4.99 |
+| 2026-09-01 | T7 | 7 | 7 | 6 | +1.48 to +2.95 |
 
 ## Overall tally
 
 | label | cycles logged | would-enter cycles |
 |---|---|---|
-| T4 | 34 | 4 |
-| T6 | 34 | 14 |
-| T7 | 33 | 1 |
+| T4 | 41 | 10 |
+| T6 | 41 | 20 |
+| T7 | 40 | 7 |
