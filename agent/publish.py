@@ -45,6 +45,10 @@ PUBLISHABLE = (
     # comparison (T4/T6/T7 dry-run agents), written by compare_report.py.
     # The per-candidate logs stay gitignored; this holds no orders.
     "artifacts/compare_summary.json",
+    # Added 2026-09-02. The explain layer's output: model narration of each
+    # sealed decision, written by prep/explain_decisions.py outside the
+    # trading loop, with the grounding verdict per item. Text only.
+    "artifacts/explanations.json",
 )
 
 

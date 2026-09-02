@@ -143,6 +143,15 @@ weeklies that sit inside the window, although those contracts exist and trade
 every cycle rather than pretending, and the purchased wings remained the only
 crash protection. The refusal artifacts are the evidence.
 
+**An explain layer that never decides.** This is an AI agents hackathon and the
+intelligence here is deterministic and measured, so the honest place for a
+language model is after the decision, not inside it. `prep/explain_decisions.py`
+runs outside the trading loop, reads each sealed artifact, and asks a model
+(Qwen 2.5 72B via Featherless) for three plain sentences a judge can read. Every
+number in the text is checked against the artifact; an explanation that invents
+or alters a number is rejected, the rejection is recorded, and the dashboard
+shows the count. The model explains; the numbers decide; the log proves it.
+
 **A watchdog**, because the most likely way to lose the week is not strategic.
 US hours are 19:00 to 01:30 IST, and a sleeping laptop hangs in-flight HTTP
 permanently. Each cycle runs in a separate subprocess with an OS-enforced

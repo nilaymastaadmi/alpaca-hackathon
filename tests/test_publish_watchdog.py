@@ -44,6 +44,8 @@ def test_publishable_list_is_narrow_and_explicit():
         # Added 2026-09-02 for the dashboard's three-agent scoreboard. A
         # summary of counts, not the shadow logs themselves.
         "artifacts/compare_summary.json",
+        # Added 2026-09-02, the explain layer's narration file.
+        "artifacts/explanations.json",
     }
     for path in P.PUBLISHABLE:
         assert path.startswith("artifacts/"), "nothing outside artifacts/ may publish"

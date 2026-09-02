@@ -10,6 +10,8 @@ The agent sells that gap with a defined-risk iron condor on SPY, entering only w
 
 A refusal is not a failure mode. It is logged with the same detail as a fill, carrying the measured numbers that produced it, so the decision is auditable rather than asserted.
 
+The intelligence is deterministic and measured, so the language model sits after the decision, not inside it: an explain layer (Qwen 2.5 72B on Featherless, outside the trading loop) narrates each sealed decision in three plain sentences, and every number it writes is checked against the artifact. Explanations that invent or alter a number are rejected and the count is shown. The model explains, the numbers decide, the log proves it.
+
 ## Risk gates
 
 Every decision passes through 11 numbered gates (0 to 10): position integrity (ledger matches broker, checked in both directions), trading-window timing, a portfolio drawdown breaker, a daily loss limit, a consecutive-loss pause, capacity, a term-structure regime filter (contango required, since VRP is only reliably significant there), the VRP threshold itself, a scheduled-macro-event proximity check, a cost ceiling, and a sizing check, plus a stagger rule that refuses a second position on an expiry already held. Gates 0, 2 and 3 are circuit breakers, distinguished in code from ordinary refusals: a refusal means no trade now, a breach means stop.

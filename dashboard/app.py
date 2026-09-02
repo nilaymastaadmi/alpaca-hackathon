@@ -209,6 +209,38 @@ if cmp.get("daily"):
 st.subheader(f"Latest decision: {str(latest.get('action', '')).upper()}")
 st.caption(f"{latest.get('timestamp', '')}  ·  artifact seq {latest.get('seq')}")
 
+# --- the explain layer ------------------------------------------------------
+# A language model narrates each SEALED decision after the fact, outside the
+# trading loop, and every number it writes is checked against the artifact.
+# The model explains; the numbers decide. See prep/explain_decisions.py.
+EXPL = load_json(ARTIFACTS / "explanations.json")
+EXPL_ITEMS = EXPL.get("items", {})
+
+
+def show_explanation(rec: dict) -> None:
+    item = EXPL_ITEMS.get(str(rec.get("leaf_hash")))
+    if not item:
+        return
+    counts = EXPL.get("counts", {})
+    label = (f"Explained after the fact by {item.get('model', 'a language model')} "
+             f"from the sealed artifact. The decision was sealed before this text "
+             f"existed and the model never takes part in deciding. Every number "
+             f"is checked against the artifact: {counts.get('explained', 0)} "
+             f"explanations accepted, {counts.get('rejected', 0)} rejected for "
+             f"inventing or altering a number.")
+    if item.get("grounded"):
+        st.info(item.get("text", ""))
+        st.caption(label)
+    else:
+        st.warning(f"The model's explanation of this decision was REJECTED by the "
+                   f"grounding check: it {item.get('rejected_reason', 'failed')}. "
+                   f"The decision stands on its numbers; the rejected text is kept "
+                   f"in artifacts/explanations.json.")
+        st.caption(label)
+
+
+show_explanation(latest)
+
 gates = latest.get("gates", [])
 if gates:
     gdf = pd.DataFrame([{
@@ -247,6 +279,7 @@ with st.expander("Explore any decision: pick a cycle, see the numbers that decid
     }
     pick = st.selectbox("cycle", list(options), label_visibility="collapsed")
     chosen = options[pick]
+    show_explanation(chosen)
     cg = chosen.get("gates", [])
     if cg:
         st.dataframe(pd.DataFrame([{

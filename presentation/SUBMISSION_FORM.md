@@ -24,6 +24,8 @@ The agent sells that premium with defined-risk iron condors and only after 11 nu
 
 Every runtime call goes through Alpaca's official MCP server over JSON-RPC, recorded request by request. Orders ladder from mid across up to 5 rungs instead of crossing the spread, measured at 1.5% of credit round trip on a real fill. A dedicated deadline mechanism flattens the book 90 minutes before submission so the result is realised, not a mark-to-market snapshot.
 
+The language model sits after the decision, not inside it: an explain layer (Qwen 2.5 72B on Featherless, outside the trading loop) narrates every sealed decision in plain English, and every number it writes is checked against the artifact, with rejections counted on the dashboard. The model explains; the numbers decide.
+
 Every decision, fill and refusal is hashed into a SHA-256 Merkle tree sealed before outcomes are known. `make verify` recomputes it. That trail has already caught its own author: on the first live morning a payload-parsing bug read the account as flat and the agent stacked four condors instead of one. The proof was a single sealed artifact holding both the raw broker response with the legs and the reconciliation that ignored them. The bug, the fix, the regression test, and the adopted positions are all in the record. 211 tests. Live week P&L is reported exactly as it happened, and the write-up says plainly which designed components (the VIX tail hedge) never engaged live and why.
 
 ## Category / challenge
@@ -32,7 +34,7 @@ Options Alpha Agents (the single main challenge; there are no sub-tracks on the 
 
 ## Technology tags
 
-Python, Alpaca MCP Server, Model Context Protocol, Streamlit, options, iron condor, volatility risk premium, Merkle tree, pre-registration, pytest
+Python, Alpaca MCP Server, Model Context Protocol, Streamlit, Featherless, Qwen 2.5, options, iron condor, volatility risk premium, Merkle tree, pre-registration, pytest
 
 ## Cover image (16:9, PNG or JPG)
 

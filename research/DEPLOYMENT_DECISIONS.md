@@ -388,3 +388,26 @@ the deadline is the wrong trade.
 only until it is given an end boundary on Thursday morning while idle; the
 freeze above is the safety net if that step is missed.
 
+
+## D5. DECIDED 2026-09-02: a language model explains sealed decisions, and never decides
+
+**The question.** This is an "AI Trading Agents" hackathon with Featherless
+credits on offer, and the agent's intelligence is a deterministic, pre-registered
+decision system with no model anywhere. A judge may ask where the AI is.
+
+**The options.** (a) Put a model inside the loop (proposing trades, adjusting
+thresholds). Rejected: it would make the pre-registered research meaningless,
+the gates unauditable, and the Merkle log a record of whatever the model felt
+like. (b) Nothing. Defensible, but leaves the question unanswered on a judging
+axis that matters. (c) A model that explains each decision after it is sealed,
+outside the loop, with its output checked against the artifact.
+
+**Decision: (c).** `prep/explain_decisions.py` runs as a scheduled task every
+10 minutes, reads `artifacts/decisions.jsonl`, and asks Qwen 2.5 72B (via
+Featherless, ungated) for at most three plain sentences per decision. A
+grounding check requires every number in the text to appear, digit for digit,
+in the facts the model was given; failures are recorded as rejections, not
+discarded, so the dashboard can state how often the model was overruled.
+Output lands in `artifacts/explanations.json`, published with the artifacts.
+Nothing flows back into agent.py. The model explains; the numbers decide.
+
