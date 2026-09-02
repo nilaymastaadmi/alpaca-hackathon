@@ -1811,13 +1811,37 @@
    "created_at": "2026-09-02T17:52:40+00:00",
    "prompt_tokens": 760,
    "completion_tokens": 60
+  },
+  "6c74de28b7cb3fc7fc4cff15a9fcefa5043378c1ee072e7a99908120001d14cc": {
+   "seq": 882,
+   "timestamp": "2026-09-02T13:55:06-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute the trade because the \"stagger\" gate blocked it. This gate was triggered because the agent already holds a position expiring on 2026-10-02, and holding five positions on one expiry would exceed the allowed concentration limit.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T18:03:14+00:00",
+   "prompt_tokens": 759,
+   "completion_tokens": 58
+  },
+  "9b623781c1af4c4a177c8babd91d48771f068681523ead80146caefa5407e470": {
+   "seq": 888,
+   "timestamp": "2026-09-02T14:00:05-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute the trade because the \"stagger\" check blocked it. This check was looking at the fact that the agent already holds a position expiring on 2026-10-02.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-02T18:04:18+00:00",
+   "prompt_tokens": 760,
+   "completion_tokens": 47
   }
  },
  "model": "Qwen/Qwen2.5-72B-Instruct",
- "generated_at": "2026-09-02T17:53:01+00:00",
+ "generated_at": "2026-09-02T18:04:18+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
-  "explained": 151,
+  "explained": 153,
   "rejected": 0
  }
 }
