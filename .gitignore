@@ -19,3 +19,4 @@ artifacts/compare/
 
 # keep-awake task output, local only
 prep/wake.log
+prep/wake_task.log

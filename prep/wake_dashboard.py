@@ -35,9 +35,34 @@ def log(msg: str) -> None:
         fh.write(line + "\n")
 
 
+def launch(p):
+    """
+    Launch chromium, tolerating a browser build the scheduled-task context
+    cannot use.
+
+    Found 2026-09-03: identical commands succeed from an interactive shell
+    and fail under Task Scheduler with "Executable doesn't exist" pointing
+    at the chromium_headless_shell build, even though that file is present,
+    complete, and 211 MB. Both DashWake runs that morning failed this way
+    and wrote nothing, because the crash happened before the first log call.
+    Rather than depend on which build the launcher prefers, try the default
+    and fall back to the full chromium build, which is a separate directory.
+    """
+    errors = []
+    for attempt, kwargs in enumerate(({}, {"channel": "chromium"}), start=1):
+        try:
+            browser = p.chromium.launch(headless=True, **kwargs)
+            if attempt > 1:
+                log(f"launched with {kwargs} after the default failed")
+            return browser
+        except Exception as exc:                          # noqa: BLE001
+            errors.append(f"{kwargs or 'default'}: {str(exc).splitlines()[0][:120]}")
+    raise RuntimeError("could not launch chromium: " + " | ".join(errors))
+
+
 def main() -> int:
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = launch(p)
         page = browser.new_page(viewport={"width": 1280, "height": 900})
 
         # Outer page first: this is where the sleep prompt lives.
