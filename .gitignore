@@ -21,3 +21,5 @@ artifacts/compare/
 prep/wake.log
 prep/wake_task.log
 prep/flatten_watch.log
+node_modules/
+package-lock.json

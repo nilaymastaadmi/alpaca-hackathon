@@ -245,6 +245,13 @@ def _cli() -> None:
             actions[r.get("action", "?")] = actions.get(r.get("action", "?"), 0) + 1
             if r.get("action") not in cycle_actions:
                 continue
+            # A dry run is a rehearsal, not a decision the account could have
+            # acted on. Found 2026-09-03 when the deck (which excluded them)
+            # reported 151 opportunities against this command's 152. Three
+            # judge-facing surfaces disagreeing by one is worse than any of
+            # them being slightly off.
+            if r.get("dry_run"):
+                continue
 
             bg = r.get("blocking_gate")
             eb = r.get("environmental_block")

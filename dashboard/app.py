@@ -75,7 +75,11 @@ def verify_log() -> tuple[bool, str]:
 
 
 decisions = load_decisions()
-cycles = [d for d in decisions if d.get("action") in ("enter", "refuse", "halt")]
+# Dry runs are rehearsals, not decisions the account could have acted on, and
+# are excluded from every count here so this page, `make summary` and the deck
+# report the same numbers. They stay in the sealed log and the raw stream.
+cycles = [d for d in decisions
+          if d.get("action") in ("enter", "refuse", "halt") and not d.get("dry_run")]
 exits = [d for d in decisions if str(d.get("action", "")).startswith("exit_check")]
 
 st.title("Volatility Risk Premium Agent")
