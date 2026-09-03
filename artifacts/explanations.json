@@ -2339,13 +2339,37 @@
    "created_at": "2026-09-03T17:03:10+00:00",
    "prompt_tokens": 734,
    "completion_tokens": 59
+  },
+  "6a6643541aeb4947d035f1e9f774617a50478b8f0a6038e7dbf2f26fb4dbbc06": {
+   "seq": 1141,
+   "timestamp": "2026-09-03T13:05:58-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute the trade because of the \"event_proximity\" check. This check blocked the action due to the US nonfarm payrolls being scheduled for 08:30 ET in 1 day. The agent avoids taking on short gamma exposure before significant macro events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-03T17:13:18+00:00",
+   "prompt_tokens": 734,
+   "completion_tokens": 59
+  },
+  "80333a13673f28ebe92534839af532dbfd831c54238b3d60345f387f0760ed12": {
+   "seq": 1147,
+   "timestamp": "2026-09-03T13:10:58-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute the trade because of the \"event_proximity\" check. This check blocked the action due to the US nonfarm payrolls being scheduled for 08:30 ET in 1 day. The agent avoids taking on short gamma exposure before significant macro events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-03T17:13:28+00:00",
+   "prompt_tokens": 734,
+   "completion_tokens": 59
   }
  },
  "model": "Qwen/Qwen2.5-72B-Instruct",
- "generated_at": "2026-09-03T17:03:10+00:00",
+ "generated_at": "2026-09-03T17:13:28+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
-  "explained": 195,
+  "explained": 197,
   "rejected": 0
  }
 }
