@@ -2243,13 +2243,37 @@
    "created_at": "2026-09-03T16:23:46+00:00",
    "prompt_tokens": 734,
    "completion_tokens": 59
+  },
+  "06187f6eb19b42f2f7834dad31e52bb8a268539c7b0af4d0fc4d37ae8e7ddda1": {
+   "seq": 1093,
+   "timestamp": "2026-09-03T12:25:58-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute the trade because of the \"event_proximity\" check. This check blocked the action due to the US nonfarm payrolls being scheduled for 08:30 ET in 1 day. The agent avoids taking on short gamma exposure before significant macro events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-03T16:33:07+00:00",
+   "prompt_tokens": 733,
+   "completion_tokens": 59
+  },
+  "a493b6e4b14d39f460f94bd8e544907bced8d1d971a34ff7db03e68eda064635": {
+   "seq": 1099,
+   "timestamp": "2026-09-03T12:30:58-04:00",
+   "action": "refuse",
+   "text": "The!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!The trading agent refused to execute the trade because of the \"event_proximity\" check. This check blocked the action due to the US nonfarm payrolls being scheduled for 08:30 ET the next day. The agent avoids taking on short gamma exposure before significant macroeconomic events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-03T16:33:18+00:00",
+   "prompt_tokens": 732,
+   "completion_tokens": 279
   }
  },
  "model": "Qwen/Qwen2.5-72B-Instruct",
- "generated_at": "2026-09-03T16:23:46+00:00",
+ "generated_at": "2026-09-03T16:33:18+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
-  "explained": 187,
+  "explained": 189,
   "rejected": 0
  }
 }
