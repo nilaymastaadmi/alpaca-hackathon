@@ -12,7 +12,7 @@ Glass Box: a pre-registered options agent whose every decision you can verify
 
 ## Short description (one line)
 
-Pre-registered SPY iron-condor agent on Alpaca MCP: 11 risk gates, 219 tests, 850+ sealed decisions in a Merkle log a judge recomputes with one command, three strategies raced live in parallel, and a log that caught its own author's bug on day one.
+Pre-registered SPY iron-condor agent on Alpaca MCP: 11 risk gates, 233 tests, 1050+ sealed decisions in a Merkle log a judge recomputes with one command, three strategies raced live in parallel, and a log that caught its own author's bug on day one.
 
 ## Long description
 
@@ -26,7 +26,7 @@ Every runtime call goes through Alpaca's official MCP server over JSON-RPC, reco
 
 The language model sits after the decision, not inside it: an explain layer (Qwen 2.5 72B on Featherless, outside the trading loop) narrates every sealed decision in plain English, and every number it writes is checked against the artifact, with rejections counted on the dashboard. The model explains; the numbers decide.
 
-Every decision, fill and refusal is hashed into a SHA-256 Merkle tree sealed before outcomes are known. `make verify` recomputes it. That trail has already caught its own author: on the first live morning a payload-parsing bug read the account as flat and the agent stacked four condors instead of one. The proof was a single sealed artifact holding both the raw broker response with the legs and the reconciliation that ignored them. The bug, the fix, the regression test, and the adopted positions are all in the record. 211 tests. Live week P&L is reported exactly as it happened, and the write-up says plainly which designed components (the VIX tail hedge) never engaged live and why.
+Every decision, fill and refusal is hashed into a SHA-256 Merkle tree sealed before outcomes are known. `make verify` recomputes it. That trail has already caught its own author: on the first live morning a payload-parsing bug read the account as flat and the agent stacked four condors instead of one. The proof was a single sealed artifact holding both the raw broker response with the legs and the reconciliation that ignored them. The bug, the fix, the regression test, and the adopted positions are all in the record. 233 tests. Live week P&L is reported exactly as it happened, and the write-up says plainly which designed components (the VIX tail hedge) never engaged live and why.
 
 ## Category / challenge
 
@@ -82,7 +82,7 @@ Leave empty. Decided 2026-08-30, do not re-raise.
 
 1. `make judge` (expect 233 passed, VERIFIED, and a regenerated results page).
 2. `node presentation/build_deck.js`, then re-export the PDF, so the deck carries Friday's numbers.
-2. Wake the dashboard, confirm the Merkle badge reads VERIFIED on the public URL.
-3. Confirm the video MP4 and the final slides PDF exist and open.
-4. Fill the form top to bottom from this file. Account ID last, read it twice.
-5. Submit, then reopen the submission page and confirm every field and file landed.
+3. Wake the dashboard, confirm the Merkle badge reads VERIFIED on the public URL.
+4. Confirm the video MP4 and the final slides PDF exist and open.
+5. Fill the form top to bottom from this file. Account ID last, read it twice.
+6. Submit, then reopen the submission page and confirm every field and file landed.

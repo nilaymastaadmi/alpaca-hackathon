@@ -169,7 +169,7 @@ timeout, since an in-process timer cannot rescue a thread stuck in a syscall.
 ## Verify it yourself
 
 ```bash
-make test      # 211 tests
+make test      # 233 tests
 make verify    # recompute the Merkle root over every logged decision
 make dry-run   # run one full cycle, place nothing
 make dash      # the dashboard, locally
@@ -208,7 +208,7 @@ detection works even when a forger recomputes the leaf hashes consistently.
 | `research/` | Pre-registration, every result including the failures, deployment decisions |
 | `dashboard/` | Streamlit cockpit, reads artifacts off disk so it renders with the market closed |
 | `prep/` | Capability probes and the daily IV logger |
-| `tests/` | 211 tests |
+| `tests/` | 233 tests |
 | [`RISK_REGISTER.md`](RISK_REGISTER.md) | What could bite during the live window, and what is done about it |
 | [`STRATEGY.md`](STRATEGY.md) | Why short volatility, why iron condors, why this tenor |
 
