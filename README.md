@@ -1,4 +1,6 @@
-# An options agent that refuses to trade
+# Glass Box
+
+### An options agent that refuses to trade
 
 **Alpaca AI Trading Agents Hackathon 2026. Main challenge: Options Alpha Agents.**
 
@@ -12,7 +14,7 @@ verify yourself.**
 
 ```bash
 make verify
-# VERIFIED: 6 artifacts, root 08b9f090be7f3f09... matches the seal written 2026-08-20T12:27:42+00:00
+# VERIFIED: 1052 artifacts, root 345ad42360dc4999... matches the seal written 2026-09-02T20:20:13+00:00
 ```
 
 (The count and root advance as the agent runs. What matters is that the line says
