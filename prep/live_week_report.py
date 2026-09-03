@@ -213,6 +213,47 @@ def build() -> str:
                      "Nothing above is adjusted, annualised, or selected.")
         lines.append("")
 
+    # --- independent read via Alpaca's CLI -----------------------------------
+    # Second opinion on the same account, through a different Alpaca surface
+    # than the MCP path that wrote it. Optional by design: the report must
+    # still generate on a machine with no CLI and no credentials.
+    try:
+        sys.path.insert(0, str(ROOT / "prep"))
+        import alpaca_cli
+        snap = alpaca_cli.snapshot()
+    except Exception as exc:                              # noqa: BLE001
+        snap = {"ok": False, "reason": f"{type(exc).__name__}: {exc}"}
+
+    lines.append("## Independent check through Alpaca's CLI")
+    lines.append("")
+    if snap.get("ok"):
+        a = snap.get("account", {})
+        hist = snap.get("portfolio_history", {}) or {}
+        lines.append(f"Read back with the official Alpaca CLI {snap.get('cli_version')} "
+                     f"(read-only commands only), a different Alpaca surface from the "
+                     f"MCP path the agent trades through. If the ledger, the MCP view "
+                     f"and this disagreed, that would show up here.")
+        lines.append("")
+        lines.append(f"- Account `{a.get('account_number')}`, status {a.get('status')}, "
+                     f"options level {a.get('options_approved_level')}")
+        lines.append(f"- Equity {money(float(a.get('equity'))) if a.get('equity') else 'n/a'}, "
+                     f"cash {money(float(a.get('cash'))) if a.get('cash') else 'n/a'}")
+        lines.append(f"- Open option legs reported by the broker: {len(snap.get('positions') or [])}")
+        eq = hist.get("equity") or []
+        pl = hist.get("profit_loss") or []
+        if eq:
+            lines.append(f"- Portfolio history ({hist.get('timeframe')}, base "
+                         f"{money(hist.get('base_value'))} as of {hist.get('base_value_asof')}): "
+                         f"equity {' -> '.join(f'{v:,.0f}' for v in eq[-6:])}")
+        if pl:
+            lines.append(f"- Daily P&L over the same points: "
+                         f"{' , '.join(f'{v:+,.0f}' for v in pl[-6:])}")
+    else:
+        lines.append(f"Not available when this was generated ({snap.get('reason')}). "
+                     f"The rest of this page is built from the sealed log and does not "
+                     f"depend on it.")
+    lines.append("")
+
     lines.append("## Incident record")
     lines.append("")
     lines.append("31 Aug 09:45 ET: a payload-parsing bug read the account as flat and "

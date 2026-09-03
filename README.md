@@ -125,6 +125,15 @@ because fastmcp 4.0.0 shipped mid-competition and kills the unpinned server at
 import. Every MCP request and response is recorded, including failures, so
 "we used the MCP server" is checkable rather than claimed.
 
+**Alpaca's official CLI is the second, read-only opinion.** Not an execution
+path and never will be: `prep/alpaca_cli.py` enforces an allowlist of read
+commands, so `order submit`, `position close-all` and `order cancel-all` are
+refused before the process starts. Reporting uses it deliberately, because
+reading the account back through a different Alpaca surface than the one that
+wrote to it is a real check. The results page carries that independent read
+(`make results`), and `prep/flatten_watch.py` witnesses Friday's deadline
+close minute by minute from outside the agent.
+
 **Eleven numbered gates (0 to 10), plus a stagger rule** that refuses a second
 position on an expiry already held. Evaluated at decision time rather than
 applied afterwards as a filter, because the rules are path dependent. All gates

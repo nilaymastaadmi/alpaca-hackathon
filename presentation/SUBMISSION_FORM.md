@@ -22,7 +22,7 @@ The thesis is the volatility risk premium: SPY options are systematically priced
 
 The agent sells that premium with defined-risk iron condors and only after 11 numbered gates pass: position integrity checked in both directions, trading-window timing, a drawdown breaker, a daily loss limit, a consecutive-loss pause, capacity, a contango regime filter, the VRP threshold itself at the exact strikes it would sell, a macro-event proximity check, a cost ceiling, a sizing check, plus a stagger rule that refuses a second position on an expiry already held. A refusal is logged with the same detail as a fill, carrying the numbers that caused it.
 
-Every runtime call goes through Alpaca's official MCP server over JSON-RPC, recorded request by request. Orders ladder from mid across up to 5 rungs instead of crossing the spread, measured at 1.5% of credit round trip on a real fill. A dedicated deadline mechanism flattens the book 90 minutes before submission so the result is realised, not a mark-to-market snapshot.
+Every runtime call goes through Alpaca's official MCP server over JSON-RPC, recorded request by request. Alpaca's CLI is used as a read-only second opinion, with an allowlist that refuses every destructive command, so the account is checked from a different surface than the one that wrote to it. Orders ladder from mid across up to 5 rungs instead of crossing the spread, measured at 1.5% of credit round trip on a real fill. A dedicated deadline mechanism flattens the book 90 minutes before submission so the result is realised, not a mark-to-market snapshot.
 
 The language model sits after the decision, not inside it: an explain layer (Qwen 2.5 72B on Featherless, outside the trading loop) narrates every sealed decision in plain English, and every number it writes is checked against the artifact, with rejections counted on the dashboard. The model explains; the numbers decide.
 
@@ -34,7 +34,7 @@ Options Alpha Agents (the single main challenge; there are no sub-tracks on the 
 
 ## Technology tags
 
-Python, Alpaca MCP Server, Model Context Protocol, Streamlit, Featherless, Qwen 2.5, options, iron condor, volatility risk premium, Merkle tree, pre-registration, pytest
+Python, Alpaca MCP Server, Alpaca CLI, Model Context Protocol, Streamlit, Featherless, Qwen 2.5, options, iron condor, volatility risk premium, Merkle tree, pre-registration, pytest
 
 ## Cover image (16:9, PNG or JPG)
 
