@@ -3791,13 +3791,49 @@
    "created_at": "2026-09-04T17:13:31+00:00",
    "prompt_tokens": 754,
    "completion_tokens": 56
+  },
+  "b6132be43e0722eb16bf0b92798f964a6687d298fcec920e56010002b3ebc3c6": {
+   "seq": 1507,
+   "timestamp": "2026-09-04T13:14:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the submission deadline had passed 2.23 hours ago, and entries were frozen for judging. This decision was made by the \"event_proximity\" check, which looked at the time until the US nonfarm payrolls announcement at 08:30 ET.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T17:23:15+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 64
+  },
+  "b12005b671272f2fedee0aeb9baaca1ba962bd49dd90060f4b2eddb898703abc": {
+   "seq": 1508,
+   "timestamp": "2026-09-04T13:17:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the submission deadline had passed 2.28 hours ago, and entries were frozen for judging. This decision was made by the \"event_proximity\" check, which looked at the time until the US nonfarm payrolls announcement at 08:30 ET.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T17:23:18+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 64
+  },
+  "d6a2fafbc6689bf68c97b84a4e9e0267052aae23c1e4534491f8008b8fde2009": {
+   "seq": 1509,
+   "timestamp": "2026-09-04T13:20:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the submission deadline had passed 2.33 hours ago, and entries are frozen after judging. This decision was made by the \"event_proximity\" check, which looked at the time until the US nonfarm payrolls announcement at 08:30 ET.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T17:23:21+00:00",
+   "prompt_tokens": 753,
+   "completion_tokens": 64
   }
  },
- "model": "Qwen/Qwen2.5-32B-Instruct",
- "generated_at": "2026-09-04T17:13:31+00:00",
+ "model": "Qwen/Qwen2.5-72B-Instruct",
+ "generated_at": "2026-09-04T17:23:21+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
-  "explained": 316,
+  "explained": 319,
   "rejected": 0
  }
 }
