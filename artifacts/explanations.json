@@ -3887,13 +3887,73 @@
    "created_at": "2026-09-04T17:43:39+00:00",
    "prompt_tokens": 754,
    "completion_tokens": 439
+  },
+  "5d35d1fb7faab98d63d40ec9ba4fdf89db6b0edbbb44126a93965af72f24a9d3": {
+   "seq": 1515,
+   "timestamp": "2026-09-04T13:38:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the submission deadline had passed 2.63 hours ago, and entries were frozen for judging. This decision was made by the \"event_proximity\" check, which also considered the upcoming US nonfarm payrolls at 08:30 ET the next day. The agent avoids taking on new short gamma exposure before scheduled macro events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T17:53:08+00:00",
+   "prompt_tokens": 753,
+   "completion_tokens": 78
+  },
+  "98d01253dcbbb26166f78700806cd19dd0513acfbbef3fcbe3a30933829b64cd": {
+   "seq": 1516,
+   "timestamp": "2026-09-04T13:41:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the submission deadline had passed 2.68 hours ago, and entries were frozen for judging. This decision was made by the \"event_proximity\" check, which looked at the time until the US nonfarm payrolls announcement at 08:30 ET.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T17:53:12+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 64
+  },
+  "b4a8f632d2fbbd6b4274a07c4d56078036e4515379ea9cf0d1936d46c59a230b": {
+   "seq": 1517,
+   "timestamp": "2026-09-04T13:44:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the submission deadline had passed 2.73 hours ago, and entries are frozen after judging. This decision was made by the \"event_proximity\" check, which also noted that the US nonfarm payrolls were scheduled for 08:30 ET the next day.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T17:53:17+00:00",
+   "prompt_tokens": 753,
+   "completion_tokens": 66
+  },
+  "1961109287141908b96c55c582c15c62fd063b911e37d243c0bdd83e00d56268": {
+   "seq": 1518,
+   "timestamp": "2026-09-04T13:47:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the submission deadline had passed 2.78 hours ago, and entries were frozen for judging. The \"event_proximity\" check blocked the action, as it identified that the US nonfarm payrolls were scheduled for 08:30 ET the next day. This check aims to avoid taking on new short gamma exposure before significant macro events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T17:53:23+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 80
+  },
+  "2e02530f718b2b6c72767a0e4095972bbcaf8908c1c5000893418e45125435d6": {
+   "seq": 1519,
+   "timestamp": "2026-09-04T13:50:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute the trade because the event proximity check blocked it. The check was looking at the US nonfarm payrolls scheduled for 08:30 ET the next day, which is too close to the current time of 13:50 ET.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T17:53:28+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 57
   }
  },
  "model": "Qwen/Qwen2.5-72B-Instruct",
- "generated_at": "2026-09-04T17:44:21+00:00",
+ "generated_at": "2026-09-04T17:53:28+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
-  "explained": 324,
+  "explained": 329,
   "rejected": 0
  }
 }
