@@ -3875,13 +3875,25 @@
    "created_at": "2026-09-04T17:33:34+00:00",
    "prompt_tokens": 754,
    "completion_tokens": 51
+  },
+  "2063a62a91c6538b18d49f2d4c7cb528326d9c0dc21a24a85c0e73f3e0b2ff9e": {
+   "seq": 1514,
+   "timestamp": "2026-09-04T13:35:02-04:00",
+   "action": "refuse",
+   "text": "The!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!The!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T17:43:39+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 439
   }
  },
- "model": "Qwen/Qwen2.5-32B-Instruct",
- "generated_at": "2026-09-04T17:33:34+00:00",
+ "model": "Qwen/Qwen2.5-72B-Instruct",
+ "generated_at": "2026-09-04T17:44:21+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
-  "explained": 323,
+  "explained": 324,
   "rejected": 0
  }
 }
