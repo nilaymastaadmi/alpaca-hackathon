@@ -1,8 +1,8 @@
 {
-  "sealed_at": "2026-09-04T18:02:09+00:00",
-  "n_artifacts": 1523,
-  "merkle_root": "3d92dcdf4b217c84391649d3cf92dd8a0291ef85efdc3168f654eb5fde4ab7f1",
+  "sealed_at": "2026-09-04T18:05:10+00:00",
+  "n_artifacts": 1524,
+  "merkle_root": "03eb206b51ec2496189a5b76f5575b9e9f3f4e4b9822e2473f64d25e90515ec3",
   "first_seq": 0,
-  "last_seq": 1523,
+  "last_seq": 1524,
   "algorithm": "sha256, domain-separated leaves (0x00) and nodes (0x01), odd node promoted unchanged"
 }
