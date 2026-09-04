@@ -79,11 +79,11 @@ PACE=1.12
 
 ## Discrepancies found while tracing (not fixed; all outside presentation/video/)
 
-1. **`presentation/slides.pdf` (the final deck, built 3 Sep 14:55) is a day stale against
-   the log**: page 1 says "1,052 sealed artifacts" and "147 of 151 opportunities
-   declined", page 2 says "97%". The log now reads 1,390 artifacts and 193 of 197, 98%.
-   The video uses the log. Flagged for Nilay on 4 Sep; not edited, it is outside
-   `presentation/video/`.
+1. **RESOLVED 4 Sep 13:15.** The deck was a day stale (1,052 artifacts, 147 of 151, 97%)
+   while this video was being cut. Commit `ef9d55a` rebuilt it from the same log, and
+   `presentation/slides.pdf` now reads 1,390 sealed artifacts, 193 of 197 declined, 98%
+   and 233 tests: the same numbers this video speaks and shows. Checked page by page
+   after the rebuild, no action left.
 2. `presentation/WRITEUP.md` says "Alpaca MCP Server v3.4.7 with 74 tools". README and
    RISK_REGISTER 4.8 say alpaca-mcp-server 2.3.0 on FastMCP 3.4.7. The video says
    "Alpaca's official MCP server" and "74 tools" with no version number.
