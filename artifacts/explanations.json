@@ -3671,13 +3671,25 @@
    "created_at": "2026-09-04T16:43:22+00:00",
    "prompt_tokens": 754,
    "completion_tokens": 64
+  },
+  "e85b0a4e82ad324de4c33e2cecfb94110fdf1c1fed91eaad15c54a36ce7a5c8d": {
+   "seq": 1498,
+   "timestamp": "2026-09-04T12:47:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute the trade because the submission deadline had passed 1.78 hours ago, and entries were frozen for judging. This decision was made by the \"event_proximity\" check, which looked at the time until the US nonfarm payrolls announcement at 08:30 ET.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T16:53:27+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 64
   }
  },
  "model": "Qwen/Qwen2.5-72B-Instruct",
- "generated_at": "2026-09-04T16:43:22+00:00",
+ "generated_at": "2026-09-04T16:53:37+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
-  "explained": 306,
+  "explained": 307,
   "rejected": 0
  }
 }
