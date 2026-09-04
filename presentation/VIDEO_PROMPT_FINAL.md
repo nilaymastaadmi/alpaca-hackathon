@@ -1,4 +1,4 @@
-You built the video for this project on 2 Sep and I gave you a correction list on 3 Sep. This is the final pass. Submission closes TODAY, Friday 4 Sep, 20:30 IST. Read all of this before running anything.
+You built the video for this project on 2 Sep. This is the final pass before submission, which closes TODAY, Friday 4 Sep, 20:30 IST. Nothing has been sent to you since you built, so this message contains every change. Read all of it before running anything.
 
 Repo: `C:\Users\toshn\alpaca-hackathon`. Your files are intact: `presentation/video/build.py`, `facts.md`, `storyboard.md`, `final.srt`, `remotion/`, `assets/`.
 
@@ -20,9 +20,9 @@ Rewrite the beat 8 line to something like:
 
 Three things that must survive the rewrite: the sign is spoken out loud, the loss is bounded by construction and you say the cap, and the flatten converts it to realised before judging. A losing week reported precisely is worth more here than a winning week reported vaguely, and the judges of the comparable event placed an entry that lost money live.
 
-# 2. Corrections still outstanding from yesterday
+# 2. Four factual corrections, all mandatory
 
-**a. The VIX hedge line is factually wrong** in `final.srt` (around line 167). It says Alpaca "served no VIX data all week". What is true: the feed quotes the monthly VIX expiries (16 Sep, 21 Oct), and neither fell inside the hedge's 21 to 45 day window at any point, so no candidate was ever quotable. Replace with:
+**a. THE VIX HEDGE LINE IS WRONG.** `final.srt` line 167 currently reads "Alpaca served no VIX data all week". It is factually wrong in `final.srt` (around line 167). It says Alpaca "served no VIX data all week". What is true: the feed quotes the monthly VIX expiries (16 Sep, 21 Oct), and neither fell inside the hedge's 21 to 45 day window at any point, so no candidate was ever quotable. Replace with:
 
 > "The tail hedge is coded and never engaged: no VIX expiry inside its window was quoted all week."
 
