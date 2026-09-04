@@ -2,7 +2,7 @@ import React from 'react';
 import {Img, staticFile, useCurrentFrame} from 'remotion';
 import type {Beat, Timeline} from './types';
 import {
-  BigStat, Browser, Card, Chip, Cursor, FlowRow, Footage, GREEN, Headline, Label, MONO, MUTED_I, RED, RED_I, Section, Sticker, Sub, TEXT_I, Terminal, YELLOW, fadeIn, typed, useFps,
+  BigStat, Browser, Card, Chip, Cursor, FlowRow, Footage, GREEN, Headline, Label, MONO, MUTED_I, RED, RED_I, Section, Sticker, Sub, TEXT_I, Terminal, Wordmark, YELLOW, fadeIn, typed, useFps,
 } from './ui';
 
 type P = {beat: Beat; tl: Timeline};
@@ -23,6 +23,7 @@ export const Beat01: React.FC<P> = ({beat, tl}) => {
       <Sticker text={c.s3} at={a.n81} x={120} y={950} tone="yellow" until={a.signed} />
       <Sticker text={c.s4} at={a.signed} x={120} y={950} tone="black" until={a.point} />
       <Sticker text={c.s5} at={a.point} x={120} y={950} tone="yellow" />
+      <Wordmark text={tl.close.wordmark} at={a.refuse} />
     </Section>
   );
 };
@@ -130,12 +131,12 @@ export const Beat05: React.FC<P> = ({beat, tl}) => {
   return (
     <Section tone="ink">
       <Label text={beat.label} at={beat.lead} />
-      <Headline segs={[{t: 'Three tenors raced on the real market. The one that traded '}, {t: 'won.', hi: 'green'}]} at={beat.lead + 4} size={70} top={140} width={1560} hiAt={a.won} />
-      <Card icon="cross" title={`${t[0].id}, ${t[0].dte}`} sub={`${t[0].cycles} cycles would enter, ${t[0].days} days`} at={a.three} x={80} y={400} width={880} />
-      <Card icon="cross" title={`${t[2].id}, ${t[2].dte}`} sub={`${t[2].cycles} cycles would enter, ${t[2].days} days`} at={a.three + 10} x={80} y={540} width={880} />
-      <Card icon="check" title={`${t[1].id}, ${t[1].dte}: deployed`} sub={`${t[1].cycles} cycles would enter, ${t[1].days} days`} at={a.three + 20} x={80} y={680} width={880} hot hotAt={a.won} />
+      <Headline segs={[{t: 'Three tenors, one live market. The one that actually trades '}, {t: 'won.', hi: 'green'}]} at={beat.lead + 4} size={70} top={140} width={1560} hiAt={a.won} />
+      <Card icon="cross" title={`${t[0].id}, ${t[0].dte}`} sub={`would have entered on ${t[0].cycles} cycles`} at={a.three} x={80} y={400} width={880} />
+      <Card icon="cross" title={`${t[2].id}, ${t[2].dte}`} sub={`would have entered on ${t[2].cycles} cycles`} at={a.three + 10} x={80} y={540} width={880} />
+      <Card icon="check" title={`${t[1].id}, ${t[1].dte}: deployed`} sub={`would have entered on ${t[1].cycles} cycles`} at={a.three + 20} x={80} y={680} width={880} hot hotAt={a.won} />
       <Sticker text={c.s1} at={a.won + 8} x={1040} y={690} tone="yellow" />
-      <Sub text={c.sub} at={a.eight} top={890} size={22} mono width={1700} />
+      <Sub text={c.sub} at={a.since} top={880} size={22} mono width={1700} />
     </Section>
   );
 };
@@ -149,42 +150,45 @@ export const Beat06: React.FC<P> = ({beat, tl}) => {
   const c1 = '# artifacts/decisions.jsonl: every decision, fill and refusal is a leaf';
   const c2 = '# SHA-256 Merkle tree, domain-separated leaves and nodes, root sealed before outcomes are known';
   const cmd = tl.verify.command;
-  const cmdDone = a.command + Math.ceil((cmd.length * fps) / 14);
-  const outAt = cmdDone + 12;
-  const out = tl.verify.output;
-  const idx = out.indexOf('VERIFIED');
+  const cmdDone = a.command + Math.ceil((cmd.length * fps) / 12);
+  const outAt = cmdDone + 10;
+  const per = 16;
   return (
     <Section tone="ink">
       <Label text={beat.label} at={beat.lead} />
-      <Terminal title="alpaca-hackathon (main)" style={{left: 80, top: 140, width: 1760, height: 580}} fontSize={30}>
+      <Terminal title="alpaca-hackathon (main)" style={{left: 80, top: 140, width: 1760, height: 660}} fontSize={26}>
         <span style={{color: MUTED_I}}>{typed(c1, frame, beat.lead, 70, fps)}</span>
         {'\n'}
         <span style={{color: MUTED_I}}>{typed(c2, frame, a.sealed, 70, fps)}</span>
         {'\n\n'}
         <span style={{opacity: frame >= a.command ? 1 : 0}}>
           <span style={{color: GREEN}}>$ </span>
-          {typed(cmd, frame, a.command, 14, fps)}
+          <span style={{fontWeight: 700}}>{typed(cmd, frame, a.command, 12, fps)}</span>
           <Cursor visible={frame < cmdDone} />
         </span>
         {'\n'}
-        <span style={{opacity: frame >= outAt ? 1 : 0}}>
-          {idx >= 0 ? (
-            <>
-              <span style={{color: GREEN, fontWeight: 700}}>{out.slice(idx, idx + 8)}</span>
-              {out.slice(idx + 8)}
-            </>
-          ) : (
-            out
-          )}
-        </span>
-        {'\n'}
-        <span style={{opacity: frame >= outAt + 6 ? 1 : 0}}>
-          <span style={{color: GREEN}}>$ </span>
-          <Cursor visible={frame >= outAt + 6} />
-        </span>
+        {tl.verify.steps.map(([step, out], i) => {
+          const at = outAt + i * per;
+          const isVerified = out.startsWith('VERIFIED');
+          return (
+            <div key={step} style={{opacity: fadeIn(frame, at, 5), marginTop: 12}}>
+              <div style={{color: MUTED_I, fontSize: 20}}>{'  '}{step}</div>
+              <div style={{color: TEXT_I}}>
+                {'  '}
+                {isVerified ? (
+                  <>
+                    <span style={{color: GREEN, fontWeight: 700}}>{out.slice(0, 8)}</span>
+                    {out.slice(8)}
+                  </>
+                ) : (
+                  <span style={{color: /passed/.test(out) ? GREEN : TEXT_I, fontWeight: /passed/.test(out) ? 700 : 400}}>{out}</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </Terminal>
-      <Sticker text={c.s1} at={outAt + 14} x={80} y={800} tone="yellow" />
-      <Sticker text={`${tl.verify.count} sealed artifacts, one root.`} at={outAt + 34} x={1180} y={800} tone="cream" />
+      <Sticker text={c.s1} at={outAt + per * 3 + 8} x={80} y={840} tone="yellow" />
     </Section>
   );
 };
@@ -223,8 +227,27 @@ export const Beat07: React.FC<P> = ({beat, tl}) => {
   );
 };
 
-// ---------------------------------------------------------------- 08 live, so far
+// ---------------------------------------------------------------- 08 where the AI sits
 export const Beat08: React.FC<P> = ({beat, tl}) => {
+  const a = beat.anchors;
+  const c = beat.copy;
+  const e = tl.live.explain;
+  return (
+    <Section tone="ink">
+      <Label text={beat.label} at={beat.lead} />
+      <Browser url={DASH_URL} at={a.after} x={120} y={130} width={1680} height={630}>
+        <Footage clip={tl.clips.explain} scale={1680 / 1920} />
+      </Browser>
+      <Sticker text={c.s1} at={a.after + 10} x={120} y={700} tone="black" size={30} />
+      <BigStat value={String(e.explained)} label="explanations accepted" at={a.counts} x={120} y={810} size={110} />
+      <BigStat value={String(e.rejected)} label="rejected for inventing a number" at={a.counts + 10} x={620} y={810} size={110} color={GREEN} />
+      <Sub text={c.sub} at={a.checked} top={830} left={1220} size={24} width={620} />
+    </Section>
+  );
+};
+
+// ---------------------------------------------------------------- 09 live, so far
+export const Beat09: React.FC<P> = ({beat, tl}) => {
   const a = beat.anchors;
   const c = beat.copy;
   return (
@@ -233,23 +256,23 @@ export const Beat08: React.FC<P> = ({beat, tl}) => {
       <Browser url={DASH_URL} at={beat.lead + 6} x={940} y={130} width={900} height={780}>
         <Footage clip={tl.clips.positions} scale={0.68} />
       </Browser>
-      <BigStat value={tl.facts.LIVE_PNL_TEXT as string} label="so far, on a $100,000 paper account" at={beat.lead + 4} x={80} y={170} size={150} width={820} />
-      <Sub text={tl.live.book} at={beat.lead + 30} top={380} size={22} mono width={820} />
-      <Sticker text={c.s1} at={a.friday} x={80} y={470} tone="yellow" size={30} maxWidth={820} />
-      <Sticker text={c.s2} at={a.noise} x={80} y={590} tone="black" size={30} maxWidth={820} />
-      <Card icon="check" title={tl.live.hedge} at={a.hedge} x={80} y={700} width={820} />
-      <Card icon="cross" title={c.hedgeNo} sub={tl.live.hedgeSub} at={a.hedge + 14} x={80} y={810} width={820} />
+      <BigStat value={tl.facts.LIVE_PNL_TEXT as string} label="so far, on a $100,000 paper account" at={beat.lead + 4} x={80} y={170} size={150} width={820} color={RED_I} />
+      <Sub text={tl.live.book} at={a.book} top={380} size={22} mono width={820} />
+      <Sticker text={c.s1} at={a.cap} x={80} y={460} tone="yellow" size={30} maxWidth={820} />
+      <Sticker text={c.s2} at={a.noise} x={80} y={575} tone="black" size={28} maxWidth={820} />
+      <Card icon="check" title={tl.live.flatten} at={a.flatten} x={80} y={690} width={820} size={27} />
+      <Card icon="cross" title={tl.live.hedge} sub={tl.live.hedgeSub} at={a.hedge} x={80} y={810} width={820} size={27} />
     </Section>
   );
 };
 
-// ---------------------------------------------------------------- 09 close
-export const Beat09: React.FC<P> = ({beat, tl}) => {
+// ---------------------------------------------------------------- 10 close
+export const Beat10: React.FC<P> = ({beat, tl}) => {
   const frame = useCurrentFrame();
   const fps = useFps();
   const a = beat.anchors;
   const c = beat.copy;
-  const cmds = ['git clone github.com/nilaymastaadmi/alpaca-hackathon', 'make test', 'make verify', 'make summary'];
+  const cmds = ['git clone github.com/nilaymastaadmi/alpaca-hackathon', 'cd alpaca-hackathon', 'make judge'];
   return (
     <Section tone="cream">
       <Label text={beat.label} at={beat.lead} />
@@ -269,7 +292,8 @@ export const Beat09: React.FC<P> = ({beat, tl}) => {
       </div>
       <Headline segs={[{t: 'You do not have to '}, {t: 'trust me.', hi: 'yellow'}]} at={a.trust} perWord={5} size={80} top={420} width={880} />
       <Sub text={c.sub} at={a.trust + 40} top={660} size={30} width={880} />
-      <Sub text={tl.close.tests} at={a.trust + 52} top={900} size={20} mono width={880} />
+      <Sub text={c.tests} at={a.trust + 52} top={900} size={20} mono width={880} />
+      <Wordmark text={tl.close.wordmark} at={a.trust + 20} bottom />
     </Section>
   );
 };
@@ -284,4 +308,5 @@ export const BEATS: Record<string, React.FC<P>> = {
   b07: Beat07,
   b08: Beat08,
   b09: Beat09,
+  b10: Beat10,
 };

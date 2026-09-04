@@ -6,7 +6,7 @@ import type {Beat, Timeline} from './types';
 import {BEATS} from './beats';
 import {BeatAudio, Captions, INK, MONO, MUTED_I, MUTED_C} from './ui';
 
-const CREAM_BEATS = new Set(['b02', 'b04', 'b07', 'b09']);
+const CREAM_BEATS = new Set(['b02', 'b04', 'b07', 'b10']);
 
 const BeatView: React.FC<{beat: Beat; tl: Timeline}> = ({beat, tl}) => {
   const Visual = BEATS[beat.id];

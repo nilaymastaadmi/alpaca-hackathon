@@ -138,9 +138,33 @@ def drive_positions(page):
     time.sleep(1.5)
 
 
+def drive_explain(page):
+    """Scroll to the latest decision so its plain-English explanation and the
+    'explained after the fact' label are both in frame, then trace the label."""
+    page.mouse.move(1500, 700)
+    time.sleep(0.4)
+    heading = page.get_by_text("Latest decision:", exact=False).first
+    for _ in range(40):
+        box = heading.bounding_box()
+        if box and 70 <= box["y"] <= 150:
+            break
+        target = (box["y"] - 110) if box else 700
+        smooth_scroll(page, max(-700, min(700, target)), steps=18)
+    time.sleep(0.8)
+    glide(page, 1500, 700, 300, 240, steps=45)   # the explanation paragraph
+    time.sleep(1.0)
+    glide(page, 300, 240, 300, 340, steps=30)    # down to the "explained after the fact" label
+    page.evaluate("window.__pulse()")
+    time.sleep(1.6)
+    glide(page, 300, 340, 1180, 340, steps=55)   # along it to the accepted/rejected counts
+    time.sleep(1.6)
+
+
 if __name__ == "__main__":
     which = sys.argv[1] if len(sys.argv) > 1 else "all"
     if which in ("all", "top"):
         record("dash_top", drive_top)
+    if which in ("all", "explain"):
+        record("dash_explain", drive_explain)
     if which in ("all", "positions"):
         record("dash_positions", drive_positions)

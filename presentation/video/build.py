@@ -79,7 +79,7 @@ def parse_params() -> dict[str, str]:
         if "=" in line:
             k, v = line.split("=", 1)
             params[k.strip()] = v.strip()
-    for k in ("LIVE_N", "LIVE_PCT", "LIVE_PNL", "VOICE", "PACE"):
+    for k in ("LIVE_N", "LIVE_PCT", "LIVE_PNL", "EXPLAINED", "REJECTED", "VOICE", "PACE"):
         if k not in params:
             sys.exit(f"facts.md PARAMS is missing {k}")
     return params
@@ -107,6 +107,47 @@ def verify_output() -> tuple[str, str]:
         sys.exit(f"make verify did not say VERIFIED:\n{line}")
     m = re.search(r"VERIFIED: (\d+) artifacts", line)
     return line, (m.group(1) if m else "?")
+
+
+def test_output() -> tuple[str, str]:
+    """Run the suite the way `make judge` does. Cached by the mtime of tests/ + agent/,
+    so a re-render for new numbers does not pay for it twice."""
+    cache = NARR / "tests.json"
+    stamp = max(f.stat().st_mtime_ns for d in ("tests", "agent") for f in (REPO / d).rglob("*.py"))
+    if cache.exists():
+        c = json.loads(cache.read_text(encoding="utf-8"))
+        if c.get("stamp") == stamp:
+            return c["line"], c["count"]
+    out = run(["uv", "run", "--with", "pytest", "--with", "tzdata", "--with", "requests",
+               "python", "-m", "pytest", "tests/", "-q"]).strip().splitlines()
+    line = next((l for l in reversed(out) if "passed" in l or "failed" in l), "")
+    m = re.search(r"(\d+) passed", line)
+    if not m:
+        sys.exit(f"make judge: the test suite did not report a pass line:\n{line}")
+    count = m.group(1)
+    if "failed" in line or "error" in line:
+        sys.exit(f"make judge: the test suite is not green, refusing to build:\n{line}")
+    NARR.mkdir(exist_ok=True)
+    cache.write_text(json.dumps({"stamp": stamp, "line": line, "count": count}), encoding="utf-8")
+    return line, count
+
+
+def compare_tally() -> dict:
+    """Running would-enter totals for the three shadow tenors."""
+    data = json.loads((REPO / "artifacts" / "compare_summary.json").read_text(encoding="utf-8"))
+    tally = data.get("tally") or {}
+    for k in ("T4", "T6", "T7"):
+        if k not in tally:
+            sys.exit(f"compare_summary.json has no tally for {k}")
+    return tally
+
+
+def explanation_counts() -> dict:
+    data = json.loads((REPO / "artifacts" / "explanations.json").read_text(encoding="utf-8"))
+    counts = data.get("counts") or {}
+    if "explained" not in counts or "rejected" not in counts:
+        sys.exit("explanations.json has no counts.explained / counts.rejected")
+    return counts
 
 
 def summary_output() -> dict[str, int]:
@@ -179,16 +220,19 @@ def seq30_excerpt() -> dict:
 
 
 # ------------------------------------------------------------------ script
-def script(p: dict[str, str], summ: dict[str, int]) -> list[dict]:
-    """Nine beats. `text` is the narration (also the .srt). `copy` is what is printed on screen:
-    short sticker lines, labels and sub-lines, the way a person would caption a cut."""
+def script(p: dict[str, str], summ: dict[str, int], tests: str, tally: dict) -> list[dict]:
+    """Ten beats. `text` is the narration (also the .srt). `copy` is what is printed on
+    screen: short sticker lines, labels and sub-lines, the way a person captions a cut."""
     live_n = int(p["LIVE_N"])
     live_pct = int(p["LIVE_PCT"])
     live_pnl = float(p["LIVE_PNL"])
+    explained = int(p["EXPLAINED"])
+    rejected = int(p["REJECTED"])
     declined = summ.get("refused") or int(round(live_n * live_pct / 100))
+    t4, t6, t7 = tally["T4"], tally["T6"], tally["T7"]
     return [
         {
-            "id": "b01", "label": "Live dashboard, 2 Sep 2026",
+            "id": "b01", "label": "Live dashboard, 4 Sep 2026",
             "text": f"Most trading agents are built to trade. This one is built to refuse. Over the live week it evaluated {live_n} real opportunities and declined {live_pct} percent of them, and every refusal is a signed artifact you can verify yourself. Let me show you why that is the point, not a bug.",
             "anchors": {"trade": "built to trade", "refuse": "built to refuse", "n81": f"evaluated {live_n}", "signed": "signed artifact", "point": "that is the point"},
             "copy": {
@@ -210,8 +254,8 @@ def script(p: dict[str, str], summ: dict[str, int]) -> list[dict]:
         },
         {
             "id": "b03", "label": "Hypothesis 1, out of sample",
-            "text": "Nearly seven years of SPY, out of sample: mean premium 3.68 vol points over 1,741 observations, Newey-West t of 4.74. The naive t of 18 is invalid, because the windows overlap. The edge is real, and the number is honest.",
-            "anchors": {"vrp": "3.68", "obs": "1,741", "t": "Newey-West", "naive": "The naive", "honest": "The edge is real"},
+            "text": "Nearly seven years of SPY, out of sample: mean premium 3.68 vol points over 1,741 observations, Newey-West t of 4.74. The naive t of 18 is invalid, because the windows overlap.",
+            "anchors": {"vrp": "3.68", "obs": "1,741", "t": "Newey-West", "naive": "The naive", "honest": "windows overlap"},
             "copy": {
                 "sub": "21-day windows sampled daily overlap by 20 of 21 days. The correction shrinks t by 3.8x, and it still clears the bar.",
                 "s1": "Real edge. Honest number.",
@@ -227,17 +271,17 @@ def script(p: dict[str, str], summ: dict[str, int]) -> list[dict]:
             },
         },
         {
-            "id": "b05", "label": "22 to 29 Aug, live, in parallel",
-            "text": "The deployed tenor was not picked from the backtest ranking. Three candidates raced live in parallel for eight days on real market data, risking nothing. The one that actually traded won: two days of five, against zero and one.",
-            "anchors": {"three": "Three candidates", "eight": "eight days", "won": "won"},
+            "id": "b05", "label": "Three tenors, one live market",
+            "text": f"The deployed tenor was not picked from the backtest ranking. Since the twenty second of August three candidates have run as shadow agents on the same live prices, placing nothing. The deployed one would have entered on {t6['would_enter']} cycles of {t6['cycles']}, against {t4['would_enter']} and {t7['would_enter']}. The one that actually trades won.",
+            "anchors": {"since": "Since the twenty second", "three": "three candidates", "count": f"entered on {t6['would_enter']}", "won": "actually trades won"},
             "copy": {
-                "s1": "2 of 5 days, against 0 and 1.",
-                "sub": "Source: research/DEPLOYMENT_DECISIONS.md, decision D3, 2026-08-30. 21 cycles over 5 trading days, no orders sent.",
+                "s1": f"{t6['would_enter']} of {t6['cycles']} cycles, against {t4['would_enter']} and {t7['would_enter']}.",
+                "sub": "Running totals, 22 Aug to 4 Sep, from artifacts/compare_summary.json. Every shadow decision is real; the dry-run branch never sends the order.",
             },
         },
         {
             "id": "b06", "label": "One command",
-            "text": "Every decision, fill and refusal is hashed into a Merkle tree, sealed before outcomes are known. One command recomputes the root. If anything had been edited after the fact, this line would not say verified.",
+            "text": "Every decision, fill and refusal is hashed into a Merkle tree, sealed before outcomes are known. One command runs the tests, recomputes the root and rebuilds the results page. If anything had been edited after the fact, this line would not say verified.",
             "anchors": {"sealed": "sealed before", "command": "One command"},
             "copy": {"s1": "Edited after the fact? This line would not say VERIFIED."},
         },
@@ -255,20 +299,30 @@ def script(p: dict[str, str], summ: dict[str, int]) -> list[dict]:
             },
         },
         {
-            "id": "b08", "label": "Live, so far",
-            "text": f"Live P&L so far: {pnl_words(live_pnl)} on a hundred thousand dollar paper account. On Friday a deadline flatten closes every position ninety minutes before submission. Realised, not marked. One week of options P&L is mostly noise, and the write-up says so. The tail hedge is coded and never engaged: Alpaca served no VIX data all week. That refusal is logged every cycle too.",
-            "anchors": {"friday": "On Friday", "noise": "One week", "hedge": "The tail hedge"},
+            "id": "b08", "label": "Where the AI sits",
+            "text": f"This is an AI agents hackathon, so where does the model sit? After the decision, never inside it. It reads each sealed artifact and explains it in plain English, and every number it writes is checked against that artifact. Invent one and the explanation is rejected and counted. So far: {explained} explained, {rejected} rejected.",
+            "anchors": {"question": "where does the model", "after": "After the decision", "reads": "reads each sealed", "checked": "is checked against", "counts": "So far"},
             "copy": {
-                "s1": "Friday: a deadline flatten closes every position 90 minutes before submission.",
-                "s2": "One week of options P&L is mostly noise. The write-up says so.",
+                "s1": "The model never takes part in deciding.",
+                "s2": f"{explained} explained. {rejected} rejected.",
+                "sub": "Every number in the explanation is checked against the sealed artifact it came from. One that invents or alters a number is rejected and counted.",
+            },
+        },
+        {
+            "id": "b09", "label": "Live, so far",
+            "text": f"Live, so far: {pnl_words(live_pnl)} on a hundred thousand dollar paper account. Four condors open, twenty eight contracts, three thousand one hundred and eight dollars of credit collected, against a worst case capped at ten thousand eight hundred and forty. The tail hedge is coded and never engaged: no VIX expiry inside its window was quoted all week. In ninety minutes the agent flattens the book and that number becomes realised.",
+            "anchors": {"book": "Four condors open", "cap": "worst case capped", "noise": "capped at ten thousand", "hedge": "The tail hedge", "flatten": "In ninety minutes"},
+            "copy": {
+                "s1": "Loss bounded by construction, not by luck.",
+                "s2": "One week of options P&L is mostly noise. The research says so.",
                 "hedgeNo": "Never engaged live.",
             },
         },
         {
-            "id": "b09", "label": "Verify it yourself",
-            "text": "Clone it. Run make test, make verify, make summary. You do not have to trust me. That is the whole design.",
+            "id": "b10", "label": "Verify it yourself",
+            "text": f"Clone it. Run make judge. You do not have to trust me. That is the whole design.",
             "anchors": {"clone": "Clone it", "trust": "You do not"},
-            "copy": {"sub": "That is the whole design."},
+            "copy": {"sub": "That is the whole design.", "tests": f"{tests} tests. Paper trading only. MIT."},
             "tail": 45,
         },
     ]
@@ -431,7 +485,8 @@ def clip_meta(name: str) -> dict:
     return {"src": f"assets/{name}.mp4", "last": f"assets/{name}_last.png", "frames": frames(ffprobe_duration(mp4))}
 
 
-def build_timeline(p: dict[str, str], beats: list[dict], verify: tuple[str, str], summ: dict[str, int]) -> dict:
+def build_timeline(p: dict[str, str], beats: list[dict], verify: tuple[str, str], summ: dict[str, int],
+                   tests: tuple[str, str], tally: dict, expl: dict) -> dict:
     live_pnl = float(p["LIVE_PNL"])
     gates = [
         (0, "position integrity", True), (1, "session window", False), (2, "drawdown breaker", True),
@@ -445,14 +500,27 @@ def build_timeline(p: dict[str, str], beats: list[dict], verify: tuple[str, str]
         "strip": "VRP agent / Nilay Toshniwal / Options Alpha Agents",
         "clips": {
             "top": clip_meta("dash_top"),
+            "explain": clip_meta("dash_explain"),
             "positions": clip_meta("dash_positions"),
         },
         "beats": build_beats(beats),
         "facts": {
             "LIVE_N": int(p["LIVE_N"]), "LIVE_PCT": int(p["LIVE_PCT"]), "LIVE_PNL": live_pnl,
+            "EXPLAINED": int(p["EXPLAINED"]), "REJECTED": int(p["REJECTED"]),
             "LIVE_PNL_TEXT": pnl_text(live_pnl), "ARTIFACTS": verify[1], "TESTS": 211,
         },
-        "verify": {"command": "make verify", "output": verify[0], "count": verify[1]},
+        "verify": {
+            "command": "make judge",
+            "output": verify[0],
+            "count": verify[1],
+            "steps": [
+                ("pytest tests/ -q", tests[0]),
+                ("python agent/artifacts.py verify", verify[0]),
+                ("python agent/artifacts.py summary", f"{summ.get('opportunities', '?')} decision opportunities, "
+                                                      f"{summ.get('refused', '?')} refused"),
+                ("python prep/live_week_report.py", "wrote research/LIVE_WEEK.md"),
+            ],
+        },
         "gitlog": gitlog(),
         "seq30": seq30_excerpt(),
         "fills": ["09:45 ET   condor 1 filled", "09:55 ET   condor 2 filled", "10:05 ET   condor 3 filled", "10:21 ET   condor 4 filled"],
@@ -464,11 +532,11 @@ def build_timeline(p: dict[str, str], beats: list[dict], verify: tuple[str, str]
             "the watchdog now restarts itself if it is killed",
         ],
         "race": {
-            "title": "22 to 29 Aug: three tenors ran live in parallel, 21 cycles over 5 trading days, no orders sent",
+            "title": "22 Aug to 4 Sep: three tenors running live in parallel, hourly, placing nothing",
             "tenors": [
-                {"id": "T4", "dte": "7 to 14 DTE", "cycles": "0 / 21", "days": "0 / 5", "deployed": False},
-                {"id": "T6", "dte": "21 to 45 DTE", "cycles": "10 / 21", "days": "2 / 5", "deployed": True},
-                {"id": "T7", "dte": "5 to 10 DTE", "cycles": "1 / 21", "days": "1 / 5", "deployed": False},
+                {"id": "T4", "dte": "7 to 14 DTE", "cycles": f"{tally['T4']['would_enter']} / {tally['T4']['cycles']}", "days": "", "deployed": False},
+                {"id": "T6", "dte": "21 to 45 DTE", "cycles": f"{tally['T6']['would_enter']} / {tally['T6']['cycles']}", "days": "", "deployed": True},
+                {"id": "T7", "dte": "5 to 10 DTE", "cycles": f"{tally['T7']['would_enter']} / {tally['T7']['cycles']}", "days": "", "deployed": False},
             ],
         },
         "gates": [{"n": n, "name": name, "breaker": br} for n, name, br in gates],
@@ -479,13 +547,20 @@ def build_timeline(p: dict[str, str], beats: list[dict], verify: tuple[str, str]
             "flatten": "Friday: a deadline flatten closes every position 90 minutes before submission. Realised, not marked.",
             "noise": "One week of options P&L is mostly noise. The write-up says so.",
             "hedge": "VIX tail hedge: designed and coded.",
-            "hedgeSub": f"Alpaca served 0 VIX contracts all week. {summ.get('hedge_refusals', '?')} refusals to hedge, one per cycle.",
+            "explain": {
+                "model": "Qwen/Qwen2.5-72B-Instruct",
+                "explained": int(expl["explained"]),
+                "rejected": int(expl["rejected"]),
+                "label": "Explained after the fact from the sealed artifact. The decision was sealed before this text existed.",
+            },
+            "hedgeSub": f"No VIX expiry inside its 21 to 45 day window was quoted all week. {summ.get('hedge_refusals', '?')} refusals to hedge, one per cycle.",
         },
         "close": {
             "line": "You do not have to trust me.",
-            "commands": "make test, make verify, make summary",
+            "commands": "make judge",
             "url": "github.com/nilaymastaadmi/alpaca-hackathon",
-            "tests": "211 tests. Paper trading only. MIT.",
+            "tests": f"{tests[1]} tests. Paper trading only. MIT.",
+            "wordmark": "GLASS BOX",
         },
     }
 
@@ -522,7 +597,10 @@ def write_srt(tl: dict) -> int:
 def sync_assets() -> None:
     dst = PUBLIC / "assets"
     dst.mkdir(parents=True, exist_ok=True)
-    needed = ["b02_prereg.png", "b09_readme.png", "dash_top.mp4", "dash_top_last.png", "dash_positions.mp4", "dash_positions_last.png"]
+    needed = ["b02_prereg.png", "b09_readme.png",
+              "dash_top.mp4", "dash_top_last.png",
+              "dash_explain.mp4", "dash_explain_last.png",
+              "dash_positions.mp4", "dash_positions_last.png"]
     for name in needed:
         src = ASSETS / name
         if not src.exists():
@@ -608,7 +686,15 @@ def main() -> None:
         if pct != int(p["LIVE_PCT"]):
             log(f"WARNING: facts.md LIVE_PCT={p['LIVE_PCT']} but make summary implies {pct}%")
 
-    beats = script(p, summ)
+    tests = test_output()
+    log(f"make judge: {tests[0]}")
+    tally = compare_tally()
+    log(f"compare tally: " + ", ".join(f"{k} {v['would_enter']}/{v['cycles']}" for k, v in tally.items()))
+    expl = explanation_counts()
+    log(f"explanations: {expl}")
+    if expl["explained"] != int(p["EXPLAINED"]) or expl["rejected"] != int(p["REJECTED"]):
+        log(f"WARNING: facts.md EXPLAINED/REJECTED = {p['EXPLAINED']}/{p['REJECTED']} but explanations.json says {expl}")
+    beats = script(p, summ, tests[1], tally)
     narration(beats, p, args.voice)
     silent = all(b["audio"] is None for b in beats)
     if silent:
@@ -616,7 +702,7 @@ def main() -> None:
     elif any(b["audio"] is None for b in beats):
         sys.exit("some beats have narration and some do not; run with --voice to fill the gaps")
 
-    tl = build_timeline(p, beats, verify, summ)
+    tl = build_timeline(p, beats, verify, summ, tests, tally, expl)
     safety_check(tl)
     PUBLIC.mkdir(exist_ok=True)
     TIMELINE.write_text(json.dumps(tl, indent=1, ensure_ascii=False), encoding="utf-8")

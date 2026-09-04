@@ -1,83 +1,102 @@
 # facts.md: every number the video uses, with its source
 
-Written 2026-09-02 by the video session, extended the same evening for the editorial cut. `build.py` reads the PARAMS block below
-and refuses to build if a number on screen is not in this file. Anything that
-could not be traced was cut from the script (list at the bottom).
+Written 2026-09-02, restyled the same evening, final pass 2026-09-04 before submission.
+`build.py` reads the PARAMS block below and refuses to build if a number on screen is not
+in this file. Anything that could not be traced was cut from the script (list at the bottom).
 
-## PARAMS (parsed by build.py; the three LIVE values are what you edit Thursday)
+## PARAMS (parsed by build.py; the live values are what you edit before a re-render)
 
 ```
-LIVE_N=81
-LIVE_PCT=95
-LIVE_PNL=36.93
+LIVE_N=197
+LIVE_PCT=98
+LIVE_PNL=-565.07
+EXPLAINED=238
+REJECTED=0
 VOICE=rahul
-PACE=1.0
+PACE=1.12
 ```
 
-- LIVE_N, LIVE_PCT: dashboard headline, read 2026-09-02 IST afternoon: "Of 81 real
-  decision opportunities (market open, inside the trading window), the agent entered 4
-  and declined 77 (95%)." Same numbers from `make summary` run 2026-09-02:
-  "decision opportunities (market open, in window): 81" and "refusals by blocking gate
-  (77 of 81 opportunities)". Source of the wording: `dashboard/app.py` lines 153-155.
-- LIVE_PNL: equity minus 100,000. Equity 100,036.93 from `artifacts/decisions.jsonl`
-  seq 554, `portfolio.equity`, timestamp 2026-09-02T01:47:09-04:00 (Tuesday close
-  carried into the Wednesday pre-session cycle). Narrated as "so far" until the
-  Friday flatten. Sign is spoken: positive reads "plus", negative reads "minus".
+- LIVE_N, LIVE_PCT: dashboard headline, read 2026-09-04 12:56 IST: "Of 197 real decision
+  opportunities (market open, inside the trading window), the agent entered 4 and declined
+  193 (98%)." Same from `make summary` run 2026-09-04: "decision opportunities (market
+  open, in window): 197" and "refusals by blocking gate (193 of 197 opportunities)".
+  193/197 = 97.97%, rendered as 98. Wording: `dashboard/app.py`. **The definition changed
+  since 2 Sep: dry-run cycles are now excluded**, so this count is not comparable to the
+  81 the earlier cut showed.
+- LIVE_PNL: equity minus 100,000. Equity **99,434.93** from `artifacts/decisions.jsonl`,
+  the last record carrying `portfolio.equity` (seq 1390, 2026-09-04T03:03:55-04:00), so
+  **-565.07**. The sign is spoken: `pnl_words()` renders it "minus five hundred and
+  sixty five dollars and seven cents". Still open at render time, realised by the
+  19:00 to 20:30 IST deadline flatten.
+- EXPLAINED, REJECTED: `artifacts/explanations.json` -> `counts` -> `{"explained": 238,
+  "rejected": 0}`, generated 2026-09-04T07:23:05+00:00. Same two numbers appear on the
+  dashboard under the latest decision.
 - VOICE, PACE: Sarvam bulbul:v3 speaker and pace. `rahul` measured at 151 words per
-  minute at pace 1.0 on a 29-word sample (11.52 s). PACE is the knob if the total
-  runs long.
+  minute at pace 1.0 on a 29-word sample (11.52 s). PACE is the knob if the total runs
+  long: raised to 1.12 on 4 Sep so ten beats fit inside 3:10.
 
 ## Numbers spoken or shown, by beat
 
 | Beat | Number | Source (file, line or field) |
 |---|---|---|
-| 1 | 81 opportunities, 95% declined, 4 entered, 77 declined | Dashboard headline (above); `make summary` 2026-09-02 |
-| 2 | Pre-registration commit `96ee715`, 2026-08-19 19:57:13 +0530, "Pre-register R1 before any backtest code exists" | `git log --reverse --date=iso -- research/PREREGISTRATION_R1.md` |
-| 2 | First backtest commit `997701c`, 2026-08-19 20:01:47 +0530, "R1 H1 and H2: thesis validated, one registered prediction wrong" | `git log --reverse --date=iso -- backtest/` |
-| 3 | 6.99 years of SPY, out of sample | `presentation/WRITEUP.md` AI logic para 1; `README.md` "The thesis" |
-| 3 | Mean VRP +3.68 vol points, 1,741 observations | `README.md` table under "The thesis"; WRITEUP para 1; slide 5 |
-| 3 | Newey-West t = +4.74; naive t +18.16 invalid (overlapping 21-day windows) | `README.md` same table and the paragraph after it; WRITEUP para 1 |
+| 1 | 197 opportunities, 4 entered, 193 declined, 98% | Dashboard headline and `make summary`, both 2026-09-04 |
+| 1 | Wordmark "GLASS BOX" | `presentation/slides.pdf` page 1: "GLASS BOX / An options agent whose every decision you can verify" |
+| 2 | Pre-registration commit `96ee715`, 2026-08-19 19:57:13 +0530, "Pre-register R1 before any backtest code exists" | `git log --diff-filter=A --reverse -- research/PREREGISTRATION_R1.md` |
+| 2 | First backtest commit `997701c`, 2026-08-19 20:01:47 +0530 | same command, `backtest/` |
+| 3 | 6.99 years of SPY out of sample; mean VRP +3.68 vol points over 1,741 observations | `README.md` table under "The thesis"; WRITEUP para 1 |
+| 3 | Newey-West t = +4.74; naive t +18.16 invalid (21-day windows overlap by 20 of 21); correction shrinks t by 3.8x | `README.md` same table and the paragraph after it |
 | 4 | 11 numbered gates (0 to 10) plus a stagger rule; gates 0, 2, 3 are circuit breakers | `README.md` Architecture; WRITEUP "Risk gates" |
-| 4 | Gate names 0-10: position_integrity, session_window, drawdown_breaker, daily_loss_limit, consecutive_losses, capacity, regime, vrp_threshold, event_proximity, cost, sizing | `artifacts/decisions.jsonl` seq 30 `gates[]` (number and name fields) |
-| 4 | Alpaca's official MCP server, 74 tools, JSON-RPC 2.0 over stdio, every request and response recorded | `README.md` Architecture para 1; WRITEUP "Alpaca infrastructure" |
-| 5 | Live comparison 22 to 29 Aug (8 days), 21 cycles, 5 trading days | `research/DEPLOYMENT_DECISIONS.md` D3, "What changed" |
-| 5 | Would-enter cycles: T4 0/21, T6 10/21, T7 1/21. Days with an entry: T4 0/5, T6 2/5, T7 1/5 | D3 table under "What changed" |
-| 5 | Deployed tenor T6 = 21 to 45 DTE; alternatives T4 7-14 DTE, T7 5-10 DTE | D3 "Decision"; WRITEUP para 2 |
-| 6 | `VERIFIED: 555 artifacts, root 9f5162884f30bb2e... matches the seal written 2026-09-02T05:47:17+00:00` | Real output of the Makefile `verify` target, run 2026-09-02. build.py re-runs it at build time so the count and root are current |
-| 6 | SHA-256 Merkle tree, domain-separated leaves and nodes, sealed before outcomes are known | `README.md` "Verify it yourself"; `artifacts/merkle_root.json` `algorithm` field |
-| 7 | 31 Aug 2026, first live morning; fills at 09:45, 09:55, 10:05, 10:21 ET; 7 contracts each; expiry 2026-10-02; 4 condors where the design intended 1 | `RISK_REGISTER.md` 4.7 para 1 |
-| 7 | Artifact seq 30, timestamp 2026-08-31T09:50:05-04:00: gate 5 reads "0/5 positions open"; `mcp_calls[1]` `get_all_positions` result contains `SPY261002C00792000`; `reconciliation[0]` says "no legs at broker; closed or expired" for `pos-d041f0056d` | `artifacts/decisions.jsonl` seq 30; named in RISK_REGISTER 4.7 para 3 |
-| 7 | Root cause: `positions()` parsed a "positions" key that does not exist; the server wraps the list as `{"data": {"result": [...]}}` | RISK_REGISTER 4.7 para 2 |
-| 7 | 9 regression tests in `tests/test_position_sync.py` | RISK_REGISTER 4.7 fix 5; `pytest --collect-only` on that file: 9 collected |
-| 7 | Combined max risk $10,840 = 10.8% of equity | RISK_REGISTER 4.7 para 1 |
-| 8 | Equity $100,036.93; P&L +$36.93 so far | seq 554 `portfolio.equity` (see PARAMS) |
-| 8 | 4 condors, 28 contracts (4 x 7), $3,108 credit | `artifacts/positions.json`: credits 1.11, 1.14, 1.10, 1.09 x 7 contracts x 100 = 777 + 798 + 770 + 763 = 3,108 |
-| 8 | Worst case capped at $10,840 | `positions.json` max_loss_per_contract 3.89 + 3.86 + 3.90 + 3.835 = 15.485 x 700 = 10,839.50; RISK_REGISTER 4.7 says $10,840 |
-| 8 | Deadline flatten starts 90 minutes before the 4 Sep 11:00 ET submission deadline | RISK_REGISTER 4.6; WRITEUP "Risk gates" last sentence |
-| 8 | Tail hedge designed and coded, never engaged live; Alpaca served zero VIX contracts on both feeds; refusal logged every cycle | RISK_REGISTER 4.9; README "A tail hedge" paragraph |
-| 8 | 90 `hedge:no_candidate` artifacts in the log (12 of 12 since 28 Aug as of 1 Sep) | `make summary` 2026-09-02; RISK_REGISTER 4.9 |
-| 9 | 211 tests | `pytest tests/ --collect-only`: 211 collected; README "Verify it yourself" |
-| 9 | github.com/nilaymastaadmi/alpaca-hackathon | `git remote -v`; SUBMISSION_FORM.md |
-| all | Challenge name "Options Alpha Agents"; solo entry; paper account PA37R35A5ZGW | SUBMISSION_FORM.md; WRITEUP.md line 3 |
-| 1 | 77 declined (sticker "77 of 81 real opportunities: declined") | `make summary` refusals count; dashboard headline "declined 77 (95%)" |
-| 3 | "The correction shrinks t by 3.8x" | README "The thesis" paragraph: "The correction shrank t by 3.8x" (18.16 / 4.74 = 3.83) |
-| 7 | Combined max risk $10,840, 10.8% of equity | RISK_REGISTER 4.7 para 1 |
-| 7 | "3 orphan condors adopted, all 4 managed since" | RISK_REGISTER 4.7 fix 3 (3 orphans adopted; the 4th was already in the ledger) |
-| 1, 8 | Dashboard footage `assets/dash_top.mp4`, `assets/dash_positions.mp4` | Recorded by `record.py` from the public dashboard on 2026-09-02 (Playwright, real scroll and cursor) |
+| 4 | Gate names 0-10 | `artifacts/decisions.jsonl` seq 30 `gates[]` |
+| 4 | Alpaca's official MCP server, 74 tools, JSON-RPC over stdio, every request and response recorded | `README.md` Architecture para 1 |
+| 5 | **T4 16 of 52, T6 26 of 52, T7 13 of 51 would-enter cycles** | `artifacts/compare_summary.json` -> `tally`, read 2026-09-04. Running totals for the whole shadow run, NOT the 22 to 29 Aug window the earlier cut quoted; the beat says the window out loud |
+| 5 | Deployed tenor T6 = 21 to 45 DTE; alternatives T4 7-14, T7 5-10 | `research/DEPLOYMENT_DECISIONS.md` D3 "Decision" |
+| 6 | `make judge` runs tests, verify, summary and the results page in one command | `Makefile` line 40: `judge: test verify summary results` |
+| 6 | `VERIFIED: 1390 artifacts, root e4ce452c697f8c90...` | Real output of the Makefile `verify` target; build.py re-runs it at build time so the count and root are current at render |
+| 7 | 31 Aug 2026, fills 09:45, 09:55, 10:05, 10:21 ET, 7 contracts each, 4 condors where the design intended 1; combined max risk $10,840 = 10.8% of equity | `RISK_REGISTER.md` 4.7 para 1 |
+| 7 | Artifact seq 30: gate 5 "0/5 positions open"; `mcp_calls[1]` `get_all_positions` contains `SPY261002C00792000`; `reconciliation[0]` "no legs at broker; closed or expired" | `artifacts/decisions.jsonl` seq 30; named in RISK_REGISTER 4.7 |
+| 7 | 9 regression tests in `tests/test_position_sync.py`; 3 orphan condors adopted | RISK_REGISTER 4.7 fixes 3 and 5 |
+| 8 | **238 explained, 0 rejected** | `artifacts/explanations.json` `counts` (see PARAMS) |
+| 8 | Explain layer runs after the seal, never inside the decision; every number checked against the artifact | `artifacts/explanations.json` `policy`; `dashboard/app.py` `show_explanation()` label |
+| 8 | Model: Qwen/Qwen2.5-72B-Instruct | `artifacts/explanations.json` `model` (named on the dashboard, not spoken) |
+| 9 | **P&L -$565.07 so far on a $100,000 paper account** | seq 1390 `portfolio.equity` (see PARAMS) |
+| 9 | 4 condors, 28 contracts (4 x 7), $3,108 credit collected | `artifacts/positions.json`: credits 1.11, 1.14, 1.10, 1.09 x 7 x 100 = 3,108 |
+| 9 | Worst case capped at $10,840 | `positions.json` max_loss_per_contract 3.89 + 3.86 + 3.90 + 3.835 = 15.485 x 700 = 10,839.50; RISK_REGISTER 4.7 rounds to $10,840 |
+| 9 | Deadline flatten runs 90 minutes before the 4 Sep 11:00 ET deadline, so 19:00 to 20:30 IST | RISK_REGISTER 4.6; WRITEUP "Risk gates" |
+| 9 | **Tail hedge coded, never engaged: no VIX expiry inside its 21 to 45 day window was quoted all week** | `RISK_REGISTER.md` 4.9 (corrected 2026-09-02): the indicative feed quotes monthly VIX expiries only; 16 Sep was 14 to 16 days out and 21 Oct was 49 to 51, so neither fell inside the window. 216 `hedge:no_candidate` artifacts, `make summary` |
+| 10 | **233 tests** | `pytest tests/ --collect-only`: 233 collected, 2026-09-04 |
+| 10 | github.com/nilaymastaadmi/alpaca-hackathon | `git remote -v`; SUBMISSION_FORM.md |
+| all | Challenge "Options Alpha Agents"; solo entry; paper account PA37R35A5ZGW | SUBMISSION_FORM.md |
+| 1, 8, 9 | Dashboard footage `assets/dash_top.mp4`, `dash_explain.mp4`, `dash_positions.mp4` | Recorded by `record.py` from the public dashboard on 2026-09-04 (Playwright, real scroll and cursor) |
 
 ## Traceable but cut for time (not in the video)
 
-- 85 cycles ran on Tuesday 1 Sep: 85 `refuse` records dated 2026-09-01 in `decisions.jsonl`; `HANDOFF.md` line 19 says the scheduled task runs 85 cycles. 344 exit checks: 344 `exit_check:hold` records dated 2026-09-01.
-- 1.5% of credit round trip on a real fill (README "Measured, not assumed"; n=1 per RISK_REGISTER open items). 5 ladder rungs (WRITEUP).
-- Prize pool $6,000 (RISK_REGISTER, resolved 2026-08-29). First live refusal: IV 12.81 vs trailing realised 13.28 (README para 1).
-- Multiple-testing bar 0.791 with N=7 (WRITEUP). Cut because D3 and slide 7 say 0.792; see discrepancies.
+- Gate 8 (event proximity) refused 46 of 197 opportunities, 23.4%, because nonfarm
+  payrolls sits inside its window (`make summary` 2026-09-04). The strongest cut item:
+  it is the event-awareness gate firing for real, and there was no room.
+- Alpaca's CLI as a read-only second opinion behind a command allowlist.
+- 1.5% of credit round trip on a real fill; 5 ladder rungs; prize pool $6,000.
+- Multiple-testing bar 0.791 (WRITEUP) vs 0.792 (D3): the video does not quote it.
 
 ## Discrepancies found while tracing (not fixed; all outside presentation/video/)
 
-1. `presentation/WRITEUP.md` says "Alpaca MCP Server v3.4.7 with 74 tools". README and RISK_REGISTER 4.8 say alpaca-mcp-server 2.3.0 on FastMCP 3.4.7. The video says "Alpaca's official MCP server" and "74 tools" with no version number.
-2. Multiple-testing bar: WRITEUP and SUBMISSION_FORM say 0.791; DEPLOYMENT_DECISIONS D3 and slide 7 say 0.792. The video does not quote it.
-3. README "What the research found that did NOT work" still says "The deployed agent trades 7-14 DTE (T4)". D3 switched to T6 (21-45 DTE) on 30 Aug. The video follows D3 and WRITEUP.
-4. `slides_draft.pdf` page 8 says "10 risk gates" and page 10 shows T4 as deployed. Both stale, so the video renders its own architecture and comparison visuals from README and D3 instead of using those two slides full frame. Slide 5 (H1 numbers) is current and is used.
-5. RISK_REGISTER 4.7 gives fill times 09:45, 09:55, 10:05, 10:21 ET. The enter artifacts are seq 28, 32, 36, 42 with cycle timestamps 09:45:05, 09:55:05, 10:05:05, 10:20:05 ET; `positions.json` opened_at for the fourth is 14:21:40Z = 10:21:40 ET. The video uses the fill times from 4.7.
-6. The dev account PA308NOY3X36 appears 18 times inside `artifacts/decisions.jsonl` (2 early records carry it as `account_number`). The seq 30 excerpt rendered on screen is built from named fields only, and build.py greps every rendered text asset and caption for that string and aborts if found.
-7. `make` is not installed on this machine (Git Bash and PowerShell both lack it). build.py runs the exact commands the Makefile targets run and labels them `make verify` and `make summary` on screen, which is what a judge would type.
+1. **`presentation/slides.pdf` (the final deck, built 3 Sep 14:55) is a day stale against
+   the log**: page 1 says "1,052 sealed artifacts" and "147 of 151 opportunities
+   declined", page 2 says "97%". The log now reads 1,390 artifacts and 193 of 197, 98%.
+   The video uses the log. Flagged for Nilay on 4 Sep; not edited, it is outside
+   `presentation/video/`.
+2. `presentation/WRITEUP.md` says "Alpaca MCP Server v3.4.7 with 74 tools". README and
+   RISK_REGISTER 4.8 say alpaca-mcp-server 2.3.0 on FastMCP 3.4.7. The video says
+   "Alpaca's official MCP server" and "74 tools" with no version number.
+3. Multiple-testing bar: WRITEUP and SUBMISSION_FORM say 0.791; D3 and the deck say 0.792.
+   The video does not quote it.
+4. README "What the research found that did NOT work" still says "The deployed agent
+   trades 7-14 DTE (T4)". D3 switched to T6 (21-45 DTE) on 30 Aug. The video follows D3.
+5. RISK_REGISTER 4.7 gives fill times 09:45, 09:55, 10:05, 10:21 ET; the enter artifacts
+   are seq 28, 32, 36, 42 with cycle timestamps 09:45:05, 09:55:05, 10:05:05, 10:20:05 ET
+   and `positions.json` opened_at 14:21:40Z for the fourth. The video uses 4.7's times.
+6. The dev account PA308NOY3X36 appears inside `artifacts/decisions.jsonl` (2 early
+   records carry it as `account_number`). The seq 30 excerpt on screen is built from named
+   fields only, and build.py aborts if that string reaches any rendered text or caption.
+7. `make` is not installed on this machine. build.py runs the exact commands the Makefile
+   targets run and labels them `make judge` and `make summary` on screen, which is what a
+   judge would type.

@@ -429,7 +429,10 @@ function card(slide, x, y, w, h, head, bodyText, opts = {}) {
   title(s, "Live week, as it happened", `Read from the sealed log when this deck was built: ${built} UTC. Rebuild the deck, the numbers move.`);
   const sw = (W - 2 * M - 3 * 0.24) / 4;
   stat(s, M, 2.3, sw, 1.4, money(equity), "equity, from $100,000");
-  stat(s, M + sw + 0.24, 2.3, sw, 1.4, (pnl >= 0 ? "+" : "") + money(pnl), "profit and loss", { color: pnl >= 0 ? GOLD : "E08A93" });
+  // Sign goes OUTSIDE the currency symbol: "-$565", never "$-565".
+  stat(s, M + sw + 0.24, 2.3, sw, 1.4,
+    (pnl >= 0 ? "+" : "-") + money(Math.abs(pnl)), "profit and loss",
+    { color: pnl >= 0 ? GOLD : "E08A93" });
   stat(s, M + 2 * (sw + 0.24), 2.3, sw, 1.4, String(open.length), "condors open");
   stat(s, M + 3 * (sw + 0.24), 2.3, sw, 1.4, String(contracts), "contracts");
   const cw = (W - 2 * M - 2 * 0.26) / 3;

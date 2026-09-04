@@ -1,0 +1,6 @@
+{
+ "key": "5baf20e572fc",
+ "voice": "rahul",
+ "pace": 1.12,
+ "text": "Nearly seven years of SPY, out of sample: mean premium 3.68 vol points over 1,741 observations, Newey-West t of 4.74. The naive t of 18 is invalid, because the windows overlap."
+}

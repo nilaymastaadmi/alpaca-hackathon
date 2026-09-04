@@ -1,187 +1,215 @@
 1
-00:00:00,300 --> 00:00:03,333
+00:00:00,300 --> 00:00:02,667
 Most trading agents are built to trade.
 
 2
-00:00:03,333 --> 00:00:05,533
+00:00:02,667 --> 00:00:04,367
 This one is built to refuse.
 
 3
-00:00:05,533 --> 00:00:12,133
-Over the live week it evaluated 81 real opportunities and declined 95 percent of them,
+00:00:04,367 --> 00:00:09,200
+Over the live week it evaluated 197 real opportunities and declined 98 percent of
 
 4
-00:00:12,133 --> 00:00:17,000
-and every refusal is a signed artifact you can verify yourself.
+00:00:09,200 --> 00:00:09,533
+them,
 
 5
-00:00:17,000 --> 00:00:20,900
-Let me show you why that is the point, not a bug.
+00:00:09,533 --> 00:00:13,300
+and every refusal is a signed artifact you can verify yourself.
 
 6
-00:00:21,200 --> 00:00:23,967
-The thesis is the volatility risk premium:
+00:00:13,300 --> 00:00:16,400
+Let me show you why that is the point, not a bug.
 
 7
-00:00:23,967 --> 00:00:27,967
-SPY options are priced richer than the movement that follows.
+00:00:16,700 --> 00:00:19,300
+The thesis is the volatility risk premium:
 
 8
-00:00:27,967 --> 00:00:32,600
-Before a single line of backtest code, I pre-registered the hypotheses,
+00:00:19,300 --> 00:00:23,033
+SPY options are priced richer than the movement that follows.
 
 9
-00:00:32,600 --> 00:00:35,467
-the trial count, and a multiple-testing bar.
+00:00:23,033 --> 00:00:27,400
+Before a single line of backtest code, I pre-registered the hypotheses,
 
 10
-00:00:35,467 --> 00:00:37,800
-The git history proves the order.
+00:00:27,400 --> 00:00:30,100
+the trial count, and a multiple-testing bar.
 
 11
-00:00:38,100 --> 00:00:41,167
-Nearly seven years of SPY, out of sample:
+00:00:30,100 --> 00:00:32,300
+The git history proves the order.
 
 12
-00:00:41,167 --> 00:00:46,667
-mean premium 3.68 vol points over 1,741 observations, Newey-West t of 4.74.
+00:00:32,600 --> 00:00:36,533
+Nearly seven years of SPY, out of sample:
 
 13
-00:00:46,667 --> 00:00:50,967
-The naive t of 18 is invalid, because the windows overlap.
+00:00:36,533 --> 00:00:43,633
+mean premium 3.68 vol points over 1,741 observations, Newey-West t of 4.74.
 
 14
-00:00:50,967 --> 00:00:54,300
-The edge is real, and the number is honest.
+00:00:43,633 --> 00:00:49,233
+The naive t of 18 is invalid, because the windows overlap.
 
 15
-00:00:54,600 --> 00:00:58,200
+00:00:49,533 --> 00:00:53,700
 The agent sells that premium with defined-risk iron condors,
 
 16
-00:00:58,200 --> 00:01:03,233
+00:00:53,700 --> 00:00:59,500
 only after eleven numbered gates pass: position integrity, timing, circuit breakers,
 
 17
-00:01:03,233 --> 00:01:07,800
+00:00:59,500 --> 00:01:04,767
 a contango filter, the premium threshold at the exact strikes it would sell,
 
 18
-00:01:07,800 --> 00:01:10,833
+00:01:04,767 --> 00:01:08,267
 event proximity, cost, sizing, and a stagger rule.
 
 19
-00:01:10,833 --> 00:01:16,000
+00:01:08,267 --> 00:01:14,200
 Every call goes through Alpaca's official MCP server, request and response recorded.
 
 20
-00:01:16,300 --> 00:01:20,500
+00:01:14,500 --> 00:01:17,967
 The deployed tenor was not picked from the backtest ranking.
 
 21
-00:01:20,500 --> 00:01:25,700
-Three candidates raced live in parallel for eight days on real market data,
+00:01:17,967 --> 00:01:22,733
+Since the twenty second of August three candidates have run as shadow agents on the
 
 22
-00:01:25,700 --> 00:01:26,867
-risking nothing.
+00:01:22,733 --> 00:01:24,733
+same live prices, placing nothing.
 
 23
-00:01:26,867 --> 00:01:32,100
-The one that actually traded won: two days of five, against zero and one.
+00:01:24,733 --> 00:01:29,000
+The deployed one would have entered on 26 cycles of 52, against 16 and 13.
 
 24
-00:01:32,400 --> 00:01:36,667
-Every decision, fill and refusal is hashed into a Merkle tree,
+00:01:29,000 --> 00:01:31,067
+The one that actually trades won.
 
 25
-00:01:36,667 --> 00:01:38,967
-sealed before outcomes are known.
+00:01:31,367 --> 00:01:35,300
+Every decision, fill and refusal is hashed into a Merkle tree,
 
 26
-00:01:38,967 --> 00:01:41,200
-One command recomputes the root.
+00:01:35,300 --> 00:01:37,433
+sealed before outcomes are known.
 
 27
-00:01:41,200 --> 00:01:46,600
-If anything had been edited after the fact, this line would not say verified.
+00:01:37,433 --> 00:01:42,367
+One command runs the tests, recomputes the root and rebuilds the results page.
 
 28
-00:01:46,900 --> 00:01:50,300
-Here is the strongest evidence that this works.
+00:01:42,367 --> 00:01:47,400
+If anything had been edited after the fact, this line would not say verified.
 
 29
-00:01:50,300 --> 00:01:55,633
-On the first live morning, a payload-parsing bug read the account as flat,
+00:01:47,700 --> 00:01:50,433
+Here is the strongest evidence that this works.
 
 30
-00:01:55,633 --> 00:01:59,267
-and the agent stacked four condors instead of one.
+00:01:50,433 --> 00:01:54,700
+On the first live morning, a payload-parsing bug read the account as flat,
 
 31
-00:01:59,267 --> 00:02:01,100
-The sealed log caught it:
+00:01:54,700 --> 00:01:57,633
+and the agent stacked four condors instead of one.
 
 32
-00:02:01,100 --> 00:02:05,567
-one artifact holds both the raw broker response with the legs,
+00:01:57,633 --> 00:01:59,100
+The sealed log caught it:
 
 33
-00:02:05,567 --> 00:02:08,567
-and the reconciliation that ignored them.
+00:01:59,100 --> 00:02:02,700
+one artifact holds both the raw broker response with the legs,
 
 34
-00:02:08,567 --> 00:02:13,967
-Bug, fix, regression tests and the adopted positions are all in the record.
+00:02:02,700 --> 00:02:05,100
+and the reconciliation that ignored them.
 
 35
-00:02:13,967 --> 00:02:15,300
-I did not hide it.
+00:02:05,100 --> 00:02:09,433
+Bug, fix, regression tests and the adopted positions are all in the record.
 
 36
-00:02:15,300 --> 00:02:17,500
-The record would not let me.
+00:02:09,433 --> 00:02:10,500
+I did not hide it.
 
 37
-00:02:17,800 --> 00:02:19,000
-Live P&L so far:
+00:02:10,500 --> 00:02:12,300
+The record would not let me.
 
 38
-00:02:19,000 --> 00:02:24,100
-plus 36 dollars and 93 cents on a hundred thousand dollar paper account.
+00:02:12,600 --> 00:02:16,600
+This is an AI agents hackathon, so where does the model sit?
 
 39
-00:02:24,100 --> 00:02:30,067
-On Friday a deadline flatten closes every position ninety minutes before submission.
+00:02:16,600 --> 00:02:19,033
+After the decision, never inside it.
 
 40
-00:02:30,067 --> 00:02:31,633
-Realised, not marked.
+00:02:19,033 --> 00:02:23,200
+It reads each sealed artifact and explains it in plain English,
 
 41
-00:02:31,633 --> 00:02:36,333
-One week of options P&L is mostly noise, and the write-up says so.
+00:02:23,200 --> 00:02:27,200
+and every number it writes is checked against that artifact.
 
 42
-00:02:36,333 --> 00:02:41,867
-The tail hedge is coded and never engaged: Alpaca served no VIX data all week.
+00:02:27,200 --> 00:02:30,867
+Invent one and the explanation is rejected and counted.
 
 43
-00:02:41,867 --> 00:02:44,800
-That refusal is logged every cycle too.
+00:02:30,867 --> 00:02:33,300
+So far: 238 explained, 0 rejected.
 
 44
-00:02:45,100 --> 00:02:45,900
-Clone it.
+00:02:33,600 --> 00:02:34,367
+Live, so far:
 
 45
-00:02:45,900 --> 00:02:49,233
-Run make test, make verify, make summary.
+00:02:34,367 --> 00:02:38,400
+minus 565 dollars and 7 cents on a hundred thousand dollar paper account.
 
 46
-00:02:49,233 --> 00:02:51,533
-You do not have to trust me.
+00:02:38,400 --> 00:02:40,767
+Four condors open, twenty eight contracts,
 
 47
-00:02:51,533 --> 00:02:54,700
+00:02:40,767 --> 00:02:44,367
+three thousand one hundred and eight dollars of credit collected,
+
+48
+00:02:44,367 --> 00:02:48,167
+against a worst case capped at ten thousand eight hundred and forty.
+
+49
+00:02:48,167 --> 00:02:50,500
+The tail hedge is coded and never engaged:
+
+50
+00:02:50,500 --> 00:02:53,400
+no VIX expiry inside its window was quoted all week.
+
+51
+00:02:53,400 --> 00:02:57,933
+In ninety minutes the agent flattens the book and that number becomes realised.
+
+52
+00:02:58,233 --> 00:02:59,833
+Clone it. Run make judge.
+
+53
+00:02:59,833 --> 00:03:01,633
+You do not have to trust me.
+
+54
+00:03:01,633 --> 00:03:04,367
 That is the whole design.

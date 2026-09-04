@@ -14,8 +14,8 @@ export const BODY = `${grotesk.fontFamily}, "Segoe UI", Arial, sans-serif`;
 export const MONO = `${jet.fontFamily}, "Cascadia Mono", Consolas, monospace`;
 
 export const CREAM = '#f3efe3';
-export const INK = '#0f1115';
-export const INK2 = '#171a20';
+export const INK = '#0a1621';        // matches presentation/slides.pdf
+export const INK2 = '#16283c';       // deck panel navy
 export const PAPER = '#fbfaf6';
 export const TEXT_C = '#14161a';
 export const TEXT_I = '#f4f1ea';
@@ -327,6 +327,29 @@ export const BeatAudio: React.FC<{beat: Beat}> = ({beat}) => {
     <Sequence from={beat.lead} layout="none">
       <Audio src={staticFile(beat.audio)} />
     </Sequence>
+  );
+};
+
+/** The project wordmark, set quietly: small caps, low contrast, out of the way. */
+export const Wordmark: React.FC<{text: string; at: number; bottom?: boolean}> = ({text, at, bottom}) => {
+  const frame = useCurrentFrame();
+  const tone = useTone();
+  const p = palette(tone);
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: 80,
+        [bottom ? 'bottom' : 'top']: bottom ? 90 : 118,
+        fontFamily: HEAD,
+        fontSize: 30,
+        letterSpacing: 8,
+        color: p.text,
+        opacity: fadeIn(frame, at, 16) * (tone === 'cream' ? 0.5 : 0.62),
+      }}
+    >
+      {text}
+    </div>
   );
 };
 
