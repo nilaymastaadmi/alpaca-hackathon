@@ -3431,13 +3431,49 @@
    "created_at": "2026-09-04T15:43:26+00:00",
    "prompt_tokens": 754,
    "completion_tokens": 48
+  },
+  "958289f19836faa3aca9c9205a4d5dba181194ddf2d2c917825e09fd6e6c34cd": {
+   "seq": 1477,
+   "timestamp": "2026-09-04T11:44:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to make a trade because the event proximity check blocked the action, as the US nonfarm payrolls event was happening at 08:30 ET on the same day. This check ensures the agent avoids taking short gamma positions before major economic events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-32B-Instruct",
+   "created_at": "2026-09-04T15:53:44+00:00",
+   "prompt_tokens": 753,
+   "completion_tokens": 55
+  },
+  "a8079c83f1ce6b4511e022396e9c8fe89303280cc4ffd3afdc5a8118079c303f": {
+   "seq": 1478,
+   "timestamp": "2026-09-04T11:47:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the event proximity check blocked the action, specifically due to the upcoming US nonfarm payrolls announcement at 08:30 ET on the same day. This check prevents new short premium positions before such significant economic events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-32B-Instruct",
+   "created_at": "2026-09-04T15:53:53+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 54
+  },
+  "f39a1ce8f90fa25ecabe4cee7c8c288efe5e443960fcf359c52a564a06571fa7": {
+   "seq": 1479,
+   "timestamp": "2026-09-04T11:50:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the US nonfarm payrolls event was too close, specifically 0.83 hours after the submission deadline, which froze all entries and prevented any new trades from being opened.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-32B-Instruct",
+   "created_at": "2026-09-04T15:53:56+00:00",
+   "prompt_tokens": 753,
+   "completion_tokens": 45
   }
  },
  "model": "Qwen/Qwen2.5-32B-Instruct",
- "generated_at": "2026-09-04T15:43:26+00:00",
+ "generated_at": "2026-09-04T15:53:56+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
-  "explained": 286,
+  "explained": 289,
   "rejected": 0
  }
 }
