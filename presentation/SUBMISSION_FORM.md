@@ -16,19 +16,19 @@ Pre-registered SPY iron-condor agent on Alpaca MCP: 11 risk gates, 233 tests, 10
 
 ## Long description
 
-(352 words, trimmed 2026-09-04 to fit the form's limit. The full version lives in `presentation/WRITEUP.md`.)
+(1955 characters against the form's 2000 limit, trimmed 2026-09-04. Full version in `presentation/WRITEUP.md`.)
 
 Most trading agents are built to trade. This one is built to measure first.
 
-The thesis is the volatility risk premium: SPY options are priced richer than the movement that follows. Tested on 6.99 years of SPY out of sample against hypotheses pre-registered before any backtest code existed, provable from git history: mean VRP +3.68 vol points over 1,741 observations, Newey-West t = +4.74. Seven configurations were tested against a multiple-testing-corrected bar of 0.791. The deployed tenor came from eight days of live paper comparison, three candidates running in parallel, not from the backtest ranking.
+The thesis is the volatility risk premium: SPY options are priced richer than the movement that follows. Tested on 6.99 years of SPY out of sample, against hypotheses pre-registered before any backtest code existed and provable from git history: mean VRP +3.68 vol points over 1,741 observations, Newey-West t = +4.74, against a multiple-testing-corrected bar of 0.791. The deployed tenor came from eight days of live paper comparison, three candidates running in parallel, not from the backtest ranking.
 
-The agent sells that premium with defined-risk iron condors, and only after 11 numbered gates pass: position integrity, timing, a drawdown breaker, loss limits, capacity, a contango regime filter, the VRP threshold at the exact strikes it would sell, macro-event proximity, cost and sizing, plus a stagger rule. A refusal is logged with the same detail as a fill, carrying the numbers that caused it.
+It sells that premium with defined-risk iron condors, and only after 11 numbered gates pass, including a contango filter, the VRP threshold at the exact strikes it would sell, and macro-event proximity. A refusal is logged with the same detail as a fill, carrying the numbers that caused it.
 
-Every runtime call goes through Alpaca's official MCP server over JSON-RPC, recorded request by request. Alpaca's CLI is a read-only second opinion behind an allowlist that refuses every destructive command. Orders ladder from mid rather than crossing the spread, measured at 1.5% of credit round trip. A deadline mechanism flattens the book before submission, so the result is realised.
+Every runtime call goes through Alpaca's official MCP server, recorded request by request. Alpaca's CLI is a read-only second opinion behind an allowlist that refuses every destructive command. Orders ladder from mid rather than crossing the spread, at 1.5% of credit round trip. A deadline mechanism flattens the book before submission, so the result is realised.
 
 The language model sits after the decision, never inside it. It narrates each sealed decision in plain English, and every number it writes is checked against the artifact, with rejections counted. The model explains; the numbers decide.
 
-Every decision is hashed into a SHA-256 Merkle tree sealed before outcomes are known, and make verify recomputes it. That trail already caught its own author: on the first live morning a payload-parsing bug read the account as flat and the agent stacked four condors instead of one. The proof was one sealed artifact holding both the raw broker response and the reconciliation that ignored it. The bug, the fix, the regression test and the adopted positions are all in the record. 233 tests. The write-up says plainly which designed component never engaged live, and why.
+Every decision is hashed into a SHA-256 Merkle tree sealed before outcomes are known, and make verify recomputes it. That trail caught its own author: on the first live morning a payload-parsing bug read the account as flat and the agent stacked four condors instead of one. The proof was one sealed artifact holding both the raw broker response and the reconciliation that ignored it. The bug, the fix, the regression test and the positions are all in the record. 233 tests.
 
 ## Category / challenge
 
