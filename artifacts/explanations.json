@@ -4067,13 +4067,49 @@
    "created_at": "2026-09-04T18:23:20+00:00",
    "prompt_tokens": 754,
    "completion_tokens": 80
+  },
+  "bb608790e78b74331902d26bcd900b9ef04c447b6b808adb628afc6d2d83db73": {
+   "seq": 1530,
+   "timestamp": "2026-09-04T14:23:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the submission deadline had passed 3.38 hours ago, and entries were frozen for judging. The \"event_proximity\" check blocked the action, as the US nonfarm payrolls were scheduled for 08:30 ET the next day.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T18:33:17+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 61
+  },
+  "74b3d723abd092693f052a302dceeabeedb884d36e8dd05a5b6ba57f7c92bd50": {
+   "seq": 1532,
+   "timestamp": "2026-09-04T14:29:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute the trade because the submission deadline had passed 3.48 hours ago, and entries were frozen for judging. The \"event_proximity\" check blocked the action, as it identified that the US nonfarm payrolls were scheduled for 08:30 ET the next day.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T18:33:42+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 64
+  },
+  "6d1c1e4beaa11a93e2dcdcf2c996311c4dc5c6650fb4cabf1004ee6ab34f4d82": {
+   "seq": 1533,
+   "timestamp": "2026-09-04T14:32:02-04:00",
+   "action": "refuse",
+   "text": "The!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!The trading agent refused to execute a trade because the submission deadline had passed 3.53 hours ago, and entries were frozen for judging. The event_proximity check blocked the action, as the US nonfarm payrolls were scheduled for 08:30 ET the next day.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T18:33:56+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 279
   }
  },
  "model": "Qwen/Qwen2.5-72B-Instruct",
- "generated_at": "2026-09-04T18:23:20+00:00",
+ "generated_at": "2026-09-04T18:33:56+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
-  "explained": 339,
+  "explained": 342,
   "rejected": 0
  }
 }
