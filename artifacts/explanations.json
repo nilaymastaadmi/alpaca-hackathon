@@ -3683,13 +3683,73 @@
    "created_at": "2026-09-04T16:53:27+00:00",
    "prompt_tokens": 754,
    "completion_tokens": 64
+  },
+  "eadc2e4127530242a7a77329c2380391a732fe9a56d218cd47a309e61fabfe07": {
+   "seq": 1497,
+   "timestamp": "2026-09-04T12:44:02-04:00",
+   "action": "refuse",
+   "text": "The!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!The trading agent refused to execute the trade because the submission deadline had passed 1.73 hours ago, and entries were frozen for judging. The \"event_proximity\" check blocked the action, as the US nonfarm payrolls were scheduled for 0!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T17:03:43+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 439
+  },
+  "c65e06ecc88258951f0b6c1b1744ae3b42399f3df83b78bdc4f16d5103c9117d": {
+   "seq": 1499,
+   "timestamp": "2026-09-04T12:50:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the submission deadline had passed 1.83 hours ago, and entries were frozen for judging. This decision was made by the \"event_proximity\" check, which looked at the time until the US nonfarm payrolls announcement at 08:30 ET.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T17:03:50+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 64
+  },
+  "14930557b4ba9fa50f808f71414c792177d7d58a6ad0c09290c8a26bd0c7592b": {
+   "seq": 1500,
+   "timestamp": "2026-09-04T12:53:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the submission deadline had passed 1.88 hours ago, and entries are frozen after judging. This decision was made by the \"event_proximity\" check, which also noted that the US nonfarm payrolls were scheduled for 08:30 ET the next day.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T17:03:58+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 66
+  },
+  "69f37dad14b39309af753640498a4d00067a05292db426c2f0fbfa03b5590869": {
+   "seq": 1501,
+   "timestamp": "2026-09-04T12:56:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the submission deadline had passed 1.93 hours ago, and entries are frozen after judging. This decision was made by the \"event_proximity\" check, which looked at the time until the US nonfarm payrolls announcement at 08:30 ET.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T17:04:05+00:00",
+   "prompt_tokens": 753,
+   "completion_tokens": 64
+  },
+  "c50582d9777f111f320b6923d06f328f3f9ce5213849fc5e348422bd3c9f8b3c": {
+   "seq": 1502,
+   "timestamp": "2026-09-04T12:59:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the submission deadline had passed 1.98 hours ago, and entries were frozen for judging. This decision was made by the \"event_proximity\" check, which also noted that the US nonfarm payrolls were scheduled for 08:30 ET the next day.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T17:04:12+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 66
   }
  },
  "model": "Qwen/Qwen2.5-72B-Instruct",
- "generated_at": "2026-09-04T16:53:37+00:00",
+ "generated_at": "2026-09-04T17:04:28+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
-  "explained": 307,
+  "explained": 312,
   "rejected": 0
  }
 }
