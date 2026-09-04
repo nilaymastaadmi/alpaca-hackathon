@@ -1,6 +1,6 @@
 # D3 comparison log: T4 vs T6 vs T7
 
-Generated 2026-09-03T01:15:30 by `agent/compare_report.py` from `agent/agent.py --compare-all`, scheduled hourly 19:15-01:15 IST (matching `agent/config.py`'s own trade_window). Purely observational -- every row below is a dry-run decision, no order was ever sent. See `research/DEPLOYMENT_DECISIONS.md` D3 for the backtest case; this file is the live-market evidence gathered in parallel while that decision stays open until kickoff.
+Generated 2026-09-04T01:15:25 by `agent/compare_report.py` from `agent/agent.py --compare-all`, scheduled hourly 19:15-01:15 IST (matching `agent/config.py`'s own trade_window). Purely observational -- every row below is a dry-run decision, no order was ever sent. See `research/DEPLOYMENT_DECISIONS.md` D3 for the backtest case; this file is the live-market evidence gathered in parallel while that decision stays open until kickoff.
 
 | ET timestamp | T4 (7-14 DTE) | T6 (21-45 DTE, deployed since 30 Aug) | T7 (5-10 DTE) |
 |---|---|---|---|
@@ -52,6 +52,10 @@ Generated 2026-09-03T01:15:30 by `agent/compare_report.py` from `agent/agent.py 
 | 2026-09-02 13:45 | **ENTER** [g7 pass] (VRP +6.40) | **ENTER** [g7 pass] (VRP +6.34) | **ENTER** [g7 pass] (VRP +3.57) |
 | 2026-09-02 14:45 | **ENTER** [g7 pass] (VRP +6.32) | **ENTER** [g7 pass] (VRP +6.30) | **ENTER** [g7 pass] (VRP +3.55) |
 | 2026-09-02 15:45 | refuse [g7 pass] (VRP +6.21) | refuse [g7 pass] (VRP +6.22) | refuse [g7 pass] (VRP +3.32) |
+| 2026-09-03 12:45 | refuse [g7 pass] (VRP +5.18) | refuse [g7 pass] (VRP +5.22) | refuse [g7 pass] (VRP +2.97) |
+| 2026-09-03 13:45 | refuse [g7 pass] (VRP +5.15) | refuse [g7 pass] (VRP +5.24) | refuse [g7 pass] (VRP +2.68) |
+| 2026-09-03 14:45 | refuse [g7 pass] (VRP +5.00) | refuse [g7 pass] (VRP +4.97) | refuse [g7 pass] (VRP +2.49) |
+| 2026-09-03 15:45 | refuse [g7 pass] (VRP +4.98) | refuse [g7 pass] (VRP +4.91) | refuse [g7 pass] (VRP +2.45) |
 
 ## Daily summary
 
@@ -87,11 +91,14 @@ Generated 2026-09-03T01:15:30 by `agent/compare_report.py` from `agent/agent.py 
 | 2026-09-02 | T4 | 7 | 7 | 6 | +6.21 to +7.01 |
 | 2026-09-02 | T6 | 7 | 7 | 6 | +6.21 to +7.07 |
 | 2026-09-02 | T7 | 7 | 7 | 6 | +3.32 to +4.82 |
+| 2026-09-03 | T4 | 4 | 4 | 0 | +4.98 to +5.18 |
+| 2026-09-03 | T6 | 4 | 4 | 0 | +4.91 to +5.24 |
+| 2026-09-03 | T7 | 4 | 4 | 0 | +2.45 to +2.97 |
 
 ## Overall tally
 
 | label | cycles logged | would-enter cycles |
 |---|---|---|
-| T4 | 48 | 16 |
-| T6 | 48 | 26 |
-| T7 | 47 | 13 |
+| T4 | 52 | 16 |
+| T6 | 52 | 26 |
+| T7 | 51 | 13 |
