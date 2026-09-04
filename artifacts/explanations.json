@@ -2858,7 +2858,7 @@
   }
  },
  "model": "Qwen/Qwen2.5-72B-Instruct",
- "generated_at": "2026-09-04T07:03:01+00:00",
+ "generated_at": "2026-09-04T07:13:01+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
   "explained": 238,
