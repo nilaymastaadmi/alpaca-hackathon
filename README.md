@@ -209,7 +209,15 @@ detection works even when a forger recomputes the leaf hashes consistently.
 | `backtest/` | Pre-registered research. Holdout sealed in code, not by memory |
 | `research/` | Pre-registration, every result including the failures, deployment decisions |
 | `dashboard/` | Streamlit cockpit, reads artifacts off disk so it renders with the market closed |
-| `prep/` | Capability probes and the daily IV logger |
+| `prep/` | Capability probes, the daily IV logger, the CLI read wrapper and the explain layer |
+
+One clarification worth making before you grep for it: four scripts in `prep/`
+call Alpaca's REST endpoints directly with `curl`. Those are the one-off
+measurements behind the numbers in the table above (the 246 ms round trip, the
+1.5% fill cost, the SPY versus QQQ spread comparison), run once during research
+and kept so those claims have provenance. Nothing in the live decision path uses
+them: `agent/` goes through MCP, and reporting goes through the allowlisted CLI
+wrapper.
 | `tests/` | 233 tests |
 | [`RISK_REGISTER.md`](RISK_REGISTER.md) | What could bite during the live window, and what is done about it |
 | [`STRATEGY.md`](STRATEGY.md) | Why short volatility, why iron condors, why this tenor |
