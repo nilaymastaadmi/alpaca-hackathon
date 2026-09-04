@@ -12,7 +12,9 @@ Glass Box: a pre-registered options agent whose every decision you can verify
 
 ## Short description (one line)
 
-Pre-registered SPY iron-condor agent on Alpaca MCP: 11 risk gates, 233 tests, 1050+ sealed decisions in a Merkle log a judge recomputes with one command, three strategies raced live in parallel, and a log that caught its own author's bug on day one.
+An autonomous options trading agent that shows its work. It sells volatility premium on SPY only when that premium is measurably there, declines out loud when it is not, and writes the reasoning behind every decision, including every refusal, into a tamper-evident log anyone can verify.
+
+(287 characters. The counts that used to be here now live in the long description and on the dashboard; a one-liner that reads like a spec sheet tells a judge what was measured but not what the thing is.)
 
 ## Long description
 
