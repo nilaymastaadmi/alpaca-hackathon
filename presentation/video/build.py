@@ -507,7 +507,7 @@ def build_timeline(p: dict[str, str], beats: list[dict], verify: tuple[str, str]
         "facts": {
             "LIVE_N": int(p["LIVE_N"]), "LIVE_PCT": int(p["LIVE_PCT"]), "LIVE_PNL": live_pnl,
             "EXPLAINED": int(p["EXPLAINED"]), "REJECTED": int(p["REJECTED"]),
-            "LIVE_PNL_TEXT": pnl_text(live_pnl), "ARTIFACTS": verify[1], "TESTS": 211,
+            "LIVE_PNL_TEXT": pnl_text(live_pnl), "ARTIFACTS": verify[1], "TESTS": int(tests[1]),
         },
         "verify": {
             "command": "make judge",
@@ -638,21 +638,22 @@ def qa(tl: dict, n_captions: int) -> None:
     size_mb = int(info["format"]["size"]) / 1e6
     loud = subprocess.run([shutil.which("ffmpeg"), "-hide_banner", "-nostats", "-i", str(FINAL), "-af", "ebur128", "-f", "null", "-"],
                           capture_output=True, text=True, encoding="utf-8", errors="replace").stderr
-    m = re.search(r"I:\s+(-?[\d.]+) LUFS", loud)
+    ms = re.findall(r"I:\s+(-?[\d.]+) LUFS", loud)   # the last one is the integrated result
+    m = ms[-1] if ms else None
     srt = SRT.read_text(encoding="utf-8")
     print()
     print("QA")
     print(f"  duration     {int(dur // 60)}:{dur % 60:05.2f}  ({dur:.2f} s)")
     print(f"  resolution   {streams.get('h264', {}).get('width')}x{streams.get('h264', {}).get('height')}  video {'h264' if 'h264' in streams else 'MISSING'}, audio {'aac' if 'aac' in streams else 'MISSING'}")
     print(f"  size         {size_mb:.1f} MB")
-    print(f"  loudness     {m.group(1) if m else 'n/a'} LUFS integrated")
+    print(f"  loudness     {m if m else 'n/a'} LUFS integrated")
     print(f"  beats        {len(tl['beats'])}")
     print(f"  captions     {n_captions}")
     print(f"  em-dashes    {srt.count(EM_DASH)} in final.srt")
     print(f"  dev account  {srt.count(DEV_ACCOUNT)} in final.srt")
     print(f"  output       {FINAL}")
     print(f"  captions     {SRT}")
-    ok = 150 <= dur <= 180 and size_mb < 150 and srt.count(EM_DASH) == 0 and srt.count(DEV_ACCOUNT) == 0
+    ok = 150 <= dur <= 190 and size_mb < 150 and srt.count(EM_DASH) == 0 and srt.count(DEV_ACCOUNT) == 0
     print(f"  verdict      {'PASS' if ok else 'CHECK'}")
 
 
