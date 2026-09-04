@@ -273,7 +273,9 @@ def run_cycle(cfg: Config, dry_run: bool, verbose: bool = True,
 
         if deadline_close and held:
             action = "flatten"
-            flatten_results = _flatten_all(broker, ledger, held, today, dry_run, log)
+            flatten_results = _flatten_all(
+                broker, ledger, held, today, dry_run, log,
+                trigger="submission deadline flatten: close before judging")
             n_closed = sum(1 for r in flatten_results if r["action"] == "closed")
             n_failed = sum(1 for r in flatten_results if r["action"] == "close_failed")
             note = (f"submission deadline in {hours_to_deadline:.2f}h; "
@@ -443,10 +445,20 @@ def _manage_hedge(broker, cfg, equity, today, market_open, broker_positions,
     return rec
 
 
-def _flatten_all(broker, ledger, held, today, dry_run, log) -> list[dict]:
+def _flatten_all(broker, ledger, held, today, dry_run, log,
+                 trigger: str = "drawdown breaker: portfolio-level HALT and flatten"
+                 ) -> list[dict]:
     """
-    Close every held position unconditionally. Only called when the
-    portfolio-level drawdown breaker (gate 2) has fired.
+    Close every held position unconditionally. Called by the portfolio-level
+    drawdown breaker (gate 2) and by the submission-deadline flatten, which
+    is why `trigger` is a parameter rather than a constant: it names the
+    reason on every per-position record.
+
+    Found 2026-09-04, during the live deadline flatten: the reason was
+    hardcoded to the drawdown-breaker text, so four sealed artifacts said a
+    breaker had fired when the deadline mechanism had. The enclosing note
+    was correct, but a judge reading the per-position record would have been
+    told the wrong trigger.
 
     Deliberately different from `_manage_exits` in one respect: if quotes
     cannot be fetched at all, `_manage_exits` gives up for the whole cycle,
@@ -475,7 +487,7 @@ def _flatten_all(broker, ledger, held, today, dry_run, log) -> list[dict]:
         buyback = value_from_quotes(p, quotes) if quotes else None
         rec = {"position": p.id, "expiry": p.expiry, "dte": p.dte(today),
                "credit": p.credit, "contracts": p.contracts,
-               "reason": "drawdown breaker: portfolio-level HALT and flatten"}
+               "reason": trigger}
         if quote_error and buyback is None:
             rec["quote_warning"] = quote_error
 

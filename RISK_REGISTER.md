@@ -408,3 +408,50 @@ list:** Social Engagement IS a separate podium, 2 teams x $500 plus a month
 of Algo Trader Plus each, distinct from the 1st/2nd/3rd prizes. Total pool
 is $6,000, not the $5,000 assumed everywhere in this repo until now. See
 `HANDOFF.md` and `SUBMISSION_CHECKLIST.md` for the full breakdown.
+
+---
+
+### 4.10 The deadline flatten worked, and two record defects it exposed. RESOLVED 2026-09-04
+
+The submission-deadline flatten fired on schedule at 09:32 ET and closed the
+book with 58 minutes to spare. Realised P&L for the week: **-$273.87** on the
+$100,000 paper account, against a mark of -$565.07 going in. The ladder
+recovered roughly half the mark by filling from mid as post-NFP spreads
+tightened, rather than crossing at the open.
+
+Two defects surfaced, both in the RECORD rather than in the trading:
+
+1. **The per-position close reason named the wrong trigger.** `_flatten_all`
+   hardcoded "drawdown breaker: portfolio-level HALT and flatten", and the
+   deadline flatten reuses that function, so four sealed artifacts say a
+   breaker fired when it had not. The enclosing note was correct throughout.
+   Fixed the same day: the trigger is a parameter and the deadline path
+   passes its own text. The wrong-reason artifacts stay in the log, because
+   the log is append-only and rewriting it to look clean would defeat its
+   entire purpose. This entry is the correction.
+
+2. **A filled close reported as `close_failed`.** `pos-14aabefe5a` returned
+   close_failed on two consecutive flatten attempts. The order had actually
+   filled; the confirmation did not arrive inside the poll window. Gate 0
+   caught it on the next cycle: the ledger claimed a position the broker had
+   no legs for, reconciliation flagged "no legs at broker; closed or
+   expired", and cleared it. Ledger, the MCP view and the independent CLI
+   read all agree at zero legs. This is the position-integrity gate doing
+   exactly what it exists for, on the last position of the competition, and
+   it is why that gate checks in both directions.
+
+Accepted, not fixed: the poll window is not lengthened. A close that fills
+without a timely confirmation is recoverable by reconciliation on the next
+cycle, which is what happened. Blocking a cycle longer to wait would be the
+worse trade.
+
+**Why the week lost money, since the strategy's own thesis held.** Implied
+volatility stayed above trailing realised on every single day (ATM IV 11.6
+to 12.8 against trailing RV 7.2 to 10.3), so the volatility risk premium
+being sold was present throughout. The loss came from direction, not from
+the premium: SPY rallied from 765.20 to 772.71 on 3 Sep, a 0.98% move that
+cost $707 in one session by pushing spot toward the 792 short call. That is
+the known cost of being short gamma, and it is exactly what "one week of
+options P&L is mostly noise" means in practice. Four trading days is not a
+sample; it is one draw.
+
