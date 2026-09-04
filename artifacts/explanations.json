@@ -3107,13 +3107,61 @@
    "created_at": "2026-09-04T14:23:25+00:00",
    "prompt_tokens": 752,
    "completion_tokens": 59
+  },
+  "dff00959ef794f5116abaf8325348b70742222b13e7f91bf16327e1b0049ca84": {
+   "seq": 1450,
+   "timestamp": "2026-09-04T10:23:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to enter a new position because the \"event_proximity\" check blocked it. The check identified that the US nonfarm payrolls were due at 08:30 ET the next day, and the agent avoids taking on new short premium positions close to such macro events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T14:33:10+00:00",
+   "prompt_tokens": 752,
+   "completion_tokens": 60
+  },
+  "0ae274b4c67453fa0490808e4b0e7780052a2705cadebd8e215cf85edfea23f6": {
+   "seq": 1451,
+   "timestamp": "2026-09-04T10:26:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to make a new trade because the \"event_proximity\" check blocked it. The check was triggered by the US nonfarm payrolls scheduled for 08:30 ET, which was less than a day away. The agent avoids taking on new short premium positions close to significant macro events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T14:33:15+00:00",
+   "prompt_tokens": 752,
+   "completion_tokens": 64
+  },
+  "d5a60b4ab2b7a3fdbc82020e37e6a9764a4f4c839441c1927aadf287b1e066d5": {
+   "seq": 1452,
+   "timestamp": "2026-09-04T10:29:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to enter a new position because the \"event_proximity\" check blocked it. The check identified that the US nonfarm payrolls were due at 08:30 ET the next day, and the agent avoids taking on new short premium positions before such macro events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T14:33:19+00:00",
+   "prompt_tokens": 752,
+   "completion_tokens": 59
+  },
+  "bf92bf2dfaf10ece16f44fba70dcc6bd59c0aa62572a62f04722005104061764": {
+   "seq": 1453,
+   "timestamp": "2026-09-04T10:32:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to make a new trade because the \"event_proximity\" check blocked it. The check was concerned!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!The trading agent refused to make a new trade because the \"event_proximity\" check blocked it. This check was looking at the US nonfarm payrolls scheduled for 08:30 ET in 0 days. The agent avoids taking on new short premium positions close to scheduled macro events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T14:33:36+00:00",
+   "prompt_tokens": 752,
+   "completion_tokens": 280
   }
  },
  "model": "Qwen/Qwen2.5-72B-Instruct",
- "generated_at": "2026-09-04T14:23:25+00:00",
+ "generated_at": "2026-09-04T14:33:36+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
-  "explained": 259,
+  "explained": 263,
   "rejected": 0
  }
 }
