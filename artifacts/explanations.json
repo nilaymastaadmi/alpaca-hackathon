@@ -3191,13 +3191,49 @@
    "created_at": "2026-09-04T14:43:32+00:00",
    "prompt_tokens": 752,
    "completion_tokens": 41
+  },
+  "71dab5d44e0b05246571d101b7e6350604510f62a868577debf171bd20a48ced": {
+   "seq": 1457,
+   "timestamp": "2026-09-04T10:44:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to enter a new position because the \"event_proximity\" check blocked it. The check identified that the US nonfarm payrolls were due at 08:30 ET in 0 days, and the agent avoids taking on new short gamma exposure before significant macro events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T14:53:07+00:00",
+   "prompt_tokens": 752,
+   "completion_tokens": 60
+  },
+  "fb6d9947c634199a25ebfe2e93db663ec3095cf9dc4e6492b7a834a55fb48d2e": {
+   "seq": 1458,
+   "timestamp": "2026-09-04T10:47:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to enter a new position because the \"event_proximity\" check blocked it. The check identified that the US nonfarm payrolls were due at 08:30 ET the next day, and the agent avoids taking on new short premium positions close to such macro events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T14:53:11+00:00",
+   "prompt_tokens": 752,
+   "completion_tokens": 60
+  },
+  "035a42bf05c817cbfd2375d0efdfa0e15d6c35f41c739d5df6806516ae0ccbe3": {
+   "seq": 1459,
+   "timestamp": "2026-09-04T10:50:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to make a new trade because the event proximity check blocked it. The check was looking at the time until the US nonfarm payrolls announcement, which was 0.17 hours away. The agent avoids taking new short premium positions close to scheduled macro events to prevent unwanted exposure.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T14:53:14+00:00",
+   "prompt_tokens": 752,
+   "completion_tokens": 61
   }
  },
- "model": "Qwen/Qwen2.5-32B-Instruct",
- "generated_at": "2026-09-04T14:43:32+00:00",
+ "model": "Qwen/Qwen2.5-72B-Instruct",
+ "generated_at": "2026-09-04T14:53:14+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
-  "explained": 266,
+  "explained": 269,
   "rejected": 0
  }
 }
