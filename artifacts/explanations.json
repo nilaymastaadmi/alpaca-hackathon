@@ -2903,13 +2903,61 @@
    "created_at": "2026-09-04T13:33:17+00:00",
    "prompt_tokens": 768,
    "completion_tokens": 57
+  },
+  "d6fc419c1809fc14676c2a0bc65c6d000a40a5326569b71266f565ae571c50a7": {
+   "seq": 1432,
+   "timestamp": "2026-09-04T09:32:02-04:00",
+   "action": "flatten",
+   "text": "The trading agent decided to flatten its positions due to the \"event_proximity\" check, which blocked further action because the US nonfarm payrolls were scheduled for 08:30 ET the next day. The agent noted that 3 out of 4 positions were successfully closed, while 1 failed to close, with the submission deadline in 1.47 hours.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T13:43:07+00:00",
+   "prompt_tokens": 753,
+   "completion_tokens": 77
+  },
+  "6a18bdaac122f80bb38d0b03b2a48ee4e483cc189aa02830f437c0e8afd8a6ee": {
+   "seq": 1434,
+   "timestamp": "2026-09-04T09:35:02-04:00",
+   "action": "flatten",
+   "text": "The trading agent decided to flatten its positions because the \"event_proximity\" check blocked further action. This check was triggered by the US nonfarm payrolls scheduled for 08:30 ET the next day, with the agent aiming to reduce exposure to a scheduled macro event. The agent noted that the submission deadline was in 1.42 hours, and it managed to close half of its positions while one failed to close.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T13:43:11+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 88
+  },
+  "fcc4dbea83a396a5aad3f2713a6211876a643df358c6ba5e012241f33aac4f95": {
+   "seq": 1435,
+   "timestamp": "2026-09-04T09:38:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to make a new entry because the \"event_proximity\" check blocked it. The check was looking at the proximity to the US nonfarm payrolls announcement, which was set for 08:30 ET the next day. The agent avoids taking on new short premium positions before scheduled macro events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T13:43:18+00:00",
+   "prompt_tokens": 751,
+   "completion_tokens": 65
+  },
+  "6f60e6afd6b3cdff2579848f6f08e86db458dd26e5e723ab4d2db64f8ae45ca2": {
+   "seq": 1436,
+   "timestamp": "2026-09-04T09:41:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to make a new entry because the \"event_proximity\" check blocked it. The check was looking at the time until the US nonfarm payrolls announcement, which was 1.32 hours away.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T13:43:22+00:00",
+   "prompt_tokens": 751,
+   "completion_tokens": 46
   }
  },
  "model": "Qwen/Qwen2.5-72B-Instruct",
- "generated_at": "2026-09-04T13:33:17+00:00",
+ "generated_at": "2026-09-04T13:43:22+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
-  "explained": 242,
+  "explained": 246,
   "rejected": 0
  }
 }
