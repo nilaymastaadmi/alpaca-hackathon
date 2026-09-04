@@ -4031,13 +4031,49 @@
    "created_at": "2026-09-04T18:13:31+00:00",
    "prompt_tokens": 753,
    "completion_tokens": 54
+  },
+  "4bf0002e157e06027161090e4e4877095986af566e51dd39a5e7e1950d4a7472": {
+   "seq": 1527,
+   "timestamp": "2026-09-04T14:14:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the submission deadline had passed 3.23 hours ago, and entries were frozen for judging. The decision was made by the event_proximity check, which looked at the time until the US nonfarm payrolls announcement at 08:30 ET.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T18:23:13+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 62
+  },
+  "56c921aae8c18a11a7c01b8521892eacc7b498e2a8bdc4aa072f010b6fb29025": {
+   "seq": 1528,
+   "timestamp": "2026-09-04T14:17:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the submission deadline had passed 3.28 hours ago, and entries were frozen for judging. The \"event_proximity\" check blocked the action, as it identified that the US nonfarm payrolls were scheduled for 08:30 ET the next day. This check aims to avoid taking on new short gamma exposure before significant macroeconomic events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T18:23:17+00:00",
+   "prompt_tokens": 753,
+   "completion_tokens": 81
+  },
+  "9d10c25175e65f163d1da4b8d88ce2a0d97e9b03d86bf57890e9a48d5bd5fa76": {
+   "seq": 1529,
+   "timestamp": "2026-09-04T14:20:02-04:00",
+   "action": "refuse",
+   "text": "The trading agent refused to execute a trade because the submission deadline had passed 3.33 hours ago, and entries were frozen for judging. The \"event_proximity\" check blocked the action, as it identified that the US nonfarm payrolls were scheduled for 08:30 ET the next day. This check aims to avoid taking on new short gamma exposure before significant macro events.",
+   "grounded": true,
+   "rejected_reason": "",
+   "model": "Qwen/Qwen2.5-72B-Instruct",
+   "created_at": "2026-09-04T18:23:20+00:00",
+   "prompt_tokens": 754,
+   "completion_tokens": 80
   }
  },
- "model": "Qwen/Qwen2.5-32B-Instruct",
- "generated_at": "2026-09-04T18:13:31+00:00",
+ "model": "Qwen/Qwen2.5-72B-Instruct",
+ "generated_at": "2026-09-04T18:23:20+00:00",
  "policy": "Generated after the fact from the sealed artifact by a language model that never takes part in the decision. Every number is checked against the artifact; explanations that invent or alter a number are rejected and counted here.",
  "counts": {
-  "explained": 336,
+  "explained": 339,
   "rejected": 0
  }
 }
